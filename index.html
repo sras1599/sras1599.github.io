@@ -12,129 +12,62 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('theme');
+                if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+            } catch (e) { }
+        })();
+    </script>
 </head>
 
 <body>
     <div class="page-shell">
         <header class="site-header">
-            <a class="brand-mark" href="#top" aria-label="Raspreet Singh home">R:</a>
+            <a class="brand-mark" href="https://sras1599.github.io/" aria-label="Raspreet Singh home"><span
+                    class="brand-letter">R</span><span class="brand-colon">:</span></a>
             <nav class="site-nav" aria-label="Primary navigation">
-                <a href="#writing">Writing</a>
-                <a href="#curiosities">Curiosities</a>
-                <a href="#builds">Builds</a>
-                <a href="#past-battles">Past Battles</a>
-                <a class="nav-glyph" href="mailto:raspreet800@gmail.com" aria-label="Email Raspreet Singh">✦</a>
+                <a href="https://github.com/sras1599" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="https://www.linkedin.com/in/singh-ras/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                <a class="nav-resume" href="/assets/resume.pdf" download
+                    aria-label="Download resume">&#8595;&nbsp;Resume</a>
+                <button class="theme-toggle" aria-label="Toggle theme">&#10035;</button>
             </nav>
         </header>
+        <div class="header-rule" aria-hidden="true"></div>
 
         <main class="home">
             <section class="intro" id="top">
                 <div class="portrait-frame">
-                    <img class="portrait-image" src="https://github.com/sras1599.png?size=240"
-                        alt="Portrait of Raspreet Singh" />
+                    <img class="portrait-image" src="/assets/profile.jpeg" alt="Portrait of Raspreet Singh" />
                 </div>
-                <h1>Raspreet</h1>
+                <h2 style="margin:0.25rem">Raspreet</h2>
                 <span class="accent-divider" aria-hidden="true"></span>
-                <p>Figuring out life, and having fun along the way</p>
+                <span style="margin:0.25rem">I love programming, sports (and board games!), and all things
+                    mountaineering.I went on a sabbatical after feeling disillusioned with my work. I'm back now,
+                    looking for problems that tickle my
+                    brain</span>
             </section>
 
-            <section class="card-grid" aria-label="Homepage sections">
-                <article class="feature-card" id="writing" data-reveal>
+            <section class="project-showcase" aria-label="Featured project">
+                <article class="feature-card" id="word-dash" data-reveal>
                     <div class="card-top">
                         <div class="card-kicker">
-                            <span class="card-icon" aria-hidden="true">✎</span>
-                            <span>Writing</span>
+                            <img class="project-icon" src="/assets/project-icon.svg" alt="" aria-hidden="true" />
+                            <span>Word-Dash</span>
                         </div>
-                        <span class="card-meta">thinking in public</span>
                     </div>
-                    <p>
-                        Notes on strategy, product intuition, and the frameworks that survive first contact with real
-                        work.
-                    </p>
-                    <div class="card-tags" aria-label="Writing topics">
-                        <span>systems</span>
-                        <span>product</span>
-                        <span>decision-making</span>
-                    </div>
-                    <a class="card-link" href="https://www.linkedin.com/in/singh-ras/" target="_blank"
-                        rel="noopener noreferrer">Explore →</a>
-                </article>
-
-                <article class="feature-card" id="curiosities" data-reveal>
-                    <div class="card-top">
-                        <div class="card-kicker">
-                            <span class="card-icon" aria-hidden="true">◌</span>
-                            <span>Curiosities</span>
-                        </div>
-                        <span class="card-meta">active threads</span>
-                    </div>
-                    <p>
-                        What I am learning right now, what feels underrated, and the questions that are worth sitting
-                        with a little longer.
-                    </p>
-                    <div class="card-tags" aria-label="Current curiosities">
-                        <span>LLMs</span>
-                        <span>game design</span>
-                        <span>human-computer interaction</span>
-                    </div>
-                    <a class="card-link" href="https://github.com/sras1599" target="_blank"
-                        rel="noopener noreferrer">Explore →</a>
-                </article>
-
-                <article class="feature-card" id="builds" data-reveal>
-                    <div class="card-top">
-                        <div class="card-kicker">
-                            <span class="card-icon" aria-hidden="true">↗</span>
-                            <span>Builds</span>
-                        </div>
-                        <span class="card-meta">1 live build</span>
-                    </div>
-                    <p>
-                        Interactive tools and experiments that turn ideas into something people can actually touch and
-                        test.
-                    </p>
-                    <div class="card-tags" aria-label="Featured build tags">
-                        <span>Word Dash</span>
-                        <span>browser game</span>
-                        <span>playful systems</span>
-                    </div>
-                    <a class="card-link" href="https://sras1599.github.io/word-dash/" target="_blank"
-                        rel="noopener noreferrer">Play Word Dash →</a>
-                </article>
-
-                <article class="feature-card" id="past-battles" data-reveal>
-                    <div class="card-top">
-                        <div class="card-kicker">
-                            <span class="card-icon" aria-hidden="true">⚔</span>
-                            <span>Past Battles</span>
-                        </div>
-                        <span class="card-meta">roles and wins</span>
-                    </div>
-                    <p>
-                        The teams I have worked with, the messy constraints that shaped me, and the proof of work behind
-                        the story.
-                    </p>
-                    <div class="card-tags" aria-label="Career themes">
-                        <span>strategy</span>
-                        <span>execution</span>
-                        <span>resilience</span>
-                    </div>
-                    <a class="card-link" href="resume.pdf" download="Raspreet_Singh_Resume.pdf">Open resume →</a>
+                    <p>A fast-paced word game which tests your speed and vocabulary at the same time</p>
+                    <a class="btn-play" href="https://sras1599.github.io/word-dash/" target="_blank"
+                        rel="noopener noreferrer">Play ↗</a>
                 </article>
             </section>
         </main>
 
-        <footer class="site-footer">
-            <p class="footer-note">Find me where work and ideas are easiest to share.</p>
-            <nav class="footer-links" aria-label="Social links">
-                <a href="https://github.com/sras1599" target="_blank" rel="noopener noreferrer">GitHub</a>
-                <a href="https://www.linkedin.com/in/singh-ras/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-                <a href="mailto:raspreet800@gmail.com">Email</a>
-            </nav>
-        </footer>
     </div>
     <script src="script.js" defer></script>
 </body>

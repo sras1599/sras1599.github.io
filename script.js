@@ -1,13 +1,23 @@
-document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener("click", (event) => {
-        const target = document.querySelector(anchor.getAttribute("href"));
+// Theme toggle
+(function () {
+    var btn = document.querySelector('.theme-toggle');
+    if (!btn) return;
 
-        if (target) {
-            event.preventDefault();
-            target.scrollIntoView({ behavior: "smooth", block: "start" });
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
         }
+    }
+
+    btn.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme');
+        var next = current === 'light' ? 'dark' : 'light';
+        try { localStorage.setItem('theme', next === 'dark' ? 'dark' : 'light'); } catch (e) { }
+        applyTheme(next);
     });
-});
+})();
 
 const revealCards = document.querySelectorAll("[data-reveal]");
 
