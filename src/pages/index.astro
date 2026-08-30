@@ -1,0 +1,154 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const projects = [
+  {
+    title: "Word-Dash",
+    type: "Game",
+    description:
+      "A fast-paced word game that tests your speed and vocabulary at the same time.",
+    href: "https://word-dash.rasmalai.dev",
+    accent: "blue",
+    github: "https://github.com/sras1599/word-dash",
+  },
+];
+
+const links = [
+  { label: "GitHub", href: "https://github.com/sras1599" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/singh-ras/" },
+  { label: "Email", href: "mailto:raspreet800@gmail.com" },
+];
+---
+
+<BaseLayout>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h4 id="hero-title">Hello There!</h4>
+        <!-- <h2 id="hero-title">Trying to find a mountain I can climb</h2> -->
+        <p class="hero-lede">
+          I am Raspreet Singh. I love programming, word games, badminton, and
+          mountaineering. I got disillusioned with my work in the IT sector and
+          left my job. I'm now looking for work in the social sector.
+
+          <br /><br />
+          I want to spend my life helping people less fortunate than me.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#work">See work</a>
+          <a class="button button-secondary" href="/blog">Read the blog</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <span class="blob blob-blue" aria-hidden="true"></span>
+        <img
+          class="hero-profile"
+          src="/assets/profile.webp"
+          alt="Raspreet Singh"
+        />
+      </div>
+    </section>
+
+    <section
+      class="section work-section"
+      id="work"
+      aria-labelledby="work-title"
+    >
+      <div class="section-heading">
+        <p class="eyebrow">Work</p>
+        <h2 id="work-title">
+          What I've built, and what I'm building currently
+        </h2>
+      </div>
+      <div class="project-grid">
+        {
+          projects.map((project) => (
+            <article class={`project-card project-card-${project.accent}`}>
+              <div class="project-media" aria-hidden="true">
+                <span>{project.type}</span>
+              </div>
+              <div class="project-body">
+                <p class="project-type">{project.type}</p>
+                <h3>{project.title}</h3>
+                <p>{project.description}</p>
+                <div class="project-actions">
+                  <a
+                    href={project.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${project.type === "Game" ? "Play Now" : "Open project"} (opens in a new tab)`}
+                  >
+                    {project.type === "Game" ? "Play Now" : "Open project"}
+                    <span aria-hidden="true"> ↗</span>
+                  </a>
+                  {project.github && (
+                    <>
+                      <span class="project-action-divider" aria-hidden="true">
+                        |
+                      </span>
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="GitHub (opens in a new tab)"
+                      >
+                        GitHub<span aria-hidden="true"> ↗</span>
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section
+      class="section about-section"
+      id="about"
+      aria-labelledby="about-title"
+    >
+      <div class="about-card">
+        <p class="eyebrow">About</p>
+        <h2 id="about-title">
+          I like work that has a real problem hiding inside it.
+        </h2>
+        <p>
+          I went on a sabbatical after feeling disillusioned with my work. I am
+          back now, looking for problems that reward curiosity, taste, and
+          sustained attention.
+        </p>
+        <p>
+          This site will grow into a portfolio and a durable writing archive.
+          The blog is wired up from day one so notes can become essays without
+          rebuilding the site later.
+        </p>
+      </div>
+    </section>
+
+    <section
+      class="section contact-section"
+      id="contact"
+      aria-labelledby="contact-title"
+    >
+      <p class="eyebrow">Contact</p>
+      <h3 id="contact-title">*I scarcely post on social media though</h3>
+      <div class="contact-links">
+        {
+          links.map((link) => (
+            <a
+              href={link.href}
+              target={link.href.startsWith("http") ? "_blank" : undefined}
+              rel={
+                link.href.startsWith("http") ? "noopener noreferrer" : undefined
+              }
+            >
+              {link.label}
+            </a>
+          ))
+        }
+      </div>
+    </section>
+  </main>
+</BaseLayout>

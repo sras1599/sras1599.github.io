@@ -1,0 +1,480 @@
+:root {
+  --paper: #faf9f6;
+  --paper-low: #f4f3f1;
+  --paper-high: #ffffff;
+  --ink: #1a1c1a;
+  --muted: #404850;
+  --outline: #707881;
+  --blue: #4ba3e3;
+  --blue-soft: #cce5ff;
+  --orange: #ff8264;
+  --orange-soft: #ffdad2;
+  --green: #76bc7f;
+  --green-soft: #abf4b2;
+  --yellow: #ffd966;
+  --container: 1180px;
+  --gutter: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Be Vietnam Pro", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-shell {
+  width: min(100%, var(--container));
+  margin: 0 auto;
+  padding: 1rem var(--gutter) 4rem;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0 2rem;
+}
+
+.brand-mark,
+.site-nav a,
+.button,
+.contact-links a {
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.brand-mark {
+  display: inline-flex;
+  background: var(--blue);
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  padding: 0.35rem 0.85rem;
+  transform: rotate(-2deg);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1.4vw, 1rem);
+  font-family: "Space Mono", monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.site-nav a {
+  background: var(--paper-high);
+  padding: 0.45rem 0.75rem;
+}
+
+.site-nav a:nth-child(2) {
+  transform: rotate(-1deg);
+}
+
+.site-nav a:hover,
+.brand-mark:hover,
+.button:hover,
+.contact-links a:hover {
+  box-shadow: 1px 1px 0 var(--ink);
+  transform: translate(3px, 3px) rotate(0deg);
+}
+
+.nav-cta {
+  background: var(--orange) !important;
+}
+
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+  min-height: 72vh;
+  padding: 3rem 0 6rem;
+}
+
+.hero-copy {
+  max-width: 780px;
+}
+
+.eyebrow,
+.project-type,
+time,
+.back-link {
+  color: var(--muted);
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+h1 {
+  max-width: 13ch;
+  margin: 0.5rem 0 1.25rem;
+  font-size: clamp(3rem, 8vw, 6.4rem);
+}
+
+h2 {
+  margin: 0.25rem 0 1rem;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+}
+
+h3 {
+  margin: 0.2rem 0 0.6rem;
+  font-size: 1.6rem;
+}
+
+.hero-lede,
+.blog-header p,
+.article-header p {
+  max-width: 46rem;
+  color: var(--muted);
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0.75rem 1.2rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.button-primary {
+  background: var(--blue);
+}
+
+.button-secondary {
+  background: var(--paper-high);
+}
+
+.hero-art {
+  position: relative;
+  min-height: 28rem;
+}
+
+.blob {
+  position: absolute;
+  inset: 4rem 0 auto auto;
+  width: min(28rem, 90%);
+  aspect-ratio: 1;
+  background: var(--blue-soft);
+  border-radius: 60% 40% 32% 68% / 54% 32% 68% 46%;
+}
+
+.hero-profile {
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto auto;
+  width: min(28rem, 95%);
+  height: 28rem;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.section {
+  padding: 4rem 0;
+}
+
+.section-heading {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.project-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.project-card {
+  background: var(--paper-high);
+  border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--orange);
+  transform: rotate(-1deg);
+  flex: 0 1 calc(33.333% - 1.5rem);
+  max-width: 100%;
+}
+
+.project-card:nth-child(2) {
+  margin-top: 2rem;
+  box-shadow: 8px 8px 0 var(--blue);
+  transform: rotate(1deg);
+}
+
+.project-card:nth-child(3) {
+  box-shadow: 8px 8px 0 var(--green);
+}
+
+.project-media {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(255, 217, 102, 0.55), transparent 38%),
+    linear-gradient(225deg, rgba(75, 163, 227, 0.55), transparent 45%),
+    var(--paper-low);
+  border-bottom: 3px solid var(--ink);
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.project-body {
+  padding: 1.4rem;
+}
+
+.project-body p {
+  color: var(--muted);
+}
+
+.project-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.project-actions a {
+  color: #003756;
+  font-family: "Space Mono", monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.project-action-divider {
+  color: var(--muted);
+}
+
+.about-card,
+.contact-section,
+.blog-header,
+.article {
+  background: var(--paper-high);
+  border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--blue);
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.about-card {
+  max-width: 860px;
+  margin-left: auto;
+  transform: rotate(1deg);
+}
+
+.about-card p {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.contact-section {
+  margin-top: 2rem;
+  background: var(--orange-soft);
+  box-shadow: 8px 8px 0 var(--green);
+}
+
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.contact-links a {
+  background: var(--paper-high);
+  padding: 0.65rem 1rem;
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+}
+
+.blog-header {
+  margin: 3rem 0;
+  box-shadow: 8px 8px 0 var(--yellow);
+}
+
+.post-list {
+  display: grid;
+  gap: 1.25rem;
+  padding-bottom: 4rem;
+}
+
+.post-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  background: var(--paper-high);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  padding: 1.4rem;
+}
+
+.post-card h2 {
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+}
+
+.post-card p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.post-card ul,
+.article-header ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-content: start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.post-card li,
+.article-header li {
+  background: var(--green-soft);
+  border: 1px solid var(--ink);
+  padding: 0.2rem 0.45rem;
+  font-family: "Space Mono", monospace;
+  font-size: 0.72rem;
+}
+
+.article {
+  max-width: 860px;
+  margin: 3rem auto 5rem;
+  box-shadow: 8px 8px 0 var(--orange);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+}
+
+.article-header {
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+}
+
+.article-header h1 {
+  max-width: 14ch;
+}
+
+.article-body {
+  color: var(--ink);
+  font-size: 1.08rem;
+}
+
+.article-body p,
+.article-body li {
+  color: var(--muted);
+}
+
+.article-body a {
+  color: #004b73;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 3px;
+}
+
+@media (max-width: 820px) {
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .site-nav {
+    flex-wrap: wrap;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-top: 2rem;
+  }
+
+  .hero-art {
+    min-height: 16rem;
+  }
+
+  .blob {
+    inset: 0 auto auto 12%;
+    width: min(18rem, 80%);
+  }
+
+  .hero-profile {
+    width: min(18rem, 80%);
+    height: 18rem;
+  }
+
+  .project-grid,
+  .post-card {
+    grid-template-columns: 1fr;
+  }
+
+  .project-card:nth-child(2) {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .site-shell {
+    padding-inline: 1rem;
+  }
+
+  .site-nav a {
+    padding: 0.4rem 0.55rem;
+  }
+
+  h1 {
+    font-size: 2.75rem;
+  }
+
+  .hero-actions,
+  .contact-links {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .button,
+  .contact-links a {
+    width: 100%;
+  }
+}

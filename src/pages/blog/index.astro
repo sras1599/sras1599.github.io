@@ -1,0 +1,44 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf()
+);
+
+const postHref = (id: string) => `/blog/${id.replace(/\.mdx?$/, "")}`;
+---
+
+<BaseLayout title="Blog" description="Writing by Raspreet Singh.">
+  <main>
+    <section class="blog-header" aria-labelledby="blog-title">
+      <p class="eyebrow">Blog</p>
+      <h1 id="blog-title">Notes now, essays soon.</h1>
+      <p>
+        A growing archive for technical ideas, strategy, systems, and anything that earns a
+        second pass.
+      </p>
+    </section>
+
+    <section class="post-list" aria-label="Blog posts">
+      {posts.map((post) => (
+        <article class="post-card">
+          <div>
+            <time datetime={post.data.publishDate.toISOString()}>
+              {post.data.publishDate.toLocaleDateString("en", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+              })}
+            </time>
+            <h2><a href={postHref(post.id)}>{post.data.title}</a></h2>
+            <p>{post.data.description}</p>
+          </div>
+          <ul aria-label="Tags">
+            {post.data.tags.map((tag) => <li>{tag}</li>)}
+          </ul>
+        </article>
+      ))}
+    </section>
+  </main>
+</BaseLayout>

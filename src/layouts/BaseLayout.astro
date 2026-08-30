@@ -1,0 +1,52 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Raspreet Singh",
+  description = "Raspreet Singh - strategy, systems, and things worth building",
+} = Astro.props;
+
+const pageTitle =
+  title === "Raspreet Singh" ? title : `${title} | Raspreet Singh`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand-mark" href="/" aria-label="Raspreet Singh home"
+          >Raspreet</a
+        >
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="/#work">Work</a>
+          <a href="/#about">About</a>
+          <a href="/blog">Blog</a>
+          <a class="nav-cta" href="/#contact">Contact</a>
+        </nav>
+      </header>
+      <slot />
+    </div>
+  </body>
+</html>
