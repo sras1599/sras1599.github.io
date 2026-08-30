@@ -1,2 +1,0 @@
-- Ask codex if it has created a design system yet. If yes, I will delete the stitch export
-- Add resume, and link to word dash
