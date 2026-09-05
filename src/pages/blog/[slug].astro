@@ -1,31 +1,44 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getReadingTime } from "../../utils/readingTime";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog", ({ data }) => !data.draft);
   return posts.map((post) => ({
     params: { slug: post.id.replace(/\.mdx?$/, "") },
-    props: { post }
+    props: { post },
   }));
 }
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+const readingTime = getReadingTime(post.body ?? "");
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
   <main>
     <article class="article">
-      <a class="back-link" href="/blog">Back to blog</a>
+      <a class="back-link" href="/blog">
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="m15 18-6-6 6-6"></path>
+        </svg>
+        <span>Back to blog</span>
+      </a>
       <header class="article-header">
-        <p class="eyebrow">
-          {post.data.publishDate.toLocaleDateString("en", {
-            year: "numeric",
-            month: "long",
-            day: "numeric"
-          })}
-        </p>
+        <div class="article-meta">
+          <time datetime={post.data.publishDate.toISOString()}>
+            {
+              post.data.publishDate.toLocaleDateString("en", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            }
+          </time>
+          <span aria-hidden="true">·</span>
+          <span>{readingTime}</span>
+        </div>
         <h1>{post.data.title}</h1>
         <p>{post.data.description}</p>
         <ul aria-label="Tags">
