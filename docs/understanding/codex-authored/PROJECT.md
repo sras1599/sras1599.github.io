@@ -30,9 +30,9 @@ personal-website/
 │   └── codex-authored/        Documentation written by Codex
 ├── public/
 │   └── CNAME                  Custom-domain file copied to the build
+├── .generated/blog/          Disposable imported posts (gitignored)
+├── scripts/                  Vault import, content loader, and commands
 ├── src/
-│   ├── content/
-│   │   └── blog/              Blog posts written in Markdown
 │   ├── layouts/
 │   │   └── BaseLayout.astro   Shared document shell and navigation
 │   ├── pages/                 Route-producing Astro files
@@ -47,7 +47,7 @@ personal-website/
 ├── package.json               Dependencies and developer commands
 ├── package-lock.json          Exact dependency resolution
 ├── tsconfig.json              Astro/TypeScript checking configuration
-└── README.md                  Original design brief
+└── README.md                  Quick start and documentation links
 ```
 
 Other top-level directories are not part of the running website:
@@ -82,7 +82,7 @@ npm performs two jobs:
 
 ### Markdown and Astro content collections
 
-Blog bodies live in Markdown files under `src/content/blog/`. Metadata such as title, description, publication date, tags, and draft status lives in each file's frontmatter.
+Blog bodies live in the private Obsidian vault. The importer selects notes with `publish: true` and writes disposable Markdown under `.generated/blog/`. Metadata includes title, description, publication date, tags, and a stable slug.
 
 `src/content.config.ts` defines the `blog` collection and validates that metadata. This prevents an incomplete or incorrectly shaped post from silently reaching production.
 
@@ -115,7 +115,7 @@ The deployment process is documented in [Deployment.md](./Deployment.md).
 
 Consider a request for `/blog/hello-world`:
 
-1. During the build, Astro loads `src/content/blog/hello-world.md` through the `blog` content collection.
+1. During the build, the importer generates `.generated/blog/hello-world.md` from a selected vault note with `slug: hello-world`, and Astro loads it through the `blog` content collection.
 2. The content schema validates the post's frontmatter.
 3. `src/pages/blog/[slug].astro` includes the post in `getStaticPaths()`.
 4. Astro renders the post body and inserts it into the page template.
@@ -132,8 +132,8 @@ There is no database lookup or server rendering when the reader opens the page.
 | Change homepage content or sections | `src/pages/index.astro` |
 | Change navigation, document metadata, or shared shell | `src/layouts/BaseLayout.astro` |
 | Change the site's appearance | `src/styles/global.css` |
-| Add a blog post | `src/content/blog/<slug>.md` |
-| Change required blog metadata | `src/content.config.ts` |
+| Add a blog post | A selected `.md` note in the Obsidian vault |
+| Change required blog metadata | `scripts/vault.mjs` and `src/content.config.ts` |
 | Change blog listing behavior | `src/pages/blog/index.astro` |
 | Change individual post presentation | `src/pages/blog/[slug].astro` |
 | Add a new route | Add an `.astro` file under `src/pages/` |

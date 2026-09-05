@@ -1,0 +1,19 @@
+name: Rebuild website
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger website deployment
+        env:
+          GH_TOKEN: ${{ secrets.WEBSITE_WORKFLOW_TOKEN }}
+        run: |
+          gh api --method POST \
+            repos/sras1599/sras1599.github.io/actions/workflows/deploy.yml/dispatches \
+            -f ref=main

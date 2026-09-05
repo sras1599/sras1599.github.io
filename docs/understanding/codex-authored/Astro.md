@@ -63,16 +63,16 @@ The blog route performs this process:
 
 ```astro
 export async function getStaticPaths() {
-  const posts = await getCollection("blog", ({ data }) => !data.draft);
+  const posts = await getCollection("blog");
 
   return posts.map((post) => ({
-    params: { slug: post.id.replace(/\.mdx?$/, "") },
+    params: { slug: post.id },
     props: { post }
   }));
 }
 ```
 
-For each non-draft post:
+For each imported post:
 
 - `params.slug` determines the URL;
 - `props.post` supplies the post to the page template.
@@ -116,7 +116,7 @@ Avoid splitting every small element into a component. The goal is clearer owners
 
 Astro content collections turn a directory of content files into validated, queryable data.
 
-The project declares a collection named `blog` in `src/content.config.ts`. Its loader finds Markdown and MDX files under `src/content/blog/`, and its schema describes valid post metadata.
+The project declares a collection named `blog` in `src/content.config.ts`. Its loader finds generated Markdown under `.generated/blog/`, and its schema describes valid post metadata. The vault importer selects notes and names generated files using their explicit slugs.
 
 The collection is consumed in two ways:
 
@@ -136,7 +136,7 @@ converts one entry's body into a component that can be placed in the page:
 <Content />
 ```
 
-The current pages filter out drafts in both the index and `getStaticPaths()`. Doing it in both places matters: a draft should be absent from the listing and should not have a publicly generated route.
+The importer selects only `publish: true` notes for production. Both the listing and `getStaticPaths()` consume that same selected collection. Local writing preview can additionally include `preview: true` notes.
 
 ## Build-time versus browser-time code
 
@@ -237,11 +237,11 @@ When `npm run build` runs:
 
 ### Add a blog post
 
-1. Add a `.md` file under `src/content/blog/`.
-2. Include metadata matching the collection schema.
-3. Draft with `draft: true`.
-4. Set `draft: false` when ready.
-5. Build and verify both the listing and post route.
+1. Write a `.md` note anywhere in the Obsidian vault.
+2. Add the required metadata, including a stable `slug`.
+3. Use `preview: true` and `npm run dev:writing` while drafting.
+4. Set `publish: true` when ready.
+5. Build and verify both the listing and post route; the vault backup triggers deployment.
 
 ### Add a reusable Astro component
 

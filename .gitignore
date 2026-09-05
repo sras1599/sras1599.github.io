@@ -5,3 +5,8 @@ dist/
 .env.*
 npm-debug.log*
 TODO.md
+
+!.env.example
+.generated/
+public/_vault/
+.vault-checkout/

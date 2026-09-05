@@ -1,16 +1,16 @@
 import { defineCollection } from "astro:content";
-import { glob } from "astro/loaders";
+import { blogLoader } from "../scripts/blog-loader";
 import { z } from "astro/zod";
 
 const blog = defineCollection({
-  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
+  loader: blogLoader(),
   schema: z.object({
     title: z.string(),
     description: z.string(),
     publishDate: z.coerce.date(),
     tags: z.array(z.string()).default([]),
-    draft: z.boolean().default(false)
-  })
+    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  }),
 });
 
 export const collections = { blog };

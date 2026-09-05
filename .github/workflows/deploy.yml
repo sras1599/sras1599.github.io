@@ -5,6 +5,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Cover the entire build and deploy, not just the final upload.
+concurrency:
+  group: website-pages
+  cancel-in-progress: false
+
 permissions:
   contents: read
   pages: write
@@ -13,10 +18,24 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VAULT_PATH: ${{ github.workspace }}/.vault-checkout
     steps:
-      - name: Checkout your repository using git
+      - name: Checkout website
         uses: actions/checkout@v7
-      - name: Install, build, and upload your site
+        with:
+          persist-credentials: false
+      - name: Checkout private vault
+        uses: actions/checkout@v7
+        with:
+          repository: sras1599/obsidian
+          ref: main
+          path: .vault-checkout
+          token: ${{ secrets.VAULT_READ_TOKEN }}
+          persist-credentials: false
+      - name: Record vault revision
+        run: git -C "$VAULT_PATH" rev-parse HEAD
+      - name: Install, build, and upload site
         uses: withastro/action@v6
 
   deploy:
