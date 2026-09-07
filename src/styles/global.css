@@ -271,8 +271,9 @@ h3 {
   border: 3px solid var(--ink);
   box-shadow: 8px 8px 0 var(--orange);
   transform: rotate(-1deg);
-  flex: 0 1 calc(33.333% - 1.5rem);
-  max-width: 100%;
+  flex: 0 1 22rem;
+  width: 100%;
+  max-width: 22rem;
 }
 
 .project-card:nth-child(2) {
@@ -515,6 +516,10 @@ h3 {
   .project-card:nth-child(2) {
     margin-top: 0;
   }
+
+  .contact-section * {
+    padding: 0rem 1rem;
+  }
 }
 
 @media (max-width: 520px) {
@@ -533,8 +538,8 @@ h3 {
   .hero {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     gap: 0.75rem;
-    min-height: 58vh;
-    padding: 1rem 0 3rem;
+    min-height: auto;
+    padding: 1rem 0 2rem;
   }
 
   .hero-copy h4 {
@@ -571,6 +576,44 @@ h3 {
     height: clamp(10rem, 42vw, 14rem);
   }
 
+  .section {
+    padding: 2.5rem 0;
+  }
+
+  .section-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(1.75rem, 8vw, 2.25rem);
+  }
+
+  .project-card {
+    flex-basis: auto;
+    width: min(84vw, 19rem);
+  }
+
+  .project-media {
+    min-height: clamp(9.5rem, 48vw, 11rem);
+    font-size: 1.7rem;
+  }
+
+  .project-body {
+    padding: 1.15rem;
+  }
+
+  .project-body h3 {
+    font-size: 1.4rem;
+  }
+
+  .project-body>p:not(.project-type) {
+    font-size: 0.9rem;
+  }
+
+  .project-actions {
+    flex-wrap: wrap;
+  }
+
   .contact-links {
     align-items: stretch;
     flex-direction: column;
@@ -578,5 +621,9 @@ h3 {
 
   .contact-links a {
     width: 100%;
+  }
+
+  .contact-section * {
+    padding: 0rem 1rem;
   }
 }
