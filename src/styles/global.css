@@ -308,6 +308,19 @@ h3 {
   color: var(--muted);
 }
 
+.project-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.project-year {
+  color: var(--muted);
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+}
+
 .project-actions {
   display: flex;
   align-items: center;
@@ -315,11 +328,51 @@ h3 {
   margin-top: 0.8rem;
 }
 
-.project-actions a {
+.project-actions a,
+.project-unavailable button {
   color: #003756;
   font-family: "Space Mono", monospace;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.project-unavailable {
+  position: relative;
+}
+
+.project-unavailable button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: line-through;
+  cursor: help;
+}
+
+.project-unavailable button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.project-hosting-note {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: max-content;
+  max-width: 13rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ink);
+  background: var(--paper-high);
+  color: var(--ink);
+  font-size: 0.8rem;
+  box-shadow: 3px 3px 0 var(--ink);
+  z-index: 1;
+  visibility: hidden;
+}
+
+.project-unavailable:not([data-dismissed]):hover .project-hosting-note,
+.project-unavailable:not([data-dismissed]):focus-within .project-hosting-note {
+  visibility: visible;
 }
 
 .project-action-divider {

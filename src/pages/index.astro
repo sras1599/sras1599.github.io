@@ -8,6 +8,8 @@ const projects = [
     description:
       "A fast-paced word game that tests your speed and vocabulary at the same time.",
     href: "https://word-dash.rasmalai.dev",
+    hosted: false,
+    year: 2026, // optional
     accent: "blue",
     github: "https://github.com/sras1599/word-dash",
   },
@@ -67,25 +69,49 @@ const links = [
       </div>
       <div class="project-grid">
         {
-          projects.map((project) => (
+          projects.map((project, index) => (
             <article class={`project-card project-card-${project.accent}`}>
               <div class="project-media" aria-hidden="true">
                 <span>{project.type}</span>
               </div>
               <div class="project-body">
-                <p class="project-type">{project.type}</p>
+                <div class="project-meta">
+                  <p class="project-type">{project.type}</p>
+                  {project.year && (
+                    <span class="project-year">{project.year}</span>
+                  )}
+                </div>
                 <h3>{project.title}</h3>
                 <p>{project.description}</p>
                 <div class="project-actions">
-                  <a
-                    href={project.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${project.type === "Game" ? "Play Now" : "Open project"} (opens in a new tab)`}
-                  >
-                    {project.type === "Game" ? "Play Now" : "Open project"}
-                    <span aria-hidden="true"> ↗</span>
-                  </a>
+                  {project.hosted ? (
+                    <a
+                      href={project.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${project.type === "Game" ? "Play Now" : "Open project"} (opens in a new tab)`}
+                    >
+                      {project.type === "Game" ? "Play Now" : "Open project"}
+                      <span aria-hidden="true"> ↗</span>
+                    </a>
+                  ) : (
+                    <span class="project-unavailable">
+                      <button
+                        type="button"
+                        aria-disabled="true"
+                        aria-describedby={`hosting-note-${index}`}
+                      >
+                        {project.type === "Game" ? "Play Now" : "Open project"}
+                      </button>
+                      <span
+                        class="project-hosting-note"
+                        id={`hosting-note-${index}`}
+                        role="tooltip"
+                      >
+                        Not hosted right now
+                      </span>
+                    </span>
+                  )}
                   {project.github && (
                     <>
                       <span class="project-action-divider" aria-hidden="true">
@@ -135,3 +161,23 @@ const links = [
     </section>
   </main>
 </BaseLayout>
+
+<script>
+  document
+    .querySelectorAll<HTMLElement>(".project-unavailable")
+    .forEach((action) => {
+      const button = action.querySelector("button")!;
+      const reveal = () => {
+        delete action.dataset.dismissed;
+      };
+      action.addEventListener("pointerenter", reveal);
+      button.addEventListener("focus", reveal);
+      button.addEventListener("click", () => {
+        reveal();
+        button.focus();
+      });
+      button.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") action.dataset.dismissed = "true";
+      });
+    });
+</script>
