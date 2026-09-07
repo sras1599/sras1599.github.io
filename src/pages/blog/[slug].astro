@@ -2,44 +2,83 @@
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getReadingTime } from "../../utils/readingTime";
+import { getSeriesDefinition } from "../../data/series";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  const definitions = new Map(
+    posts.flatMap((post) =>
+      post.data.series
+        ? [[post.id, getSeriesDefinition(post.data.series, post.id)] as const]
+        : [],
+    ),
+  );
+  return posts.map((post) => {
+    return {
+      params: { slug: post.id },
+      props: {
+        post,
+        returnSlugs: posts
+          .filter(
+            (candidate) =>
+              definitions.get(candidate.id)?.aboutSlug === post.id,
+          )
+          .map((candidate) => candidate.id),
+      },
+    };
+  });
 }
 
-const { post } = Astro.props;
+const { post, returnSlugs } = Astro.props;
 const { Content } = await render(post);
 const readingTime = getReadingTime(post.body ?? "");
+const series = post.data.series
+  ? getSeriesDefinition(post.data.series, post.id)
+  : undefined;
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
   <main>
     <article class="article">
-      <a class="back-link" href="/blog">
+      <a
+        class="back-link"
+        href="/blog"
+        data-entry-back-link={
+          returnSlugs.length ? returnSlugs.join(" ") : undefined
+        }
+      >
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="m15 18-6-6 6-6"></path>
         </svg>
-        <span>Back to blog</span>
+        <span data-entry-back-label>Back to blog</span>
       </a>
       <header class="article-header">
-        <div class="article-meta">
-          <time datetime={post.data.publishDate.toISOString()}>
-            {
-              post.data.publishDate.toLocaleDateString("en", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            }
-          </time>
-          <span aria-hidden="true">·</span>
-          <span>{readingTime}</span>
+        <div class="article-meta-row">
+          <div class="article-meta">
+            <time datetime={post.data.publishDate.toISOString()}>
+              {
+                post.data.publishDate.toLocaleDateString("en", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
+              }
+            </time>
+            <span aria-hidden="true">·</span>
+            <span>{readingTime}</span>
+          </div>
+          {
+            series && (
+              <a
+                class="series-about-link"
+                href={`/blog/${series.aboutSlug}?from=${encodeURIComponent(post.id)}`}
+              >
+                {series.aboutLabel}
+              </a>
+            )
+          }
         </div>
-        <h1>{post.data.title}</h1>
+        <h2>{post.data.title}</h2>
         <p>{post.data.description}</p>
         <ul aria-label="Tags">
           {post.data.tags.map((tag) => <li>{tag}</li>)}
@@ -51,3 +90,18 @@ const readingTime = getReadingTime(post.body ?? "");
     </article>
   </main>
 </BaseLayout>
+
+<script>
+  const backLink = document.querySelector<HTMLAnchorElement>(
+    "[data-entry-back-link]",
+  );
+  const backLabel = document.querySelector<HTMLElement>(
+    "[data-entry-back-label]",
+  );
+  const allowedSlugs = new Set(backLink?.dataset.entryBackLink?.split(" "));
+  const from = new URLSearchParams(window.location.search).get("from");
+  if (backLink && backLabel && from && allowedSlugs.has(from)) {
+    backLink.href = `/blog/${from}`;
+    backLabel.textContent = "Back to entry";
+  }
+</script>

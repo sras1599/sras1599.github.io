@@ -68,6 +68,18 @@ function readNote(text, file, preview) {
       data.tags.some((tag) => typeof tag !== "string"))
   )
     throw new Error(`${file}: tags must be a list of strings`);
+  if (
+    data.displayInFeed !== undefined &&
+    typeof data.displayInFeed !== "boolean"
+  )
+    throw new Error(`${file}: displayInFeed must be a boolean`);
+  if (
+    data.series !== undefined &&
+    (typeof data.series !== "string" || !slugPattern.test(data.series))
+  )
+    throw new Error(
+      `${file}: series must contain lowercase letters, digits, and single hyphens`,
+    );
   return {
     file,
     body: text.replace(/^\uFEFF/, "").slice(match[0].length),
@@ -77,6 +89,8 @@ function readNote(text, file, preview) {
       slug: data.slug,
       publishDate: data.publishDate,
       tags: data.tags ?? [],
+      displayInFeed: data.displayInFeed ?? true,
+      ...(data.series === undefined ? {} : { series: data.series }),
     },
   };
 }

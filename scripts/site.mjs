@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { spawn } from "node:child_process";
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -14,18 +15,51 @@ let child;
 let server;
 let watcher;
 let timer;
+let lockPath;
+let lockAcquired = false;
 let queue = Promise.resolve();
 let resolveStopped;
 const stopped = new Promise((resolve) => {
   resolveStopped = resolve;
 });
 const options = { vaultPath, projectRoot, preview: mode === "writing" };
+
+async function acquireDevelopmentLock() {
+  lockPath = path.join(projectRoot, ".astro/dev-server.lock");
+  await fs.mkdir(path.dirname(lockPath), { recursive: true });
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await fs.mkdir(lockPath);
+      await fs.writeFile(path.join(lockPath, "pid"), String(process.pid));
+      lockAcquired = true;
+      return;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      const pid = Number(
+        await fs.readFile(path.join(lockPath, "pid"), "utf8").catch(() => ""),
+      );
+      try {
+        process.kill(pid, 0);
+      } catch {
+        await fs.rm(lockPath, { recursive: true, force: true });
+        continue;
+      }
+      throw new Error(
+        `A development server is already running for this project (PID ${pid}). Stop it before starting another.`,
+      );
+    }
+  }
+  throw new Error("Could not acquire the development server lock.");
+}
+
 async function refresh() {
   const result = await importVault(options);
   console.log(
     `Vault: ${result.posts} posts, ${result.assets} images${options.preview ? " (writing preview)" : ""}.`,
   );
 }
+
 function astro(command, extra = []) {
   return new Promise((resolve, reject) => {
     child = spawn(
@@ -45,6 +79,7 @@ function astro(command, extra = []) {
     child.once("exit", (code) => resolve(code ?? 1));
   });
 }
+
 function stop(signal) {
   clearTimeout(timer);
   child?.kill(signal);
@@ -55,6 +90,7 @@ process.on("SIGTERM", () => stop("SIGTERM"));
 try {
   if (!["dev", "writing", "build"].includes(mode))
     throw new Error("Expected dev, writing, or build.");
+  if (development) await acquireDevelopmentLock();
   await refresh();
   if (development) {
     const normalizedArgs = args.map((arg, index) =>
@@ -130,4 +166,6 @@ try {
   await watcher?.close();
   await queue;
   await server?.stop();
+  if (lockAcquired)
+    await fs.rm(lockPath, { recursive: true, force: true });
 }

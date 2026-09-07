@@ -8,8 +8,8 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const note = (flag, slug, body) =>
-  `---\n${flag}: true\ntitle: Synthetic\ndescription: Synthetic test\npublishDate: 2026-09-05\nslug: ${slug}\nprivate: SECRET_METADATA\n---\n${body}\n`;
+const note = (flag, slug, body, metadata = "") =>
+  `---\n${flag}: true\ntitle: Synthetic\ndescription: Synthetic test\npublishDate: 2026-09-05\nslug: ${slug}\n${metadata}private: SECRET_METADATA\n---\n${body}\n`;
 async function eventually(check, output) {
   const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {
@@ -35,7 +35,7 @@ function command(mode, vault, args = []) {
   });
   const done = new Promise((resolve, reject) => {
     child.on("error", reject);
-    child.on("exit", (code) => resolve(code));
+    child.on("close", (code) => resolve(code));
   });
   return { child, done, output: () => output };
 }
@@ -203,5 +203,68 @@ test(
     );
     emptyDev.child.kill("SIGTERM");
     await emptyDev.done;
+  },
+);
+
+test(
+  "hidden series pages remain routable and series entries link back to their origin",
+  { timeout: 90000 },
+  async (t) => {
+    const vault = await fs.mkdtemp(path.join(os.tmpdir(), "series-vault-"));
+    t.after(() => fs.rm(vault, { recursive: true, force: true }));
+    await fs.writeFile(
+      path.join(vault, "about.md"),
+      note(
+        "publish",
+        "perfectly-imperfect",
+        "ABOUT_SERIES_BODY",
+        "displayInFeed: false\n",
+      ).replace("title: Synthetic", "title: About the series"),
+    );
+    await fs.writeFile(
+      path.join(vault, "entry.md"),
+      note(
+        "publish",
+        "series-entry",
+        "SERIES_ENTRY_BODY",
+        "series: perfectly-imperfect\n",
+      ).replace("title: Synthetic", "title: Series entry"),
+    );
+
+    const build = command("build", vault);
+    assert.equal(await build.done, 0, build.output());
+    const index = await fs.readFile(
+      path.join(root, "dist/blog/index.html"),
+      "utf8",
+    );
+    assert.match(index, /Series entry/);
+    assert.doesNotMatch(index, /About the series/);
+
+    const entry = await fs.readFile(
+      path.join(root, "dist/blog/series-entry/index.html"),
+      "utf8",
+    );
+    assert.match(entry, /What is Perfectly Imperfect\?/);
+    assert.match(entry, /\/blog\/perfectly-imperfect\?from=series-entry/);
+
+    const about = await fs.readFile(
+      path.join(root, "dist/blog/perfectly-imperfect/index.html"),
+      "utf8",
+    );
+    assert.match(about, /ABOUT_SERIES_BODY/);
+    assert.match(about, /Back to entry/);
+
+    await fs.writeFile(
+      path.join(vault, "entry.md"),
+      note(
+        "publish",
+        "series-entry",
+        "SERIES_ENTRY_BODY",
+        "series: missing-series\n",
+      ),
+    );
+    const invalidBuild = command("build", vault);
+    assert.notEqual(await invalidBuild.done, 0);
+    assert.match(invalidBuild.output(), /unknown series "missing-series"/);
   },
 );

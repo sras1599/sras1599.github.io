@@ -128,6 +128,31 @@ test("metadata errors and duplicate slugs fail without altering the last import"
   await assert.rejects(f.run(), /duplicate slug/);
 });
 
+test(
+  "feed visibility and series metadata are retained and validated",
+  async (t) => {
+    const f = await fixture(t);
+    await f.write(
+      "series.md",
+      article(
+        "series-entry",
+        "Entry",
+        "publish: true\ndisplayInFeed: false\nseries: perfectly-imperfect",
+      ),
+    );
+    await f.run();
+    const content = await f.read("series-entry");
+    assert.match(content, /displayInFeed: false/);
+    assert.match(content, /series: perfectly-imperfect/);
+
+    await f.write(
+      "series.md",
+      article("series-entry", "Entry", "publish: true\ndisplayInFeed: no"),
+    );
+    await assert.rejects(f.run(), /displayInFeed must be a boolean/);
+  },
+);
+
 test("missing or ambiguous references and unsupported Obsidian syntax fail", async (t) => {
   const f = await fixture(t);
   await f.write("one/Other.md", "private");

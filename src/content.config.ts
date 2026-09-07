@@ -10,6 +10,11 @@ const blog = defineCollection({
     publishDate: z.coerce.date(),
     tags: z.array(z.string()).default([]),
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    displayInFeed: z.boolean().default(true),
+    series: z
+      .string()
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      .optional(),
   }),
 });
 
