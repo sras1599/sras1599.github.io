@@ -45,10 +45,9 @@ routing.
 
 - An explicit marker owns ordinary Markdown notes in its directory and unmarked
   descendants.
-- A nested explicit marker starts an independent boundary and owns its subtree.
 - Notes outside every marker are ignored, even if they contain `publish: true`.
-- Discovery must not stop at an unknown boundary. A nested `blog` marker remains
-  discoverable.
+- Collection boundaries are not nested. Assume no descendant of an explicit
+  marker declares another explicit marker.
 
 ### Unknown collections
 
@@ -77,7 +76,7 @@ routing.
 ## Suggested implementation shape
 
 Represent discovery separately from selection. A useful intermediate result is a
-list or map of Markdown files with their nearest explicit owner:
+list or map of Markdown files with their explicit owner:
 
 ```text
 file -> { markerPath, collectionId, registered }
@@ -102,9 +101,7 @@ steps for the user in the phase handoff:
   targeting is deferred to Phase 5.
 - Matching is exact and case-sensitive.
 - Unmarked descendants inherit eligibility recursively.
-- A nested explicit marker owns its subtree independently.
 - An unknown collection warns once and imports none of its owned notes.
-- A registered marker nested inside an unknown tree still imports.
 - No markers succeeds and clears prior generated entries/assets.
 - A malformed marker fails without replacing the last successful output.
 - Adding or removing a marker while the development server runs changes route
@@ -137,8 +134,7 @@ check pass.
 ## Acceptance criteria
 
 - Only notes owned by a registered explicit marker can be selected.
-- Unknown boundaries warn once, skip their content, and do not hide nested known
-  boundaries.
+- Unknown boundaries warn once and skip their content.
 - Empty eligibility removes stale importer-managed output.
 - Existing blog entry rendering, series behavior, images, and preview isolation
   remain intact for marked content.

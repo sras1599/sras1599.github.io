@@ -43,8 +43,6 @@ collection may expose different defaults or no defaults at all.
 - Its declared values replace inherited values.
 - An ordinary note's declared values replace effective marker defaults.
 - Arrays replace rather than concatenate.
-- An explicit nested marker, including one repeating the same collection ID,
-  starts an independent boundary and resets all inherited defaults.
 - A marker for a collection with no folder-default schema must reject default
   properties.
 
@@ -109,8 +107,6 @@ steps for the user in the phase handoff:
 - Preview inheritance and production isolation.
 - Nested refinements overriding scalar defaults.
 - Note arrays replacing inherited arrays.
-- Nested explicit markers resetting defaults, including an explicit marker naming
-  the same collection.
 - Top-level refinement markers failing.
 - Invalid default types and unknown marker keys failing with paths.
 - Ordinary note `collection` failing, including on an otherwise unselected note.
@@ -141,7 +137,7 @@ git diff --check
 
 - Blog folder defaults are validated, inherited, and overridden exactly as
   specified.
-- Explicit boundaries reset defaults; refinement boundaries inherit them.
+- Refinement markers inherit their enclosing boundary's defaults.
 - Full note validation only applies to selected entries, while malformed owned
   YAML and structural misuse still fail early.
 - Private metadata filtering and last-known-good behavior remain intact.

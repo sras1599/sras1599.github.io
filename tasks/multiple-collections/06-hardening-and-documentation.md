@@ -112,7 +112,7 @@ The implementing agent must not perform these checks. Include concrete steps for
 the user to exercise and inspect at least:
 
 - No markers and stale cleanup
-- Registered, unknown, nested independent, and nested refinement boundaries
+- Registered and unknown boundaries, plus nested refinement markers
 - Collection-specific defaults and note overrides
 - Production/preview selection
 - Per-collection schema validation and same-slug isolation

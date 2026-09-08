@@ -66,9 +66,8 @@ filenames and function names are not.
 - The exact, case-sensitive filename `_website.md` marks an import boundary.
 - The marker is a Markdown note because it must be visible and editable in
   Obsidian. It is never imported as a normal entry.
-- A marker with `collection` starts an independent collection boundary. It does
-  not inherit defaults from an enclosing marker, even if both name the same
-  collection.
+- A marker with `collection` starts a collection boundary. Collection boundaries
+  are not nested.
 - A nested marker without `collection` refines the nearest enclosing registered
   collection and inherits its defaults.
 - The nearest marker owns a note. Unmarked descendants of a marker are included
@@ -87,8 +86,6 @@ filenames and function names are not.
   synchronization, wikilink resolution, or generic routing.
 - An unregistered collection emits one warning identifying the collection and
   marker, then skips the notes and index content it owns.
-- Discovery continues below an unregistered boundary so an independent nested
-  registered boundary still works.
 - A wikilink to skipped or unselected content becomes plain text. Do not emit an
   additional warning for each such link.
 
@@ -180,10 +177,8 @@ from the concrete steps supplied in each handoff.
 - Wikilinks to an active collection's `_website.md` resolve to that collection's
   effective root URL, while normal ambiguity rules still apply.
 - Nested slugs produce nested public URLs without deriving them from source paths.
-- Unknown collections warn once and are skipped without hiding independent nested
-  registered collections.
-- Folder defaults, refinement, resets, and note overrides follow the defined
-  precedence.
+- Unknown collections warn once and are skipped.
+- Folder defaults, refinement, and note overrides follow the defined precedence.
 - Blog index text and page metadata come from `_website.md`; website code retains
   layout, list rendering, and ordering.
 - Empty imports remove stale generated content.
