@@ -56,7 +56,7 @@ async function acquireDevelopmentLock() {
 async function refresh() {
   const result = await importVault(options);
   console.log(
-    `Vault: ${result.posts} posts, ${result.assets} images${options.preview ? " (writing preview)" : ""}.`,
+    `Vault: ${result.entries} entries, ${result.assets} images${options.preview ? " (writing preview)" : ""}.`,
   );
 }
 

@@ -12,6 +12,7 @@ import { parseMarkdownDocument } from "./markdown-document.mjs";
 const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkStringify);
 const raster = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const collectionRegistry = new Map([["blog", { id: "blog" }]]);
 const escapeHtml = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -34,19 +35,24 @@ export async function importVault({
   }
 
   const root = path.resolve(vaultPath);
-  let files;
+  let discovery;
   try {
-    files = await listVaultFiles(root);
+    discovery = await discoverVault(root);
   } catch (error) {
+    if (!error.code) throw error;
     throw new Error(`Cannot read VAULT_PATH (${root}): ${error.message}`);
   }
 
-  const notes = await readSelectedNotes(root, files, preview);
+  const notes = await readSelectedNotes(
+    root,
+    discovery.ownedMarkdown,
+    preview,
+  );
   validateUniqueSlugs(notes);
   const context = {
     root,
-    files,
-    fileSet: new Set(files),
+    files: discovery.files,
+    fileSet: new Set(discovery.files),
     byFile: new Map(notes.map((note) => [note.file, note])),
     assets: new Map(),
   };
@@ -62,22 +68,84 @@ export async function importVault({
     context.assets,
   );
   await syncGeneratedFiles(path.join(projectRoot, ".generated/blog"), output);
-  return { posts: notes.length, assets: context.assets.size };
+  return { entries: notes.length, assets: context.assets.size };
 }
 
-async function listVaultFiles(root, dir = "") {
-  const result = [];
-  for (const entry of await fs.readdir(path.join(root, dir), {
+async function discoverVault(
+  root,
+  dir = "",
+  inheritedOwner,
+  result = { files: [], markers: [], ownedMarkdown: new Map() },
+) {
+  const entries = await fs.readdir(path.join(root, dir), {
     withFileTypes: true,
-  })) {
+  });
+  const marker = entries.find(
+    (entry) =>
+      entry.name === "_website.md" &&
+      entry.isFile() &&
+      !entry.isSymbolicLink(),
+  );
+  let owner = inheritedOwner;
+
+  if (marker) {
+    const markerPath = path.posix.join(dir, marker.name);
+    const source = await fs.readFile(path.join(root, markerPath), "utf8");
+    const document = parseMarkdownDocument(source, { file: markerPath });
+
+    if (!document.hasFrontmatter) {
+      throw new Error(`${markerPath}: marker must have leading YAML frontmatter`);
+    }
+    if (
+      !document.metadata ||
+      typeof document.metadata !== "object" ||
+      Array.isArray(document.metadata)
+    ) {
+      throw new Error(`${markerPath}: marker frontmatter must be a YAML mapping`);
+    }
+
+    if (Object.hasOwn(document.metadata, "collection")) {
+      const collectionId = document.metadata.collection;
+      if (typeof collectionId !== "string" || !collectionId.trim()) {
+        throw new Error(
+          `${markerPath}: collection must be a nonempty string`,
+        );
+      }
+
+      owner = {
+        markerPath,
+        collectionId,
+        registered: collectionRegistry.has(collectionId),
+      };
+      if (!owner.registered) {
+        console.warn(
+          `Vault: unknown collection ${collectionId} at ${markerPath}; skipping its entries.`,
+        );
+      }
+    }
+
+    // Retain the whole marker document for later phases without treating it as
+    // an ordinary entry or activating its other properties yet.
+    result.markers.push({
+      file: markerPath,
+      metadata: document.metadata,
+      body: document.body,
+      owner,
+    });
+  }
+
+  for (const entry of entries) {
     if (entry.name.startsWith(".") || entry.isSymbolicLink()) {
       continue;
     }
     const relative = path.posix.join(dir, entry.name);
     if (entry.isDirectory()) {
-      result.push(...(await listVaultFiles(root, relative)));
+      await discoverVault(root, relative, owner, result);
     } else if (entry.isFile()) {
-      result.push(relative);
+      result.files.push(relative);
+      if (entry.name !== "_website.md" && relative.endsWith(".md") && owner) {
+        result.ownedMarkdown.set(relative, owner);
+      }
     }
   }
 
@@ -171,9 +239,11 @@ function publicMetadata(data) {
   };
 }
 
-async function readSelectedNotes(root, files, preview) {
+async function readSelectedNotes(root, ownedMarkdown, preview) {
   const notes = [];
-  for (const file of files.filter((file) => file.endsWith(".md"))) {
+  for (const [file, owner] of ownedMarkdown) {
+    if (!owner.registered) continue;
+
     const note = readNote(
       await fs.readFile(path.join(root, file), "utf8"),
       file,
