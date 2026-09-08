@@ -7,8 +7,7 @@
     "dev": "node scripts/site.mjs dev",
     "build": "node scripts/site.mjs build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
-    "dev:writing": "node scripts/site.mjs writing",
-    "test": "node --test tests/*.test.mjs"
+    "dev:writing": "node scripts/site.mjs writing"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

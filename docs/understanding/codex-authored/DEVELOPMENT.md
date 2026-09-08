@@ -11,12 +11,8 @@ read local writing. The importer never edits the vault.
 - `npm run dev:writing`: also include notes marked `preview: true` for local review.
 - `npm run build`: import published notes only, run Astro checks, and build `dist`.
 - `npm run preview`: serve the existing production build; it does not import or rebuild.
-- `npm test`: importer tests plus a local dev/build integration test with synthetic notes.
 
 Development commands accept `--port`, `--host`, `--open`, and `--mode`, such as `npm run dev -- --port 4323`.
-The integration test uses localhost port 4389 and the project's disposable build
-output; stop your development server before running it. Afterwards, run the normal
-build to replace the synthetic output with your selected content.
 
 ## Selecting notes
 

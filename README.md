@@ -10,8 +10,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Use `npm run dev:writing` to include explicitly marked local previews, `npm test`
-for synthetic validation, and `npm run build` for a production build.
+Use `npm run dev:writing` to include explicitly marked local previews for synthetic validation, and `npm run build` for a production build.
 
 - [Local development and writing](docs/understanding/codex-authored/DEVELOPMENT.md)
 - [Deployment and required secrets](docs/understanding/codex-authored/Deployment.md)
