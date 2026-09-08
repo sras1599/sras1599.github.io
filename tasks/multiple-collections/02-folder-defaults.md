@@ -1,8 +1,8 @@
-# Phase 2: Folder defaults and nested configuration
+# Phase 2: Folder defaults
 
 ## Objective
 
-Add strict, collection-specific folder defaults and nested refinement semantics to
+Add strict, collection-specific folder defaults to each collection boundary's
 `_website.md`, with ordinary note metadata taking precedence.
 
 ## Prerequisites
@@ -19,7 +19,7 @@ Add strict, collection-specific folder defaults and nested refinement semantics 
 Marker properties remain flat. The initial registered `blog` definition permits:
 
 ```yaml
-collection: blog       # structural; optional only for a refinement marker
+collection: blog       # required structural boundary identifier
 publish: false         # optional inherited default
 preview: false         # optional inherited default
 displayInFeed: true    # optional inherited default
@@ -35,12 +35,12 @@ defaults. Route behavior begins in Phase 4 and index behavior in Phase 5.
 The schema for allowed defaults belongs to the collection definition. A future
 collection may expose different defaults or no defaults at all.
 
-### Refinement and reset rules
+### Default and override rules
 
-- A nested `_website.md` without `collection` is a refinement marker.
-- It is invalid when no enclosing explicit collection boundary exists.
-- It inherits the enclosing collection and its effective defaults.
-- Its declared values replace inherited values.
+- Assume a collection boundary has no descendant `_website.md` files. Nested
+  markers and nested collection boundaries do not need to be supported.
+- A boundary marker's declared default values replace the collection definition's
+  metadata defaults.
 - An ordinary note's declared values replace effective marker defaults.
 - Arrays replace rather than concatenate.
 - A marker for a collection with no folder-default schema must reject default
@@ -49,7 +49,7 @@ collection may expose different defaults or no defaults at all.
 The precedence chain is:
 
 ```text
-collection's metadata defaults < ancestor refinement < closest refinement < note
+collection's metadata defaults < boundary marker < note
 ```
 
 Do not confuse schema defaults used to normalize public output (for example,
@@ -85,10 +85,10 @@ explicit in code and documentation.
 
 ## Suggested implementation shape
 
-Separate these concepts in data structures and functions:
+Keep these concepts distinct in data structures and functions:
 
 - Raw parsed marker
-- Resolved boundary/refinement with inherited collection ID
+- Resolved collection boundary
 - Effective folder defaults
 - Raw note metadata
 - Effective note metadata used for selection and validation
@@ -105,9 +105,8 @@ steps for the user in the phase handoff:
 - Root defaults selecting notes without note-level `publish`.
 - Explicit `publish: false` on a note overriding inherited `true`.
 - Preview inheritance and production isolation.
-- Nested refinements overriding scalar defaults.
+- Boundary defaults overriding collection metadata defaults.
 - Note arrays replacing inherited arrays.
-- Top-level refinement markers failing.
 - Invalid default types and unknown marker keys failing with paths.
 - Ordinary note `collection` failing, including on an otherwise unselected note.
 - Malformed YAML in an owned unselected note failing without replacing prior
@@ -135,9 +134,9 @@ git diff --check
 
 ## Acceptance criteria
 
-- Blog folder defaults are validated, inherited, and overridden exactly as
+- Blog folder defaults are validated and overridden exactly as
   specified.
-- Refinement markers inherit their enclosing boundary's defaults.
+- Boundary marker defaults apply recursively to the ordinary notes they own.
 - Full note validation only applies to selected entries, while malformed owned
   YAML and structural misuse still fail early.
 - Private metadata filtering and last-known-good behavior remain intact.

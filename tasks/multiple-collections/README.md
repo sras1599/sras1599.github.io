@@ -53,7 +53,7 @@ filenames and function names are not.
 
 0. [Importer foundations](00-importer-foundations.md)
 1. [Collection boundaries](01-collection-boundaries.md)
-2. [Folder defaults and nested configuration](02-folder-defaults.md)
+2. [Folder defaults](02-folder-defaults.md)
 3. [Collection-aware importer](03-collection-aware-importer.md)
 4. [Routes and nested slugs](04-routes-and-nested-slugs.md)
 5. [Vault-authored collection indexes](05-collection-indexes.md)
@@ -67,10 +67,8 @@ filenames and function names are not.
 - The marker is a Markdown note because it must be visible and editable in
   Obsidian. It is never imported as a normal entry.
 - A marker with `collection` starts a collection boundary. Collection boundaries
-  are not nested.
-- A nested marker without `collection` refines the nearest enclosing registered
-  collection and inherits its defaults.
-- The nearest marker owns a note. Unmarked descendants of a marker are included
+  are not nested, and descendant `_website.md` files do not need to be supported.
+- A marker owns ordinary notes in its directory and unmarked descendants
   recursively. Notes with no owning marker are ignored.
 - Hidden path components and symlinks remain excluded.
 - Marker properties are flat because Obsidian's normal property editor does not
@@ -98,8 +96,8 @@ filenames and function names are not.
 - Blog folder defaults initially permit only `publish`, `preview`,
   `displayInFeed`, and `tags`. Other collection definitions may expose a
   different allowlist or no folder defaults at all.
-- A closer marker replaces an inherited value. A note replaces a marker value.
-  Arrays replace arrays; they are not concatenated.
+- A boundary marker replaces a collection metadata default. A note replaces a
+  marker value. Arrays replace arrays; they are not concatenated.
 - `collection` is structural. A `collection` property on an ordinary note is an
   error, even though unrelated private note properties remain excluded from
   generated frontmatter as they are today.
@@ -116,8 +114,7 @@ filenames and function names are not.
 - Generated entries live below `.generated/<collection>/`.
 - Website code defines a collection's default route. An explicit collection
   marker may override it for the entire collection.
-- Multiple overrides for one collection must agree. Refinement markers cannot
-  override routes.
+- Multiple overrides for one collection must agree.
 - Prefix-sharing routes are allowed. Exact final URL collisions are not. Validate
   generated entries and collection indexes against each other and handwritten
   site routes at build time.
@@ -178,7 +175,7 @@ from the concrete steps supplied in each handoff.
   effective root URL, while normal ambiguity rules still apply.
 - Nested slugs produce nested public URLs without deriving them from source paths.
 - Unknown collections warn once and are skipped.
-- Folder defaults, refinement, and note overrides follow the defined precedence.
+- Folder defaults and note overrides follow the defined precedence.
 - Blog index text and page metadata come from `_website.md`; website code retains
   layout, list rendering, and ordering.
 - Empty imports remove stale generated content.

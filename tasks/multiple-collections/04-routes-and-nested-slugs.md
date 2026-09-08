@@ -16,7 +16,6 @@ nested entry slugs, and route generated pages without blog-specific URL files.
 
 - Each registered collection has a website-defined default route such as `/blog`.
 - An explicit `_website.md` marker may declare a flat `route` property.
-- A refinement marker without `collection` cannot declare `route`.
 - A route override applies to the entire collection, not only its source root.
 - Multiple explicit roots feeding one collection may omit the override or declare
   the same normalized override. Conflicting explicit values fail with all relevant
@@ -100,7 +99,6 @@ steps for the user in the phase handoff:
 - One route override changing index, entry, wikilink, series, and back-link URLs.
 - Equal overrides across multiple roots succeeding.
 - Conflicting overrides failing with marker paths.
-- A refinement route override failing.
 - Valid two- and three-segment slugs.
 - Every invalid nested-slug form listed above.
 - Same nested slug in different collections succeeding.

@@ -47,7 +47,6 @@ registered collection definition. The example is intentionally verbose.
 - A collection with an index can render an empty entry list.
 - A registered collection without an index component must reject `title`,
   `metaDescription`, or non-whitespace marker body content with a targeted error.
-- Refinement markers cannot supply index metadata or body content.
 - At most one explicit root per collection may supply index content. Fail with all
   candidate paths rather than using traversal order.
 
@@ -130,7 +129,6 @@ steps for the user in the phase handoff:
 - Links to inactive, unknown, skipped, and no-index markers becoming plain text.
 - Index heading fragments resolving against the collection root URL.
 - Duplicate index providers failing with both marker paths.
-- Refinement markers attempting index content failing.
 - Index content for a no-index collection failing.
 - Blog ordering, feed filtering, empty state, and current visual selectors staying
   intact.

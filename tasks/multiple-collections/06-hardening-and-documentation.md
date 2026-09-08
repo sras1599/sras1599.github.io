@@ -40,7 +40,6 @@ Audit errors and warnings for actionable source context:
 - Malformed marker or note YAML
 - Unknown marker keys
 - Unsupported folder defaults
-- Top-level refinement markers
 - Note-level `collection`
 - Unknown collection warnings
 - Conflicting route overrides
@@ -72,7 +71,7 @@ Update `README.md` and
 including:
 
 - Exact `_website.md` naming and recursive ownership
-- Explicit boundaries versus refinements
+- Explicit collection boundaries and the assumption that markers are not nested
 - The final blog marker example
 - Flat, collection-specific folder defaults and precedence
 - Required entry metadata and nested slug rules
@@ -112,7 +111,7 @@ The implementing agent must not perform these checks. Include concrete steps for
 the user to exercise and inspect at least:
 
 - No markers and stale cleanup
-- Registered and unknown boundaries, plus nested refinement markers
+- Registered and unknown collection boundaries
 - Collection-specific defaults and note overrides
 - Production/preview selection
 - Per-collection schema validation and same-slug isolation
