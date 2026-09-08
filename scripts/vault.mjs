@@ -1,12 +1,13 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { parse, stringify } from "yaml";
+import { stringify } from "yaml";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import remarkGfm from "remark-gfm";
 import { slug as heading } from "github-slugger";
+import { parseMarkdownDocument } from "./markdown-document.mjs";
 
 const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkStringify);
 const raster = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
@@ -84,22 +85,21 @@ async function listVaultFiles(root, dir = "") {
 }
 
 function readNote(text, file, preview) {
-  const match = text
-    .replace(/^\uFEFF/, "")
-    .match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-  if (!match) {
-    return null;
-  }
-  let data;
+  let document;
   try {
-    data = parse(match[1]);
+    document = parseMarkdownDocument(text, { file });
   } catch (error) {
-    if (/^(?:publish|preview):\s*true\s*$/m.test(match[1])) {
-      throw new Error(`${file}: invalid YAML: ${error.message}`);
+    if (/^(?:publish|preview):\s*true\s*$/m.test(error.frontmatter)) {
+      throw error;
     }
     return null;
   }
 
+  if (!document.hasFrontmatter) {
+    return null;
+  }
+
+  const data = document.metadata;
   if (!data || (data.publish !== true && !(preview && data.preview === true))) {
     return null;
   }
@@ -107,7 +107,7 @@ function readNote(text, file, preview) {
 
   return {
     file,
-    body: text.replace(/^\uFEFF/, "").slice(match[0].length),
+    body: document.body,
     data: publicMetadata(data),
   };
 }
