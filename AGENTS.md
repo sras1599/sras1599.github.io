@@ -44,6 +44,8 @@ Optimize for clarity and ease of change, not for hypothetical future needs.
 ## Code readability
 
 - After changing code, format it according to the repository's established style.
+- Use blank lines to separate distinct logical steps within functions so related
+  statements read as clear code segments.
 - Keep code straightforward, consistently structured, and easy for the user to
   read.
 - Add comments where they clarify intent, constraints, or non-obvious behavior.
