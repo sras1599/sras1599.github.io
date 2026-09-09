@@ -1,3 +1,11 @@
+/**
+ * Define the website-owned contract for vault collections. Definitions keep
+ * entry validation, optional index validation, and public routes together while
+ * remaining safe to import from Node scripts and Astro's content configuration.
+ * Public routes are website-owned rather than authored by vault markers. The
+ * helpers normalize canonical routes and entry slugs used by both the importer
+ * and Astro route generation.
+ */
 import { z } from "zod";
 
 export const collectionSlugPattern =
@@ -6,9 +14,8 @@ export const collectionSlugPattern =
 /** Define all website-owned behavior for one vault collection. */
 export function defineCollectionDefinition({
   id,
-  defaultRoute,
-  entryRenderer,
-  indexRenderer,
+  route,
+  indexSchema,
   metadataDefaults = { publish: false, preview: false },
   folderDefaultsSchema = z.object({}),
   entrySchema,
@@ -19,15 +26,14 @@ export function defineCollectionDefinition({
     throw new Error(`Invalid collection ID ${id}`);
   }
 
-  const normalizedDefaultRoute = normalizeCollectionRoute(defaultRoute, {
-    label: `default route for collection ${id}`,
+  const normalizedRoute = normalizeCollectionRoute(route, {
+    label: `route for collection ${id}`,
   });
 
   return {
     id,
-    defaultRoute: normalizedDefaultRoute,
-    entryRenderer,
-    indexRenderer,
+    route: normalizedRoute,
+    indexSchema,
     metadataDefaults,
     folderDefaultsSchema,
     entrySchema,
@@ -35,9 +41,7 @@ export function defineCollectionDefinition({
     projectEntry,
     markerSchema: z.strictObject({
       collection: z.literal(id),
-      route: z.string().optional(),
-      title: z.string().optional(),
-      metaDescription: z.unknown().optional(),
+      ...(indexSchema?.partial().shape ?? {}),
       ...folderDefaultsSchema.shape,
     }),
   };
@@ -99,7 +103,7 @@ export function normalizeCollectionSlug(slug, { label = "slug" } = {}) {
   return slug;
 }
 
-/** Construct URLs from a validated effective route and canonical entry slug. */
+/** Construct URLs from a website-owned route and canonical entry slug. */
 export function collectionEntryUrl(route, slug) {
   return `${normalizeCollectionRoute(route)}/${normalizeCollectionSlug(slug)}`;
 }

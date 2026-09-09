@@ -1,3 +1,8 @@
+/**
+ * Shared Zod schemas for collection definitions. These schemas validate the
+ * common selection and identity fields used by entries plus the authored title
+ * and description required by collection indexes.
+ */
 import { z } from "zod";
 import { collectionSlugPattern } from "./definition.mjs";
 
@@ -40,3 +45,12 @@ export const baseContentSchema = z.object({
   title: z.string(),
   slug: slugSchema,
 });
+
+export const baseIndexSchema = z.strictObject({
+  title: nonemptyStringSchema,
+  metaDescription: nonemptyStringSchema,
+});
+
+export const indexContentSchema = baseIndexSchema.extend({
+  collection: z.string(),
+}).loose();

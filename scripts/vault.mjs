@@ -6,21 +6,23 @@
  * A collection boundary is a folder whose _website.md declares a collection ID.
  * That boundary owns notes in its subtree until another collection declaration
  * takes over. The website's registry supplies schemas and publishing behavior;
- * marker frontmatter supplies folder defaults and optional public route overrides.
+ * marker frontmatter supplies folder defaults and the separately validated
+ * metadata/body for a collection index. Public routes come only from the registry.
  *
  * The import proceeds in four stages:
- * 1. Discover files and boundaries, then resolve one public route per collection.
+ * 1. Discover files and boundaries, then resolve each website-owned public route
+ *    and optional authored index document.
  * 2. Merge note metadata with defaults, select published notes (plus preview notes
  *    in writing mode), and reject duplicate identities or conflicting public URLs.
- * 3. Rewrite Markdown and Obsidian links, read embedded local images, and prepare
- *    all output in memory. Links to existing unselected notes become their labels;
- *    missing or ambiguous vault references fail the import.
- * 4. Synchronize .generated/<collection>/<slug>.md, .generated/collections.json,
- *    and public/_vault/<content-hash>.<extension>, removing obsolete output.
+ * 3. Rewrite entry and index Markdown and Obsidian links, read embedded local
+ *    images, and prepare all output in memory. Links to existing unavailable
+ *    notes and markers become their labels; missing or ambiguous references fail.
+ * 4. Synchronize entry Markdown, separate .generated/_indexes documents, and
+ *    hashed public assets, removing stale output.
  *
  * Vault lookup paths use forward slashes and are relative to the vault root.
- * Entry identity (collection ID plus slug) is separate from its public URL, so a
- * route override changes website links without changing generated file locations.
+ * Entry identity (collection ID plus slug) is separate from its public URL and
+ * generated file location.
  *
  * Parsing, validation, and rendering failures leave the previous output untouched.
  * Once synchronization starts, files are replaced individually; an I/O failure can
@@ -38,7 +40,6 @@ import { slug as heading } from "github-slugger";
 import { parseMarkdownDocument } from "./markdown-document.mjs";
 import {
   collectionEntryUrl,
-  normalizeCollectionRoute,
   normalizeCollectionSlug,
 } from "../src/collections/definition.mjs";
 import { CollectionRegistry } from "../src/collections/registry.mjs";
@@ -84,17 +85,35 @@ export async function importVault({
   await validateUrlOwnership(notes, activeCollections, projectRoot);
   validateUniqueIdentities(notes);
 
-  // Resolution needs every discovered file to distinguish an unpublished target
-  // from a missing one. Only selected notes receive a public URL in this lookup.
+  // Resolution needs every discovered file to distinguish an unavailable target
+  // from a missing one. Entries and active indexes have separate canonical target
+  // identities even when the link transformer only needs their public URL.
+  const publicTargetsByFile = new Map(
+    notes.map((note) => [
+      note.file,
+      {
+        identity: {
+          kind: "entry",
+          collection: note.identity.collectionId,
+          slug: note.identity.slug,
+        },
+        url: collectionEntryUrl(note.route, note.identity.slug),
+      },
+    ]),
+  );
+  for (const collection of activeCollections.values()) {
+    if (!collection.index) continue;
+
+    publicTargetsByFile.set(collection.index.file, {
+      identity: collection.index.identity,
+      url: collection.route,
+    });
+  }
+
   const vault = {
     root,
     files: new Set(discovery.files),
-    publishedUrlsByFile: new Map(
-      notes.map((note) => [
-        note.file,
-        collectionEntryUrl(note.route, note.identity.slug),
-      ]),
-    ),
+    publicTargetsByFile,
   };
   const output = new Map();
   const assets = new Map();
@@ -103,7 +122,7 @@ export async function importVault({
   // Asset filenames encode their contents, so repeated map keys share one output
   // file even when several notes embed the same image.
   for (const note of notes) {
-    const prepared = await prepareNote(note, vault);
+    const prepared = await prepareMarkdownDocument(note, vault);
     output.set(generatedEntryPath(note.identity), prepared.contents);
 
     for (const [name, bytes] of prepared.assets) {
@@ -111,18 +130,27 @@ export async function importVault({
     }
   }
 
-  const collections = Array.from(
-    activeCollections.values(),
-    ({ definition, route }) => ({ id: definition.id, route }),
-  );
-  output.set(
-    "collections.json",
-    `${JSON.stringify({ collections }, null, 2)}\n`,
-  );
+  // Index documents share the entry transformation pipeline but use distinct
+  // storage and metadata so Astro entry queries can never return them.
+  for (const collection of activeCollections.values()) {
+    if (!collection.index) continue;
+
+    const prepared = await prepareMarkdownDocument(collection.index, vault);
+    output.set(
+      path.posix.join("_indexes", `${collection.definition.id}.md`),
+      prepared.contents,
+    );
+
+    for (const [name, bytes] of prepared.assets) {
+      assets.set(name, bytes);
+    }
+  }
 
   await syncGeneratedFiles(path.join(projectRoot, "public/_vault"), assets);
   await syncGeneratedFiles(path.join(projectRoot, ".generated"), output, {
-    directories: registry.keys(),
+    // Collection IDs cannot contain underscores, so this internal directory
+    // cannot collide with a future registered collection's entry directory.
+    directories: [...registry.keys(), "_indexes"],
   });
 
   return { entries: notes.length, assets: assets.size };
@@ -178,7 +206,7 @@ async function discoverVault(
 
       const definition = registry.get(collectionId);
       owner = definition
-        ? resolveCollectionBoundary(document.metadata, markerPath, definition)
+        ? resolveCollectionBoundary(document, markerPath, definition)
         : { markerPath, collectionId, registered: false };
       if (owner.registered) {
         result.boundaries.push(owner);
@@ -209,12 +237,30 @@ async function discoverVault(
 }
 
 /**
- * Validate a registered marker and build the defaults inherited by its notes.
- * The marker schema validates the whole declaration; the folder-defaults schema
- * selects the fields that may flow into entry metadata. An omitted route remains
- * undefined until all boundaries for this collection have been considered.
+ * Validate a registered marker and separate its two authored roles: entry-folder
+ * defaults and optional index metadata/body. Collection routes are website-owned.
  */
-function resolveCollectionBoundary(metadata, markerPath, definition) {
+function resolveCollectionBoundary(document, markerPath, definition) {
+  const { metadata, body } = document;
+  const indexPropertyNames = ["title", "metaDescription"];
+  const declaredIndexProperties = indexPropertyNames.filter((property) =>
+    Object.hasOwn(metadata, property),
+  );
+  const hasIndexBody = Boolean(body.trim());
+
+  if (
+    !definition.indexSchema &&
+    (declaredIndexProperties.length || hasIndexBody)
+  ) {
+    const content = [
+      ...declaredIndexProperties.map((property) => `property ${property}`),
+      ...(hasIndexBody ? ["Markdown body"] : []),
+    ].join(" and ");
+    throw new Error(
+      `${markerPath}: collection ${definition.id} has no index schema and cannot supply index content (${content})`,
+    );
+  }
+
   const markerMetadata = parseSchema(
     definition.markerSchema,
     metadata,
@@ -226,18 +272,25 @@ function resolveCollectionBoundary(metadata, markerPath, definition) {
     markerMetadata,
     markerPath,
   );
-  const declaredRoute = Object.hasOwn(markerMetadata, "route")
-    ? normalizeCollectionRoute(markerMetadata.route, {
-      label: `${markerPath}: route`,
-    })
-    : undefined;
 
   return {
     markerPath,
     collectionId: definition.id,
     registered: true,
     definition,
-    declaredRoute,
+    indexCandidate:
+      declaredIndexProperties.length || hasIndexBody
+        ? {
+          file: markerPath,
+          body,
+          metadata: Object.fromEntries(
+            declaredIndexProperties.map((property) => [
+              property,
+              markerMetadata[property],
+            ]),
+          ),
+        }
+        : undefined,
     // Collection normalization is lowest precedence; author-declared marker
     // values replace it, including arrays such as tags.
     effectiveFolderDefaults: {
@@ -248,11 +301,10 @@ function resolveCollectionBoundary(metadata, markerPath, definition) {
 }
 
 /**
- * Return a map from collection ID to its definition, effective route, and source
- * boundaries without mutating those boundaries. Several folders may declare the
- * same collection: one explicit route applies to all of them, matching overrides
- * are allowed, and different overrides fail. With none, use the registry default.
- * A collection is active even if its boundaries contain no selected notes.
+ * Return a map from collection ID to its definition, website-owned route, and
+ * source boundaries without mutating those boundaries. Several folders may
+ * declare the same collection. A collection is active even if its boundaries
+ * contain no selected notes.
  */
 function resolveActiveCollections(collectionBoundaries) {
   const boundariesByCollection = new Map();
@@ -266,31 +318,12 @@ function resolveActiveCollections(collectionBoundaries) {
   const activeCollections = new Map();
   for (const [collectionId, boundaries] of boundariesByCollection) {
     const definition = boundaries[0].definition;
-    const explicitRoutes = boundaries.filter(
-      ({ declaredRoute }) => declaredRoute !== undefined,
-    );
-    const routes = new Set(
-      explicitRoutes.map(({ declaredRoute }) => declaredRoute),
-    );
-    if (routes.size > 1) {
-      const declarations = explicitRoutes
-        .map(
-          ({ markerPath, declaredRoute }) =>
-            `${markerPath} declares ${declaredRoute}`,
-        )
-        .join("; ");
-
-      throw new Error(
-        `Conflicting route overrides for collection ${collectionId}: ${declarations}`,
-      );
-    }
-
-    const route =
-      explicitRoutes[0]?.declaredRoute ?? definition.defaultRoute;
+    const index = resolveCollectionIndex(definition, boundaries);
     activeCollections.set(collectionId, {
       definition,
-      route,
+      route: definition.route,
       boundaries,
+      index,
     });
   }
 
@@ -298,9 +331,56 @@ function resolveActiveCollections(collectionBoundaries) {
 }
 
 /**
+ * Select and validate the single marker that authors an active collection index.
+ * Provider detection happens across every boundary before schema validation so a
+ * duplicate error always identifies every candidate instead of traversal order.
+ */
+function resolveCollectionIndex(definition, boundaries) {
+  if (!definition.indexSchema) return undefined;
+
+  const candidates = boundaries.flatMap((boundary) =>
+    boundary.indexCandidate ? [boundary.indexCandidate] : [],
+  );
+  if (candidates.length > 1) {
+    throw new Error(
+      `Collection ${definition.id} has multiple index providers: ${candidates
+        .map(({ file }) => file)
+        .join(", ")}`,
+    );
+  }
+  if (candidates.length === 0) {
+    throw new Error(
+      `Collection ${definition.id} requires title and metaDescription from one root _website.md; active markers: ${boundaries
+        .map(({ markerPath }) => markerPath)
+        .join(", ")}`,
+    );
+  }
+
+  const candidate = candidates[0];
+  const metadata = parseSchema(
+    definition.indexSchema,
+    candidate.metadata,
+    candidate.file,
+  );
+
+  return {
+    file: candidate.file,
+    body: candidate.body,
+    identity: {
+      kind: "collection-index",
+      collection: definition.id,
+    },
+    metadata: {
+      collection: definition.id,
+      ...metadata,
+    },
+  };
+}
+
+/**
  * Read notes owned by registered collections and return only selected entries.
- * Pass the collection's resolved route explicitly alongside the folder owner;
- * the owner carries local defaults, while the route belongs to the collection.
+ * Pass the collection's website-owned route alongside the folder owner; the
+ * owner carries local defaults, while the route belongs to the collection.
  * Notes under unknown collections are skipped before their contents are read.
  */
 async function readSelectedNotes(root, ownedMarkdown, activeCollections, preview) {
@@ -445,7 +525,7 @@ function generatedEntryPath({ collectionId, slug }) {
 
 /**
  * Reject duplicate generated URLs and collisions with existing website routes.
- * Collection index URLs are reserved only when an index renderer exists; entry
+ * Collection index URLs are reserved only when an index schema exists; entry
  * URLs are reserved for selected notes. Ownership descriptions retain source
  * paths so a collision identifies the declarations the author needs to change.
  */
@@ -453,12 +533,10 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot) {
   const generatedOwners = [];
 
   for (const collection of activeCollections.values()) {
-    if (collection.definition.indexRenderer) {
+    if (collection.definition.indexSchema) {
       generatedOwners.push({
         url: collection.route,
-        owner: `collection ${collection.definition.id} index from ${collection.boundaries
-          .map(({ markerPath }) => markerPath)
-          .join(", ")}`,
+        owner: `collection ${collection.definition.id} index from ${collection.index.file}`,
       });
     }
   }
@@ -481,7 +559,13 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot) {
     ownerByUrl.set(candidate.url, candidate.owner);
   }
 
-  const handwrittenOwners = await readHandwrittenRouteOwners(projectRoot);
+  const collectionRoutes = new Set(
+    Array.from(activeCollections.values(), ({ route }) => route),
+  );
+  const handwrittenOwners = await readHandwrittenRouteOwners(
+    projectRoot,
+    collectionRoutes,
+  );
   const handwrittenOwnerByUrl = new Map(
     handwrittenOwners.map(({ url, owner }) => [url, owner]),
   );
@@ -497,12 +581,12 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot) {
 
 /**
  * Inventory concrete URLs from src/pages and public without executing Astro.
- * For example, src/pages/about/index.astro reserves /about; public/logo.png
- * reserves /logo.png. Dynamic page segments are skipped because their concrete
- * URLs cannot be inferred from filenames. Generated _vault assets are excluded.
- * This inventory is limited to these filesystem rules, not a full routing model.
+ * Registered collection roots are implemented by their matching page folders,
+ * so those exact page URLs are expected rather than conflicting ownership.
+ * Dynamic page segments are skipped because their concrete URLs cannot be
+ * inferred from filenames. Generated _vault assets are excluded.
  */
-async function readHandwrittenRouteOwners(projectRoot) {
+async function readHandwrittenRouteOwners(projectRoot, collectionRoutes) {
   const owners = [];
   const pagesRoot = path.join(projectRoot, "src/pages");
 
@@ -514,9 +598,11 @@ async function readHandwrittenRouteOwners(projectRoot) {
     const segments = withoutExtension.split("/");
     if (segments.some((segment) => segment.startsWith("["))) continue;
     if (segments.at(-1) === "index") segments.pop();
+    const url = segments.length ? `/${segments.join("/")}` : "/";
+    if (collectionRoutes.has(url)) continue;
 
     owners.push({
-      url: segments.length ? `/${segments.join("/")}` : "/",
+      url,
       owner: `handwritten route from src/pages/${relative}`,
     });
   }
@@ -556,13 +642,13 @@ async function listFiles(directory, { skip = new Set() } = {}) {
 }
 
 /**
- * Prepare one note's generated Markdown and a map of image filenames to bytes.
+ * Prepare one entry or index document's generated Markdown and image bytes.
  * Parse into a Markdown syntax tree so links and images can be rewritten without
  * interpreting wiki syntax inside code. Collect reference definitions before
  * transforming nodes, since a definition may appear after a link that uses it.
  * Image reads happen here; output writes happen later in importVault.
  */
-async function prepareNote(note, vault) {
+async function prepareMarkdownDocument(note, vault) {
   const tree = markdown.parse(note.body);
   const definitions = collectDefinitions(tree);
   const assets = new Map();
@@ -899,7 +985,7 @@ function escapeHtml(value) {
  * ordinary Markdown fragments are treated as authored anchors and kept unchanged.
  */
 function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
-  const { files, publishedUrlsByFile } = vault;
+  const { files, publicTargetsByFile } = vault;
 
   if (/^[a-z][a-z0-9+.-]*:|^\/\//i.test(url)) {
     return [{ type: "link", url, children }];
@@ -938,10 +1024,10 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
   }
 
   // Unselected notes keep their link label without exposing a private destination.
-  const publishedUrl = publishedUrlsByFile.get(file);
-  if (!publishedUrl) return children;
+  const publicTarget = publicTargetsByFile.get(file);
+  if (!publicTarget) return children;
 
-  let destination = publishedUrl;
+  let destination = publicTarget.url;
   if (fragment) {
     const anchor = wiki ? heading(fragment) : fragment;
     destination += `#${anchor}`;

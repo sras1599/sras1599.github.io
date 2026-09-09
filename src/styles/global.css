@@ -1,3 +1,8 @@
+/*
+ * Define the site's shared visual system and responsive layouts. Collection
+ * renderers reuse these selectors for entry cards and authored Markdown; local
+ * content images remain fluid within their bordered page sections.
+ */
 :root {
   --paper: #faf9f6;
   --paper-low: #f4f3f1;
@@ -415,6 +420,21 @@ h3 {
 .blog-header {
   margin: 3rem 0;
   box-shadow: 8px 8px 0 var(--yellow);
+}
+
+.blog-index-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.blog-index-body a {
+  color: #004b73;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 0.25rem;
 }
 
 .post-list {

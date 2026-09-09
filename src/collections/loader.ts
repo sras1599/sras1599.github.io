@@ -1,3 +1,8 @@
+/**
+ * Load importer-generated Markdown into Astro's content layer. Entry loaders
+ * read one collection directory; the index loader reads the separate indexes
+ * directory. Both use the same recursive synchronization and Markdown renderer.
+ */
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -6,11 +11,27 @@ import { parseMarkdownDocument } from "../../scripts/markdown-document.mjs";
 
 /** Load one build-time-known collection from the importer's public snapshot. */
 export function collectionLoader(collectionId: string): Loader {
+  return generatedMarkdownLoader(`vault-${collectionId}`, collectionId);
+}
+
+/** Load authored collection indexes without mixing them into entry collections. */
+export function collectionIndexLoader(): Loader {
+  return generatedMarkdownLoader("vault-collection-indexes", "_indexes");
+}
+
+/**
+ * Create a loader for one importer-owned directory relative to .generated.
+ * Missing files remove stale store entries; watcher updates stay serialized.
+ */
+function generatedMarkdownLoader(
+  name: string,
+  generatedDirectory: string,
+): Loader {
   return {
-    name: `vault-${collectionId}`,
+    name,
     async load(context) {
       const directory = fileURLToPath(
-        new URL(`.generated/${collectionId}/`, context.config.root),
+        new URL(`.generated/${generatedDirectory}/`, context.config.root),
       );
 
       async function sync() {

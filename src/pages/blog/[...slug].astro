@@ -1,17 +1,36 @@
 ---
+/**
+ * Generate and render one /blog entry for each imported blog item. The rest
+ * parameter receives the entry ID unchanged, so slash-separated IDs such as
+ * guides/astro/setup continue to produce nested public URLs.
+ */
+import {
+  getCollection,
+  render,
+  type CollectionEntry,
+} from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { blogCollectionDefinition } from "../../collections/blog/definition.mjs";
+import { collectionEntryUrl } from "../../collections/definition.mjs";
+import { getSeriesDefinition } from "../../data/series";
+import { getReadingTime } from "../../utils/readingTime";
+
 interface Props {
-  post: any;
-  posts: any[];
-  route: string;
+  post: CollectionEntry<"blog">;
+  posts: CollectionEntry<"blog">[];
 }
 
-import { render } from "astro:content";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getReadingTime } from "../../utils/readingTime";
-import { getSeriesDefinition } from "../../data/series";
-import { collectionEntryUrl } from "../definition.mjs";
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
 
-const { post, posts, route } = Astro.props;
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post, posts },
+  }));
+}
+
+const { post, posts } = Astro.props;
+const route = blogCollectionDefinition.route;
 const definitions = new Map(
   posts.flatMap((candidate) =>
     candidate.data.series

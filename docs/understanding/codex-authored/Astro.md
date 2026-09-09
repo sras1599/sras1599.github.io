@@ -42,10 +42,11 @@ Astro turns supported files under `src/pages/` into routes:
 ```text
 src/pages/index.astro             -> /
 src/pages/blog/index.astro        -> /blog
-src/pages/blog/[slug].astro       -> /blog/<slug>
+src/pages/blog/[...slug].astro    -> /blog/<possibly/nested/slug>
 ```
 
-Directories become URL segments, `index.astro` represents the directory itself, and a bracketed name represents a dynamic parameter.
+Directories become URL segments, `index.astro` represents the directory itself,
+and a bracketed rest parameter matches one or more remaining URL segments.
 
 To add a static `/about` page, create:
 
@@ -57,7 +58,9 @@ No separate routing table is necessary.
 
 ## Dynamic routes in a static site
 
-`[slug].astro` describes a family of URLs, but a static build must know every member of that family ahead of time. `getStaticPaths()` supplies them.
+`[...slug].astro` describes a family of URLs, including slash-separated nested
+slugs, but a static build must know every member ahead of time.
+`getStaticPaths()` supplies them.
 
 The blog route performs this process:
 
@@ -77,7 +80,9 @@ For each imported post:
 - `params.slug` determines the URL;
 - `props.post` supplies the post to the page template.
 
-If the collection contains `hello-world.md`, Astro generates `/blog/hello-world`. A new published Markdown file automatically adds another route at the next build.
+If the collection contains `hello-world.md`, Astro generates `/blog/hello-world`.
+An ID such as `guides/astro/setup` generates `/blog/guides/astro/setup`. A new
+published Markdown file automatically adds another route at the next build.
 
 ## Layouts, components, props, and slots
 
@@ -258,4 +263,3 @@ When `npm run build` runs:
 - [Pages and routing](https://docs.astro.build/en/basics/astro-pages/)
 - [Content collections](https://docs.astro.build/en/guides/content-collections/)
 - [Islands architecture](https://docs.astro.build/en/concepts/islands/)
-

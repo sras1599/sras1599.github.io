@@ -1,4 +1,10 @@
+/**
+ * Register the blog's website-owned route and vault schemas. The importer uses
+ * this definition to validate, project, and link content; Astro page modules own
+ * presentation and list ordering.
+ */
 import { defineCollectionDefinition } from "../definition.mjs";
+import { baseIndexSchema } from "../schema.mjs";
 import {
   blogContentSchema,
   blogEntrySchema,
@@ -7,9 +13,8 @@ import {
 
 export const blogCollectionDefinition = defineCollectionDefinition({
   id: "blog",
-  defaultRoute: "/blog",
-  entryRenderer: "blog",
-  indexRenderer: "blog",
+  route: "/blog",
+  indexSchema: baseIndexSchema,
   metadataDefaults: {
     publish: false,
     preview: false,

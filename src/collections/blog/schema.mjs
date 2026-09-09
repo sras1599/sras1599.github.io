@@ -5,7 +5,6 @@ import {
   nonemptyStringSchema,
   selectionSchema,
   slugSegmentSchema,
-  slugSchema,
 } from "../schema.mjs";
 
 const publishDateSchema = z

@@ -36,9 +36,10 @@ tags:
 ---
 ```
 
-Marker properties are strict. `route`, `title`, and `metaDescription` are also
-reserved for later collection-routing and index support, but do not affect entries
-yet; any other marker property is an error.
+Marker properties are strict. `title` and `metaDescription`, together with the
+marker body, author the collection index. Public routes are defined in the website
+collection registry; declaring `route` or any other unsupported marker property is
+an error.
 
 Defaults apply recursively. An ordinary note's explicitly declared value replaces
 the marker value, and the marker value replaces the website's collection default;
@@ -69,9 +70,10 @@ For unpublished work, use `preview: true` without `publish: true` and run
 always exclude preview-only notes, even after a writing-preview session.
 
 Titles and descriptions must be nonempty strings; dates use valid `YYYY-MM-DD`
-calendar dates. Slugs must be unique lowercase letters/digits separated by single
-hyphens. Tags are an optional list of strings. Other properties are discarded from
-generated frontmatter. The former `draft` property is not used.
+calendar dates. Slugs use lowercase letters, digits, and single hyphens in
+slash-separated segments; each slug must be unique within its collection. Tags are
+an optional list of strings. Other properties are discarded from generated
+frontmatter. The former `draft` property is not used.
 
 The slug determines `/blog/an-example-article`, independent of the vault filename
 or folder. Changing a slug changes the URL; no automatic redirect is created.
@@ -106,9 +108,10 @@ literal; recognized executable plugin blocks are rejected.
 
 ## Generated files and errors
 
-`.generated/blog` holds generated Markdown; `public/_vault` holds selected images.
-Both are gitignored and disposable. Never edit them. Astro derives collection IDs
-from the generated slug filenames, then `getStaticPaths()` creates article routes.
+`.generated/blog` holds generated entries, `.generated/_indexes` holds authored
+collection indexes, and `public/_vault` holds selected images. They are gitignored
+and disposable. Never edit them. Astro derives collection IDs from the generated
+slug filenames, then each collection's page module creates its article routes.
 
 The importer validates and prepares content before updating those directories.
 During development, invalid edits report an error in the terminal and retain the

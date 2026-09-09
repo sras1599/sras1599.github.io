@@ -39,7 +39,7 @@ personal-website/
 │   │   ├── index.astro        /
 │   │   └── blog/
 │   │       ├── index.astro    /blog
-│   │       └── [slug].astro   One generated route per blog post
+│   │       └── [...slug].astro One generated route per blog post, including nested slugs
 │   ├── styles/
 │   │   └── global.css         Site-wide styling
 │   └── content.config.ts      Blog collection and metadata schema
@@ -117,7 +117,7 @@ Consider a request for `/blog/hello-world`:
 
 1. During the build, the importer generates `.generated/blog/hello-world.md` from a selected vault note with `slug: hello-world`, and Astro loads it through the `blog` content collection.
 2. The content schema validates the post's frontmatter.
-3. `src/pages/blog/[slug].astro` includes the post in `getStaticPaths()`.
+3. `src/pages/blog/[...slug].astro` includes the post in `getStaticPaths()`.
 4. Astro renders the post body and inserts it into the page template.
 5. The page uses `BaseLayout.astro` for shared metadata and navigation.
 6. Astro writes the resulting static page into `dist/`.
@@ -135,7 +135,7 @@ There is no database lookup or server rendering when the reader opens the page.
 | Add a blog post | A selected `.md` note in the Obsidian vault |
 | Change required blog metadata | `scripts/vault.mjs` and `src/content.config.ts` |
 | Change blog listing behavior | `src/pages/blog/index.astro` |
-| Change individual post presentation | `src/pages/blog/[slug].astro` |
+| Change individual post presentation | `src/pages/blog/[...slug].astro` |
 | Add a new route | Add an `.astro` file under `src/pages/` |
 | Add an unprocessed public file | `public/` |
 | Change build-wide Astro behavior | `astro.config.mjs` |
@@ -163,4 +163,3 @@ That is useful context when considering a new dependency: first ask whether Astr
 - `npm run preview` — serve the contents of the production build locally.
 
 Those workflows are described in [DEVELOPMENT.md](./DEVELOPMENT.md).
-

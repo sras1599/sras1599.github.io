@@ -1,0 +1,83 @@
+---
+/**
+ * Render the website-owned /blog index from the blog content collection and the
+ * index document authored by the vault's blog marker. This page owns the blog's
+ * publication ordering, feed filtering, card markup, and empty state.
+ */
+import {
+  getCollection,
+  render,
+  type CollectionEntry,
+} from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { blogCollectionDefinition } from "../../collections/blog/definition.mjs";
+import { collectionEntryUrl } from "../../collections/definition.mjs";
+
+const indexes = await getCollection("collectionIndexes");
+const index = indexes.find(
+  (candidate) => candidate.data.collection === blogCollectionDefinition.id,
+);
+if (!index) {
+  throw new Error("Blog collection is missing its generated index document");
+}
+
+const allPosts = await getCollection("blog");
+allPosts.sort(compareBlogEntries);
+const posts = allPosts.filter((post) => post.data.displayInFeed);
+const { Content } = await render(index);
+
+/** Order newer blog entries first and use their stable IDs to break date ties. */
+function compareBlogEntries(
+  left: CollectionEntry<"blog">,
+  right: CollectionEntry<"blog">,
+) {
+  const dateOrder =
+    right.data.publishDate.valueOf() - left.data.publishDate.valueOf();
+
+  return dateOrder || left.id.localeCompare(right.id, "en");
+}
+---
+
+<BaseLayout title={index.data.title} description={index.data.metaDescription}>
+  <main>
+    <section class="blog-header" aria-labelledby="blog-title">
+      <p class="eyebrow" id="blog-title">{index.data.title}</p>
+      <div class="blog-index-body">
+        <Content />
+      </div>
+    </section>
+
+    <section class="post-list" aria-label="Blog posts">
+      {posts.length === 0 && <p>No posts yet.</p>}
+      {
+        posts.map((post) => (
+          <article class="post-card">
+            <div>
+              <time datetime={post.data.publishDate.toISOString()}>
+                {post.data.publishDate.toLocaleDateString("en", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+              <h2>
+                <a
+                  href={collectionEntryUrl(
+                    blogCollectionDefinition.route,
+                    post.id,
+                  )}
+                >
+                  {post.data.title}
+                </a>
+              </h2>
+              <p>{post.data.description}</p>
+            </div>
+            <ul aria-label="Tags">
+              {post.data.tags.map((tag: string) => <li>{tag}</li>)}
+            </ul>
+          </article>
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

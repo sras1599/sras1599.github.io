@@ -1,7 +1,11 @@
 ---
+/**
+ * Provide the shared HTML document shell, metadata, fonts, and primary
+ * navigation for website pages. Callers supply optional page title and
+ * description text; the website-owned blog definition supplies its fixed link.
+ */
 import "../styles/global.css";
-import { activeCollectionRoute } from "../collections/manifest.mjs";
-import { CollectionRegistry } from "../collections/registry.mjs";
+import { blogCollectionDefinition } from "../collections/blog/definition.mjs";
 
 interface Props {
   title?: string;
@@ -15,10 +19,7 @@ const {
 
 const pageTitle =
   title === "Raspreet Singh" ? title : `${title} | Raspreet Singh`;
-const blogRoute =
-  (await activeCollectionRoute("blog")) ??
-  CollectionRegistry.get("blog")?.defaultRoute ??
-  "/blog";
+const blogRoute = blogCollectionDefinition.route;
 ---
 
 <!doctype html>
@@ -39,6 +40,7 @@ const blogRoute =
       rel="stylesheet"
     />
     <script
+      is:inline
       defer
       src="https://cloud.umami.is/script.js"
       data-website-id="8bd0129b-fca1-4a2f-bf0e-39d7ddf9bf03"
