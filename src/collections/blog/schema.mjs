@@ -4,6 +4,7 @@ import {
   baseEntrySchema,
   nonemptyStringSchema,
   selectionSchema,
+  slugSegmentSchema,
   slugSchema,
 } from "../schema.mjs";
 
@@ -34,7 +35,7 @@ export const blogEntrySchema = baseEntrySchema
       error: "must be a list of strings",
     }),
     displayInFeed: z.boolean({ error: "must be a boolean" }),
-    series: slugSchema.optional(),
+    series: slugSegmentSchema.optional(),
   })
   .loose();
 
@@ -43,5 +44,5 @@ export const blogContentSchema = baseContentSchema.extend({
   publishDate: z.coerce.date(),
   tags: z.array(z.string()).default([]),
   displayInFeed: z.boolean().default(true),
-  series: slugSchema.optional(),
+  series: slugSegmentSchema.optional(),
 });

@@ -1,8 +1,8 @@
 import { defineCollection } from "astro:content";
 import { collectionLoader } from "./collections/loader";
-import { productionCollectionRegistry } from "./collections/registry.mjs";
+import { CollectionRegistry } from "./collections/registry.mjs";
 
-const blogDefinition = productionCollectionRegistry.get("blog");
+const blogDefinition = CollectionRegistry.get("blog");
 if (!blogDefinition) {
   throw new Error("Production collection registry is missing blog");
 }

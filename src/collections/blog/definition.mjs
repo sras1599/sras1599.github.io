@@ -9,6 +9,7 @@ export const blogCollectionDefinition = defineCollectionDefinition({
   id: "blog",
   defaultRoute: "/blog",
   entryRenderer: "blog",
+  indexRenderer: "blog",
   metadataDefaults: {
     publish: false,
     preview: false,

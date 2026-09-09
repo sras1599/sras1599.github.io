@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { collectionSlugPattern } from "./definition.mjs";
 
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const slugSegmentPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const nonemptyStringSchema = z
   .string({ error: "must be a nonempty string" })
@@ -8,10 +9,20 @@ export const nonemptyStringSchema = z
 
 export const slugSchema = z
   .string({
+    error:
+      "must contain lowercase letters, digits, and single hyphens in slash-separated segments",
+  })
+  .regex(
+    collectionSlugPattern,
+    "must contain lowercase letters, digits, and single hyphens in slash-separated segments",
+  );
+
+export const slugSegmentSchema = z
+  .string({
     error: "must contain lowercase letters, digits, and single hyphens",
   })
   .regex(
-    slugPattern,
+    slugSegmentPattern,
     "must contain lowercase letters, digits, and single hyphens",
   );
 

@@ -1,12 +1,16 @@
 ---
-import { getCollection } from "astro:content";
-import BaseLayout from "../../layouts/BaseLayout.astro";
+interface Props {
+  posts: any[];
+  route: string;
+}
 
-const posts = (await getCollection("blog"))
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { collectionEntryUrl } from "../definition.mjs";
+
+const { posts: unsortedPosts, route } = Astro.props;
+const posts = unsortedPosts
   .filter((post) => post.data.displayInFeed)
   .sort((a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf());
-
-const postHref = (id: string) => `/blog/${id}`;
 ---
 
 <BaseLayout title="Blog" description="Writing by Raspreet Singh.">
@@ -34,14 +38,14 @@ const postHref = (id: string) => `/blog/${id}`;
                 })}
               </time>
               <h2>
-                <a href={postHref(post.id)}>{post.data.title}</a>
+                <a href={collectionEntryUrl(route, post.id)}>
+                  {post.data.title}
+                </a>
               </h2>
               <p>{post.data.description}</p>
             </div>
             <ul aria-label="Tags">
-              {post.data.tags.map((tag) => (
-                <li>{tag}</li>
-              ))}
+              {post.data.tags.map((tag: string) => <li>{tag}</li>)}
             </ul>
           </article>
         ))

@@ -1,5 +1,7 @@
 ---
 import "../styles/global.css";
+import { activeCollectionRoute } from "../collections/manifest.mjs";
+import { CollectionRegistry } from "../collections/registry.mjs";
 
 interface Props {
   title?: string;
@@ -8,11 +10,15 @@ interface Props {
 
 const {
   title = "Raspreet Singh",
-  description = "Raspreet Singh - strategy, systems, and things worth building",
+  description = "Raspreet Singh's personal website",
 } = Astro.props;
 
 const pageTitle =
   title === "Raspreet Singh" ? title : `${title} | Raspreet Singh`;
+const blogRoute =
+  (await activeCollectionRoute("blog")) ??
+  CollectionRegistry.get("blog")?.defaultRoute ??
+  "/blog";
 ---
 
 <!doctype html>
@@ -46,7 +52,7 @@ const pageTitle =
         >
         <nav class="site-nav" aria-label="Primary navigation">
           <a class="nav-work" href="/#work">Work</a>
-          <a class="nav-blog" href="/blog">Blog</a>
+          <a class="nav-blog" href={blogRoute}>Blog</a>
           <a class="nav-cta" href="/#contact">Contact</a>
         </nav>
       </header>

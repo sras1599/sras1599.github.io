@@ -14,9 +14,7 @@ export function collectionLoader(collectionId: string): Loader {
       );
 
       async function sync() {
-        const files = (await readdir(directory)).filter((file) =>
-          file.endsWith(".md"),
-        );
+        const files = await listMarkdownFiles(directory);
 
         const entries = await Promise.all(
           files.map(async (file) => {
@@ -32,7 +30,7 @@ export function collectionLoader(collectionId: string): Loader {
             if (!document.hasFrontmatter)
               throw new Error(`Invalid generated Markdown: ${file}`);
 
-            const id = file.slice(0, -3);
+            const id = file.slice(0, -3).split(path.sep).join("/");
             const body = document.body;
             const digest = context.generateDigest(source);
 
@@ -64,8 +62,11 @@ export function collectionLoader(collectionId: string): Loader {
         let queue = Promise.resolve();
 
         context.watcher.on("all", (_event, file) => {
+          const relative = path.relative(directory, path.resolve(file));
           if (
-            path.dirname(path.resolve(file)) !== directory.replace(/\/$/, "") ||
+            relative === ".." ||
+            relative.startsWith(`..${path.sep}`) ||
+            path.isAbsolute(relative) ||
             !file.endsWith(".md")
           )
             return;
@@ -76,4 +77,21 @@ export function collectionLoader(collectionId: string): Loader {
       }
     },
   };
+}
+
+async function listMarkdownFiles(directory: string, relative = "") {
+  const files: string[] = [];
+
+  for (const entry of await readdir(path.join(directory, relative), {
+    withFileTypes: true,
+  })) {
+    const child = path.join(relative, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await listMarkdownFiles(directory, child)));
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(child);
+    }
+  }
+
+  return files;
 }
