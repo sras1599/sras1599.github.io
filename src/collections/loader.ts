@@ -2,15 +2,15 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Loader } from "astro/loaders";
-import { parseMarkdownDocument } from "./markdown-document.mjs";
+import { parseMarkdownDocument } from "../../scripts/markdown-document.mjs";
 
-/** Read only the importer's public output, including an explicitly empty set. */
-export function blogLoader(): Loader {
+/** Load one build-time-known collection from the importer's public snapshot. */
+export function collectionLoader(collectionId: string): Loader {
   return {
-    name: "vault-blog",
+    name: `vault-${collectionId}`,
     async load(context) {
       const directory = fileURLToPath(
-        new URL(".generated/blog/", context.config.root),
+        new URL(`.generated/${collectionId}/`, context.config.root),
       );
 
       async function sync() {

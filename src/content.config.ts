@@ -1,21 +1,15 @@
 import { defineCollection } from "astro:content";
-import { blogLoader } from "../scripts/blog-loader";
-import { z } from "astro/zod";
+import { collectionLoader } from "./collections/loader";
+import { productionCollectionRegistry } from "./collections/registry.mjs";
+
+const blogDefinition = productionCollectionRegistry.get("blog");
+if (!blogDefinition) {
+  throw new Error("Production collection registry is missing blog");
+}
 
 const blog = defineCollection({
-  loader: blogLoader(),
-  schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    publishDate: z.coerce.date(),
-    tags: z.array(z.string()).default([]),
-    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    displayInFeed: z.boolean().default(true),
-    series: z
-      .string()
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-      .optional(),
-  }),
+  loader: collectionLoader(blogDefinition.id),
+  schema: blogDefinition.contentSchema,
 });
 
 export const collections = { blog };

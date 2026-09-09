@@ -7,81 +7,12 @@ import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import remarkGfm from "remark-gfm";
 import { slug as heading } from "github-slugger";
-import { z } from "zod";
 import { parseMarkdownDocument } from "./markdown-document.mjs";
+import { collectionEntryUrl } from "../src/collections/definition.mjs";
+import { productionCollectionRegistry } from "../src/collections/registry.mjs";
 
 const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkStringify);
 const raster = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const nonemptyStringSchema = z
-  .string({ error: "must be a nonempty string" })
-  .refine((value) => value.trim(), "must be a nonempty string");
-const slugSchema = z
-  .string({
-    error: "must contain lowercase letters, digits, and single hyphens",
-  })
-  .regex(
-    slugPattern,
-    "must contain lowercase letters, digits, and single hyphens",
-  );
-const publishDateSchema = z
-  .string({ error: "must be a valid YYYY-MM-DD date" })
-  .refine(
-    (value) =>
-      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-      Number.isFinite(Date.parse(value)) &&
-      new Date(value).toISOString().slice(0, 10) === value,
-    "must be a valid YYYY-MM-DD date",
-  );
-const blogFolderDefaultsSchema = z.object({
-  publish: z.boolean({ error: "must be a boolean" }).optional(),
-  preview: z.boolean({ error: "must be a boolean" }).optional(),
-  displayInFeed: z.boolean({ error: "must be a boolean" }).optional(),
-  tags: z
-    .array(z.string({ error: "must be a string" }), {
-      error: "must be a list of strings",
-    })
-    .optional(),
-});
-const blogMarkerSchema = z.strictObject({
-  collection: z.literal("blog"),
-  route: z.string().optional(),
-  title: z.string().optional(),
-  metaDescription: z.unknown().optional(),
-  ...blogFolderDefaultsSchema.shape,
-});
-const blogEntrySchema = z
-  .object({
-    publish: z.boolean({ error: "must be a boolean" }),
-    preview: z.boolean({ error: "must be a boolean" }),
-    title: nonemptyStringSchema,
-    description: nonemptyStringSchema,
-    slug: slugSchema,
-    publishDate: publishDateSchema,
-    tags: z.array(z.string({ error: "must be a string" }), {
-      error: "must be a list of strings",
-    }),
-    displayInFeed: z.boolean({ error: "must be a boolean" }),
-    series: slugSchema.optional(),
-  })
-  .loose();
-const collectionRegistry = new Map([
-  [
-    "blog",
-    {
-      id: "blog",
-      metadataDefaults: {
-        publish: false,
-        preview: false,
-        displayInFeed: true,
-        tags: [],
-      },
-      folderDefaultsSchema: blogFolderDefaultsSchema,
-      markerSchema: blogMarkerSchema,
-      entrySchema: blogEntrySchema,
-    },
-  ],
-]);
 const escapeHtml = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -96,6 +27,7 @@ export async function importVault({
   vaultPath,
   projectRoot = process.cwd(),
   preview = false,
+  registry = productionCollectionRegistry,
 }) {
   if (!vaultPath) {
     throw new Error(
@@ -106,42 +38,49 @@ export async function importVault({
   const root = path.resolve(vaultPath);
   let discovery;
   try {
-    discovery = await discoverVault(root);
+    discovery = await discoverVault(root, registry);
   } catch (error) {
     if (!error.code) throw error;
     throw new Error(`Cannot read VAULT_PATH (${root}): ${error.message}`);
   }
 
-  const notes = await readSelectedNotes(
-    root,
-    discovery.ownedMarkdown,
-    preview,
-  );
-  validateUniqueSlugs(notes);
+  const notes = await readSelectedNotes(root, discovery.ownedMarkdown, preview);
+  validateUniqueIdentities(notes);
   const context = {
     root,
     files: discovery.files,
     fileSet: new Set(discovery.files),
-    byFile: new Map(notes.map((note) => [note.file, note])),
+    publicTargetsByFile: new Map(
+      notes.map((note) => [
+        note.file,
+        { kind: "entry", identity: note.identity, definition: note.definition },
+      ]),
+    ),
     assets: new Map(),
   };
   const output = new Map();
 
   // Convert everything before updating the last successful import.
   for (const note of notes) {
-    output.set(`${note.data.slug}.md`, await renderNote(note, context));
+    output.set(
+      `${note.identity.collectionId}/${note.identity.slug}.md`,
+      await renderNote(note, context),
+    );
   }
 
   await syncGeneratedFiles(
     path.join(projectRoot, "public/_vault"),
     context.assets,
   );
-  await syncGeneratedFiles(path.join(projectRoot, ".generated/blog"), output);
+  await syncGeneratedFiles(path.join(projectRoot, ".generated"), output, {
+    directories: registry.keys(),
+  });
   return { entries: notes.length, assets: context.assets.size };
 }
 
 async function discoverVault(
   root,
+  registry,
   dir = "",
   inheritedOwner,
   result = { files: [], markers: [], ownedMarkdown: new Map() },
@@ -181,7 +120,7 @@ async function discoverVault(
         );
       }
 
-      const definition = collectionRegistry.get(collectionId);
+      const definition = registry.get(collectionId);
       owner = definition
         ? resolveCollectionBoundary(document.metadata, markerPath, definition)
         : { markerPath, collectionId, registered: false };
@@ -208,7 +147,7 @@ async function discoverVault(
     }
     const relative = path.posix.join(dir, entry.name);
     if (entry.isDirectory()) {
-      await discoverVault(root, relative, owner, result);
+      await discoverVault(root, registry, relative, owner, result);
     } else if (entry.isFile()) {
       result.files.push(relative);
       if (entry.name !== "_website.md" && relative.endsWith(".md") && owner) {
@@ -286,7 +225,12 @@ function readNote(text, file, owner, preview) {
   return {
     file,
     body: document.body,
-    data: publicMetadata(validatedMetadata),
+    definition: owner.definition,
+    identity: {
+      collectionId: owner.collectionId,
+      slug: validatedMetadata.slug,
+    },
+    data: owner.definition.projectEntry(validatedMetadata),
   };
 }
 
@@ -305,19 +249,6 @@ function parseSchema(schema, value, file, { unknownKeyLabel = "property" } = {})
     return `${file}: ${property} ${issue.message}`;
   });
   throw new Error(messages.join("; "));
-}
-
-// Only these fields may leave the vault; other frontmatter stays private.
-function publicMetadata(data) {
-  return {
-    title: data.title,
-    description: data.description,
-    slug: data.slug,
-    publishDate: data.publishDate,
-    tags: data.tags ?? [],
-    displayInFeed: data.displayInFeed ?? true,
-    ...(data.series === undefined ? {} : { series: data.series }),
-  };
 }
 
 async function readSelectedNotes(root, ownedMarkdown, preview) {
@@ -339,14 +270,23 @@ async function readSelectedNotes(root, ownedMarkdown, preview) {
   return notes;
 }
 
-function validateUniqueSlugs(notes) {
-  const slugs = new Set();
+function validateUniqueIdentities(notes) {
+  const sourcesByCollection = new Map();
 
   for (const note of notes) {
-    if (slugs.has(note.data.slug)) {
-      throw new Error(`${note.file}: duplicate slug ${note.data.slug}`);
+    let sourcesBySlug = sourcesByCollection.get(note.identity.collectionId);
+    if (!sourcesBySlug) {
+      sourcesBySlug = new Map();
+      sourcesByCollection.set(note.identity.collectionId, sourcesBySlug);
     }
-    slugs.add(note.data.slug);
+
+    const existingSource = sourcesBySlug.get(note.identity.slug);
+    if (existingSource) {
+      throw new Error(
+        `${note.file}: duplicate slug ${note.identity.slug} in collection ${note.identity.collectionId}; also declared by ${existingSource}`,
+      );
+    }
+    sourcesBySlug.set(note.identity.slug, note.file);
   }
 }
 
@@ -588,7 +528,7 @@ async function createImageNode(url, alt, from, context, dimensions) {
 }
 
 function createNoteLink(url, children, from, context, wiki = false) {
-  const { fileSet, byFile } = context;
+  const { fileSet, publicTargetsByFile } = context;
 
   if (/^[a-z][a-z0-9+.-]*:|^\/\//i.test(url)) {
     return { type: "link", url, children };
@@ -626,35 +566,76 @@ function createNoteLink(url, children, from, context, wiki = false) {
     );
   }
   // Unselected notes keep their link label without exposing a private destination.
-  const selected = byFile.get(file);
-  return selected
+  const targetIdentity = publicTargetsByFile.get(file);
+  return targetIdentity?.kind === "entry"
     ? {
       type: "link",
-      url: `/blog/${selected.data.slug}${fragment ? `#${wiki ? heading(fragment) : fragment}` : ""}`,
+      url: `${collectionEntryUrl(targetIdentity.definition, targetIdentity.identity.slug)}${fragment ? `#${wiki ? heading(fragment) : fragment}` : ""}`,
       children,
     }
     : children;
 }
 
 // Remove stale generated files and replace changed files via a temporary file.
-async function syncGeneratedFiles(directory, entries) {
+async function syncGeneratedFiles(
+  directory,
+  entries,
+  { directories = [] } = {},
+) {
   await fs.mkdir(directory, { recursive: true });
-  for (const file of await fs.readdir(directory)) {
-    if (!entries.has(file)) {
-      await fs.rm(path.join(directory, file), {
-        recursive: true,
-        force: true,
-      });
+  const expectedDirectories = new Set(directories);
+
+  for (const name of entries.keys()) {
+    let parent = path.posix.dirname(name);
+    while (parent !== ".") {
+      expectedDirectories.add(parent);
+      parent = path.posix.dirname(parent);
     }
+  }
+
+  await removeStaleGeneratedFiles(directory, "", entries, expectedDirectories);
+
+  for (const expectedDirectory of expectedDirectories) {
+    await fs.mkdir(path.join(directory, expectedDirectory), { recursive: true });
   }
 
   for (const [name, contents] of entries) {
     const destination = path.join(directory, name);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
     const current = await fs.readFile(destination).catch(() => null);
     if (!current?.equals(Buffer.from(contents))) {
       const temporary = `${destination}.tmp`;
       await fs.writeFile(temporary, contents);
       await fs.rename(temporary, destination);
+    }
+  }
+}
+
+async function removeStaleGeneratedFiles(
+  directory,
+  relativeDirectory,
+  entries,
+  expectedDirectories,
+) {
+  const absoluteDirectory = path.join(directory, relativeDirectory);
+
+  for (const entry of await fs.readdir(absoluteDirectory, {
+    withFileTypes: true,
+  })) {
+    const relative = path.posix.join(relativeDirectory, entry.name);
+
+    if (entry.isDirectory() && expectedDirectories.has(relative)) {
+      await removeStaleGeneratedFiles(
+        directory,
+        relative,
+        entries,
+        expectedDirectories,
+      );
+    } else if (entry.isDirectory() || !entries.has(relative)) {
+      await fs.rm(path.join(directory, relative), {
+        recursive: true,
+        force: true,
+      });
     }
   }
 }
