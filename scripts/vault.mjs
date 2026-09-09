@@ -7,12 +7,81 @@ import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import remarkGfm from "remark-gfm";
 import { slug as heading } from "github-slugger";
+import { z } from "zod";
 import { parseMarkdownDocument } from "./markdown-document.mjs";
 
 const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkStringify);
 const raster = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const collectionRegistry = new Map([["blog", { id: "blog" }]]);
+const nonemptyStringSchema = z
+  .string({ error: "must be a nonempty string" })
+  .refine((value) => value.trim(), "must be a nonempty string");
+const slugSchema = z
+  .string({
+    error: "must contain lowercase letters, digits, and single hyphens",
+  })
+  .regex(
+    slugPattern,
+    "must contain lowercase letters, digits, and single hyphens",
+  );
+const publishDateSchema = z
+  .string({ error: "must be a valid YYYY-MM-DD date" })
+  .refine(
+    (value) =>
+      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+      Number.isFinite(Date.parse(value)) &&
+      new Date(value).toISOString().slice(0, 10) === value,
+    "must be a valid YYYY-MM-DD date",
+  );
+const blogFolderDefaultsSchema = z.object({
+  publish: z.boolean({ error: "must be a boolean" }).optional(),
+  preview: z.boolean({ error: "must be a boolean" }).optional(),
+  displayInFeed: z.boolean({ error: "must be a boolean" }).optional(),
+  tags: z
+    .array(z.string({ error: "must be a string" }), {
+      error: "must be a list of strings",
+    })
+    .optional(),
+});
+const blogMarkerSchema = z.strictObject({
+  collection: z.literal("blog"),
+  route: z.string().optional(),
+  title: z.string().optional(),
+  metaDescription: z.unknown().optional(),
+  ...blogFolderDefaultsSchema.shape,
+});
+const blogEntrySchema = z
+  .object({
+    publish: z.boolean({ error: "must be a boolean" }),
+    preview: z.boolean({ error: "must be a boolean" }),
+    title: nonemptyStringSchema,
+    description: nonemptyStringSchema,
+    slug: slugSchema,
+    publishDate: publishDateSchema,
+    tags: z.array(z.string({ error: "must be a string" }), {
+      error: "must be a list of strings",
+    }),
+    displayInFeed: z.boolean({ error: "must be a boolean" }),
+    series: slugSchema.optional(),
+  })
+  .loose();
+const collectionRegistry = new Map([
+  [
+    "blog",
+    {
+      id: "blog",
+      metadataDefaults: {
+        publish: false,
+        preview: false,
+        displayInFeed: true,
+        tags: [],
+      },
+      folderDefaultsSchema: blogFolderDefaultsSchema,
+      markerSchema: blogMarkerSchema,
+      entrySchema: blogEntrySchema,
+    },
+  ],
+]);
 const escapeHtml = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -112,11 +181,10 @@ async function discoverVault(
         );
       }
 
-      owner = {
-        markerPath,
-        collectionId,
-        registered: collectionRegistry.has(collectionId),
-      };
+      const definition = collectionRegistry.get(collectionId);
+      owner = definition
+        ? resolveCollectionBoundary(document.metadata, markerPath, definition)
+        : { markerPath, collectionId, registered: false };
       if (!owner.registered) {
         console.warn(
           `Vault: unknown collection ${collectionId} at ${markerPath}; skipping its entries.`,
@@ -152,78 +220,91 @@ async function discoverVault(
   return result;
 }
 
-function readNote(text, file, preview) {
-  let document;
-  try {
-    document = parseMarkdownDocument(text, { file });
-  } catch (error) {
-    if (/^(?:publish|preview):\s*true\s*$/m.test(error.frontmatter)) {
-      throw error;
-    }
-    return null;
+function resolveCollectionBoundary(metadata, markerPath, definition) {
+  const markerMetadata = parseSchema(
+    definition.markerSchema,
+    metadata,
+    markerPath,
+    { unknownKeyLabel: "marker property" },
+  );
+  const declaredDefaults = parseSchema(
+    definition.folderDefaultsSchema,
+    markerMetadata,
+    markerPath,
+  );
+
+  return {
+    markerPath,
+    collectionId: definition.id,
+    registered: true,
+    definition,
+    // Collection normalization is lowest precedence; author-declared marker
+    // values replace it, including arrays such as tags.
+    effectiveFolderDefaults: {
+      ...definition.metadataDefaults,
+      ...declaredDefaults,
+    },
+  };
+}
+
+function readNote(text, file, owner, preview) {
+  // Every owned note is parsed before selection so invalid YAML and structural
+  // collection misuse cannot hide in unpublished content.
+  const document = parseMarkdownDocument(text, { file });
+  const rawMetadata =
+    document.hasFrontmatter &&
+      document.metadata &&
+      typeof document.metadata === "object" &&
+      !Array.isArray(document.metadata)
+      ? document.metadata
+      : {};
+
+  if (Object.hasOwn(rawMetadata, "collection")) {
+    throw new Error(
+      `${file}: collection is only allowed in _website.md; move this note to the intended collection boundary or edit its _website.md`,
+    );
   }
 
-  if (!document.hasFrontmatter) {
+  // Note values have final precedence over the collection and marker defaults.
+  // Object spread replaces arrays rather than combining them.
+  const effectiveMetadata = {
+    ...owner.effectiveFolderDefaults,
+    ...rawMetadata,
+  };
+  if (
+    effectiveMetadata.publish !== true &&
+    !(preview && effectiveMetadata.preview === true)
+  ) {
     return null;
   }
-
-  const data = document.metadata;
-  if (!data || (data.publish !== true && !(preview && data.preview === true))) {
-    return null;
-  }
-  validateMetadata(data, file);
+  const validatedMetadata = parseSchema(
+    owner.definition.entrySchema,
+    effectiveMetadata,
+    file,
+  );
 
   return {
     file,
     body: document.body,
-    data: publicMetadata(data),
+    data: publicMetadata(validatedMetadata),
   };
 }
 
-function validateMetadata(data, file) {
-  for (const key of ["title", "description", "slug", "publishDate"]) {
-    if (typeof data[key] !== "string" || !data[key].trim()) {
-      throw new Error(`${file}: ${key} must be a nonempty string`);
+function parseSchema(schema, value, file, { unknownKeyLabel = "property" } = {}) {
+  const result = schema.safeParse(value);
+  if (result.success) return result.data;
+
+  const messages = result.error.issues.flatMap((issue) => {
+    if (issue.code === "unrecognized_keys") {
+      return issue.keys.map(
+        (key) => `${file}: unknown ${unknownKeyLabel} ${key}`,
+      );
     }
-  }
 
-  if (!slugPattern.test(data.slug)) {
-    throw new Error(
-      `${file}: slug must contain lowercase letters, digits, and single hyphens`,
-    );
-  }
-
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(data.publishDate) ||
-    !Number.isFinite(Date.parse(data.publishDate)) ||
-    new Date(data.publishDate).toISOString().slice(0, 10) !== data.publishDate
-  ) {
-    throw new Error(`${file}: publishDate must be a valid YYYY-MM-DD date`);
-  }
-
-  if (
-    data.tags !== undefined &&
-    (!Array.isArray(data.tags) ||
-      data.tags.some((tag) => typeof tag !== "string"))
-  ) {
-    throw new Error(`${file}: tags must be a list of strings`);
-  }
-
-  if (
-    data.displayInFeed !== undefined &&
-    typeof data.displayInFeed !== "boolean"
-  ) {
-    throw new Error(`${file}: displayInFeed must be a boolean`);
-  }
-
-  if (
-    data.series !== undefined &&
-    (typeof data.series !== "string" || !slugPattern.test(data.series))
-  ) {
-    throw new Error(
-      `${file}: series must contain lowercase letters, digits, and single hyphens`,
-    );
-  }
+    const property = issue.path.join(".") || "frontmatter";
+    return `${file}: ${property} ${issue.message}`;
+  });
+  throw new Error(messages.join("; "));
 }
 
 // Only these fields may leave the vault; other frontmatter stays private.
@@ -247,6 +328,7 @@ async function readSelectedNotes(root, ownedMarkdown, preview) {
     const note = readNote(
       await fs.readFile(path.join(root, file), "utf8"),
       file,
+      owner,
       preview,
     );
     if (note) {

@@ -20,7 +20,8 @@
     "remark-stringify": "^11.0.0",
     "typescript": "^5.8.3",
     "unified": "^11.0.5",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.20.1"

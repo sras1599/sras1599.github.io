@@ -18,12 +18,8 @@ export function parseMarkdownDocument(text, { file }) {
       hasFrontmatter: true,
     };
   } catch (cause) {
-    const error = new Error(`${file}: invalid YAML: ${cause.message}`, {
+    throw new Error(`${file}: invalid YAML: ${cause.message}`, {
       cause,
     });
-    // The current importer uses the source only to preserve its existing
-    // malformed-but-unselected-note behavior. Parsing policy stays here.
-    error.frontmatter = match[1];
-    throw error;
   }
 }
