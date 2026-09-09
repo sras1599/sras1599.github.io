@@ -1,0 +1,45 @@
+---
+/**
+ * Generate and render one /people page for each imported person note. The rest
+ * parameter preserves slash-separated slugs, and the note body is the complete
+ * public profile content beneath its note-owned title.
+ */
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { peopleCollectionDefinition } from "../../collections/people/definition.mjs";
+
+interface Props {
+  person: CollectionEntry<"people">;
+}
+
+export async function getStaticPaths() {
+  const people = await getCollection("people");
+
+  return people.map((person) => ({
+    params: { slug: person.id },
+    props: { person },
+  }));
+}
+
+const { person } = Astro.props;
+const { Content } = await render(person);
+---
+
+<BaseLayout title={person.data.title}>
+  <main>
+    <article class="article">
+      <a class="back-link" href={peopleCollectionDefinition.route}>
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="m15 18-6-6 6-6"></path>
+        </svg>
+        <span>Back to people</span>
+      </a>
+      <header class="article-header">
+        <h2>{person.data.title}</h2>
+      </header>
+      <div class="article-body">
+        <Content />
+      </div>
+    </article>
+  </main>
+</BaseLayout>

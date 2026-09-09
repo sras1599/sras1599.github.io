@@ -16,18 +16,20 @@ Development commands accept `--port`, `--host`, `--open`, and `--mode`, such as 
 
 ## Selecting notes
 
-An exact, case-sensitive `_website.md` file opts its folder and unmarked
-descendants into a website collection. The production registry currently accepts
-only `collection: blog`; unknown collections warn once and are skipped. Ordinary
+An exact, case-sensitive `_website.md` (we call this the *marker*) file opts its folder and unmarked
+descendants into a website collection. Ordinary
 notes outside a registered boundary are ignored. Hidden files, hidden directories,
 and symlinks are excluded, and the marker itself is never imported as an entry.
 
-The blog marker may provide folder defaults for `publish`, `preview`,
-`displayInFeed`, and `tags`:
+The marker may provide folder defaults specific to the collection:
 
 ```yaml
 ---
-collection: blog
+collection: my-collection # required
+title: lorem ipsum # required
+metaDescription: SEO description # required
+# folder defaults. These are applied to all documents imported within this collection.
+# properties that the document defines takes precedence over these
 publish: true
 preview: false
 displayInFeed: true
@@ -108,10 +110,11 @@ literal; recognized executable plugin blocks are rejected.
 
 ## Generated files and errors
 
-`.generated/blog` holds generated entries, `.generated/_indexes` holds authored
-collection indexes, and `public/_vault` holds selected images. They are gitignored
-and disposable. Never edit them. Astro derives collection IDs from the generated
-slug filenames, then each collection's page module creates its article routes.
+`.generated/{collection}` hold generated entries,
+`.generated/_indexes` holds authored collection indexes, and `public/_vault` holds
+selected images. They are gitignored and disposable. Never edit them. Astro derives
+collection IDs from the generated slug filenames, then each collection's page
+module creates its public routes.
 
 The importer validates and prepares content before updating those directories.
 During development, invalid edits report an error in the terminal and retain the

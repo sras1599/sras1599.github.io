@@ -19,7 +19,6 @@ export function defineCollectionDefinition({
   metadataDefaults = { publish: false, preview: false },
   folderDefaultsSchema = z.object({}),
   entrySchema,
-  contentSchema,
   projectEntry,
 }) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
@@ -37,7 +36,6 @@ export function defineCollectionDefinition({
     metadataDefaults,
     folderDefaultsSchema,
     entrySchema,
-    contentSchema,
     projectEntry,
     markerSchema: z.strictObject({
       collection: z.literal(id),

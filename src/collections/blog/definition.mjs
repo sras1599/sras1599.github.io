@@ -5,11 +5,7 @@
  */
 import { defineCollectionDefinition } from "../definition.mjs";
 import { baseIndexSchema } from "../schema.mjs";
-import {
-  blogContentSchema,
-  blogEntrySchema,
-  blogFolderDefaultsSchema,
-} from "./schema.mjs";
+import { blogEntrySchema, blogFolderDefaultsSchema } from "./schema.mjs";
 
 export const blogCollectionDefinition = defineCollectionDefinition({
   id: "blog",
@@ -23,7 +19,6 @@ export const blogCollectionDefinition = defineCollectionDefinition({
   },
   folderDefaultsSchema: blogFolderDefaultsSchema,
   entrySchema: blogEntrySchema,
-  contentSchema: blogContentSchema,
   // Only these fields may leave the vault; other frontmatter stays private.
   projectEntry(data) {
     return {

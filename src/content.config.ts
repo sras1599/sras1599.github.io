@@ -9,6 +9,7 @@ import {
   collectionLoader,
 } from "./collections/loader";
 import { blogContentSchema } from "./collections/blog/schema.mjs";
+import { peopleContentSchema } from "./collections/people/schema.mjs";
 import { indexContentSchema } from "./collections/schema.mjs";
 
 const blog = defineCollection({
@@ -16,9 +17,14 @@ const blog = defineCollection({
   schema: blogContentSchema,
 });
 
+const people = defineCollection({
+  loader: collectionLoader("people"),
+  schema: peopleContentSchema,
+});
+
 const collectionIndexes = defineCollection({
   loader: collectionIndexLoader(),
   schema: indexContentSchema,
 });
 
-export const collections = { blog, collectionIndexes };
+export const collections = { blog, people, collectionIndexes };
