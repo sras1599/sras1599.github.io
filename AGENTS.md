@@ -16,7 +16,13 @@ Optimize for clarity and ease of change, not for hypothetical future needs.
 ## Design
 
 - Prefer direct code and existing platform features over new abstractions.
-- Add a dependency only when it provides clear value that would be unreasonable to implement locally.
+- Prefer established, library-owned solutions for standard problems such as schema
+  validation, parsing, and serialization, especially when the library is already
+  available in the project. Write a custom solution only when the library's cost
+  or constraints clearly outweigh its reliability and maintenance benefits.
+- Add a focused dependency when it provides a clearer, more reliable, or more
+  maintainable solution than implementing the same capability locally; consider
+  its security, runtime, and bundle-size costs before adding it.
 - Avoid interfaces, adapters, factories, registries, and configuration layers with only one real use case.
 - Keep logic close to its consumer until there is demonstrated reuse or the extraction clearly improves readability.
 - Prefer a small function or a few explicit statements over a generic subsystem.

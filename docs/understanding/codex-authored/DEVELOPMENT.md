@@ -16,10 +16,41 @@ Development commands accept `--port`, `--host`, `--open`, and `--mode`, such as 
 
 ## Selecting notes
 
-Any ordinary `.md` note anywhere in the vault can be published. Hidden files,
-hidden directories, and symlinks are excluded. Only the YAML boolean `true` selects
-a note: the string `"true"` does not. The entire selected note becomes the article,
-so keep planning text in separate notes.
+An exact, case-sensitive `_website.md` file opts its folder and unmarked
+descendants into a website collection. The production registry currently accepts
+only `collection: blog`; unknown collections warn once and are skipped. Ordinary
+notes outside a registered boundary are ignored. Hidden files, hidden directories,
+and symlinks are excluded, and the marker itself is never imported as an entry.
+
+The blog marker may provide folder defaults for `publish`, `preview`,
+`displayInFeed`, and `tags`:
+
+```yaml
+---
+collection: blog
+publish: true
+preview: false
+displayInFeed: true
+tags:
+  - writing
+---
+```
+
+Marker properties are strict. `route`, `title`, and `metaDescription` are also
+reserved for later collection-routing and index support, but do not affect entries
+yet; any other marker property is an error.
+
+Defaults apply recursively. An ordinary note's explicitly declared value replaces
+the marker value, and the marker value replaces the website's collection default;
+arrays such as `tags` replace rather than concatenate. `publish` and `preview`
+default to `false`, `displayInFeed` defaults to `true`, and `tags` defaults to an
+empty list. A note may opt out of an inherited default with `publish: false`.
+
+Only the YAML boolean `true` selects a note: the string `"true"` does not.
+Production imports effective `publish: true`; `npm run dev:writing` also imports
+effective `preview: true`. The entire selected note becomes the article, so keep
+planning text in separate notes. A `collection` property is invalid on an ordinary
+note; move the note beneath the intended marker or edit that `_website.md`.
 
 ```yaml
 ---
@@ -39,8 +70,8 @@ always exclude preview-only notes, even after a writing-preview session.
 
 Titles and descriptions must be nonempty strings; dates use valid `YYYY-MM-DD`
 calendar dates. Slugs must be unique lowercase letters/digits separated by single
-hyphens. Tags are optional strings. Other properties are discarded from generated
-frontmatter. The former `draft` property is not used.
+hyphens. Tags are an optional list of strings. Other properties are discarded from
+generated frontmatter. The former `draft` property is not used.
 
 The slug determines `/blog/an-example-article`, independent of the vault filename
 or folder. Changing a slug changes the URL; no automatic redirect is created.
