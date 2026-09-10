@@ -3,13 +3,13 @@
  * Generate and render one /blog entry for each imported blog item. The rest
  * parameter receives the entry ID unchanged, so slash-separated IDs such as
  * guides/astro/setup continue to produce nested public URLs.
+ * This entry template enables previews of links to other collection entries.
+ * Blog pages keep a fixed link to the blog index; series links open their
+ * introduction directly without carrying return-navigation state.
  */
-import {
-  getCollection,
-  render,
-  type CollectionEntry,
-} from "astro:content";
+import { getCollection, render, type CollectionEntry } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import NotePreview from "../../components/NotePreview.astro";
 import { blogCollectionDefinition } from "../../collections/blog/definition.mjs";
 import { collectionEntryUrl } from "../../collections/definition.mjs";
 import { getSeriesDefinition } from "../../data/series";
@@ -17,7 +17,6 @@ import { getReadingTime } from "../../utils/readingTime";
 
 interface Props {
   post: CollectionEntry<"blog">;
-  posts: CollectionEntry<"blog">[];
 }
 
 export async function getStaticPaths() {
@@ -25,22 +24,12 @@ export async function getStaticPaths() {
 
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: { post, posts },
+    props: { post },
   }));
 }
 
-const { post, posts } = Astro.props;
+const { post } = Astro.props;
 const route = blogCollectionDefinition.route;
-const definitions = new Map(
-  posts.flatMap((candidate) =>
-    candidate.data.series
-      ? [[candidate.id, getSeriesDefinition(candidate.data.series, candidate.id)]]
-      : [],
-  ),
-);
-const returnSlugs = posts
-  .filter((candidate) => definitions.get(candidate.id)?.aboutSlug === post.id)
-  .map((candidate) => candidate.id);
 const { Content } = await render(post);
 const readingTime = getReadingTime(post.body ?? "");
 const series = post.data.series
@@ -51,18 +40,11 @@ const series = post.data.series
 <BaseLayout title={post.data.title} description={post.data.description}>
   <main>
     <article class="article">
-      <a
-        class="back-link"
-        href={route}
-        data-entry-back-link={returnSlugs.length
-          ? returnSlugs.join(" ")
-          : undefined}
-        data-collection-route={route}
-      >
+      <a class="back-link" href={route}>
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="m15 18-6-6 6-6"></path>
         </svg>
-        <span data-entry-back-label>Back to blog</span>
+        <span>Back to blog</span>
       </a>
       <header class="article-header">
         <div class="article-meta-row">
@@ -83,7 +65,7 @@ const series = post.data.series
             series && (
               <a
                 class="series-about-link"
-                href={`${collectionEntryUrl(route, series.aboutSlug)}?from=${encodeURIComponent(post.id)}`}
+                href={collectionEntryUrl(route, series.aboutSlug)}
               >
                 {series.aboutLabel}
               </a>
@@ -101,26 +83,5 @@ const series = post.data.series
       </div>
     </article>
   </main>
+  <NotePreview />
 </BaseLayout>
-
-<script>
-  const backLink = document.querySelector<HTMLAnchorElement>(
-    "[data-entry-back-link]",
-  );
-  const backLabel = document.querySelector<HTMLElement>(
-    "[data-entry-back-label]",
-  );
-  const allowedSlugs = new Set(backLink?.dataset.entryBackLink?.split(" "));
-  const from = new URLSearchParams(window.location.search).get("from");
-  const collectionRoute = backLink?.dataset.collectionRoute;
-  if (
-    backLink &&
-    backLabel &&
-    collectionRoute &&
-    from &&
-    allowedSlugs.has(from)
-  ) {
-    backLink.href = `${collectionRoute}/${from}`;
-    backLabel.textContent = "Back to entry";
-  }
-</script>

@@ -1,7 +1,7 @@
 export const seriesDefinitions = {
   "perfectly-imperfect": {
     title: "Perfectly Imperfect",
-    aboutSlug: "perfectly-imperfect",
+    aboutSlug: "pi",
     aboutLabel: "What is Perfectly Imperfect?",
   },
 } as const;

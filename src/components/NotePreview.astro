@@ -1,0 +1,281 @@
+---
+/**
+ * Preview collection entries from their existing page HTML. Entry-page templates
+ * include this component; the collection registry supplies eligible target routes
+ * without a separate collection list. Hover or keyboard focus fetches the article
+ * header and body into a scrollable panel, caching successful responses for this
+ * page's lifetime. Links marked data-no-preview, indexes, external links,
+ * same-page anchors, and touch taps navigate normally. Target pages must use
+ * the shared article markup. The opt-out depends on attribute presence, not value.
+ * Eligible links receive an inline blue highlight and ink border, using the same
+ * eligibility rule as the preview behavior so other links keep their usual style.
+ */
+import { CollectionRegistry } from "../collections/registry.mjs";
+---
+
+<aside
+  id="note-preview"
+  class="note-preview"
+  aria-label="Note preview"
+  tabindex="0"
+  data-routes={JSON.stringify(
+    Array.from(CollectionRegistry.values(), (collection) => collection.route),
+  )}
+  hidden
+>
+</aside>
+
+<script>
+  const panel = document.querySelector<HTMLElement>("#note-preview")!;
+  const routes: string[] = JSON.parse(panel.dataset.routes!);
+  const cache = new Map<string, HTMLElement[]>();
+  let activeLink: HTMLAnchorElement | null = null;
+  let openTimer: ReturnType<typeof setTimeout> | undefined;
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Find eligible entry links, respecting data-no-preview and excluding recursive previews. */
+  function noteLink(target: EventTarget | null) {
+    if (!(target instanceof Element) || panel.contains(target)) return null;
+    const link = target.closest<HTMLAnchorElement>("a[href]");
+    if (!link || link.hasAttribute("download")) return null;
+    if (link.hasAttribute("data-no-preview")) return null;
+
+    const url = new URL(link.href);
+    if (url.origin !== location.origin) return null;
+    const pathname = url.pathname.replace(/\/$/, "");
+    if (pathname === location.pathname.replace(/\/$/, "")) return null;
+    if (routes.includes(pathname)) return null;
+    if (!routes.some((route) => pathname.startsWith(`${route}/`))) return null;
+    return link;
+  }
+
+  // Mark only links that can open this panel. Links inside fetched previews are
+  // not marked because the component deliberately excludes recursive previews.
+  document.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((link) => {
+    if (noteLink(link)) link.setAttribute("data-preview-link", "");
+  });
+
+  /** Keep the panel beside its trigger and inside the available viewport. */
+  function positionPanel() {
+    if (!activeLink || panel.hidden) return;
+    const rect = activeLink.getBoundingClientRect();
+    const margin = 12;
+    const gap = 8;
+    const below = window.innerHeight - rect.bottom - margin - gap;
+    const above = rect.top - margin - gap;
+    const placeBelow =
+      below >= Math.min(360, window.innerHeight * 0.6) || below >= above;
+    panel.style.maxHeight = `${Math.max(0, placeBelow ? below : above)}px`;
+    panel.style.left = `${Math.max(margin, Math.min(rect.left, window.innerWidth - panel.offsetWidth - margin))}px`;
+    panel.style.top = `${placeBelow ? rect.bottom + gap : Math.max(margin, rect.top - panel.offsetHeight - gap)}px`;
+  }
+
+  /** Cancel pending work and hide the panel; stale fetches cannot reopen it. */
+  function dismiss() {
+    clearTimeout(openTimer);
+    clearTimeout(closeTimer);
+    panel.hidden = true;
+    activeLink = null;
+  }
+
+  /** Allow the pointer to cross the gap, and keep focused previews readable. */
+  function scheduleClose() {
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      if (panel.matches(":hover") || panel.contains(document.activeElement))
+        return;
+      if (
+        activeLink?.matches(":hover") ||
+        activeLink === document.activeElement
+      )
+        return;
+      dismiss();
+    }, 180);
+  }
+
+  /**
+   * Fetch an entry on demand and copy its rendered content. Resolve relative URLs
+   * against the fetched page and remove IDs to avoid collisions with this page.
+   * Failed requests show a navigation fallback and remain retryable.
+   */
+  async function showPreview(link: HTMLAnchorElement) {
+    const url = new URL(link.href);
+    url.hash = "";
+    url.search = "";
+    panel.textContent = "Loading note…";
+    panel.hidden = false;
+    positionPanel();
+
+    try {
+      let content = cache.get(url.href);
+      if (!content) {
+        const response = await fetch(url.href);
+        if (!response.ok)
+          throw new Error(
+            `Preview request failed for ${url.href}: ${response.status}`,
+          );
+        const page = new DOMParser().parseFromString(
+          await response.text(),
+          "text/html",
+        );
+        const header = page.querySelector<HTMLElement>(
+          ".article > .article-header",
+        );
+        const body = page.querySelector<HTMLElement>(
+          ".article > .article-body",
+        );
+        if (!header || !body)
+          throw new Error(`No note content found at ${url.href}`);
+        content = [header, body];
+
+        for (const section of content) {
+          section
+            .querySelectorAll("script, iframe, object, embed")
+            .forEach((node) => node.remove());
+          for (const element of [section, ...section.querySelectorAll("*")]) {
+            element.removeAttribute("id");
+            for (const attribute of ["href", "src", "poster"]) {
+              const value = element.getAttribute(attribute);
+              if (value)
+                element.setAttribute(
+                  attribute,
+                  new URL(value, response.url).href,
+                );
+            }
+          }
+        }
+        cache.set(url.href, content);
+      }
+
+      if (activeLink !== link) return;
+      panel.replaceChildren(...content.map((node) => node.cloneNode(true)));
+      panel.scrollTop = 0;
+      positionPanel();
+    } catch {
+      if (activeLink !== link) return;
+      const fallback = document.createElement("a");
+      fallback.href = link.href;
+      fallback.textContent = "Preview unavailable. Open note →";
+      panel.replaceChildren(fallback);
+      positionPanel();
+    }
+  }
+
+  /** Briefly delay opening so passing across a list does not fetch every note. */
+  function scheduleOpen(link: HTMLAnchorElement) {
+    clearTimeout(closeTimer);
+    if (activeLink === link) return;
+    dismiss();
+    activeLink = link;
+    openTimer = setTimeout(() => void showPreview(link), 250);
+  }
+
+  document.addEventListener("pointerover", (event) => {
+    if (event.pointerType === "touch") return;
+    const link = noteLink(event.target);
+    if (link) scheduleOpen(link);
+  });
+  document.addEventListener("pointerout", (event) => {
+    if (noteLink(event.target)) scheduleClose();
+  });
+  document.addEventListener("focusin", (event) => {
+    const link = noteLink(event.target);
+    if (link) scheduleOpen(link);
+    else if (!panel.contains(event.target as Node)) dismiss();
+  });
+  document.addEventListener("focusout", scheduleClose);
+  panel.addEventListener("pointerenter", () => clearTimeout(closeTimer));
+  panel.addEventListener("pointerleave", scheduleClose);
+  document.addEventListener("keydown", (event) => {
+    // Arrow Down moves keyboard readers into the scrollable preview; Escape
+    // returns them to the originating link without navigating away.
+    if (
+      event.key === "ArrowDown" &&
+      !panel.hidden &&
+      document.activeElement === activeLink
+    ) {
+      event.preventDefault();
+      panel.focus({ preventScroll: true });
+      return;
+    }
+    if (event.key !== "Escape") return;
+    if (panel.contains(document.activeElement)) activeLink?.focus();
+    dismiss();
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!panel.contains(event.target as Node)) dismiss();
+  });
+  // Scrolling inside the preview preserves it; scrolling the page dismisses it.
+  document.addEventListener(
+    "scroll",
+    (event) => {
+      if (event.target instanceof Node && panel.contains(event.target)) return;
+      dismiss();
+    },
+    true,
+  );
+  window.addEventListener("resize", dismiss);
+</script>
+
+<style is:global>
+  /* Small inline labels echo the site's bordered cards without interrupting
+     wrapping or shifting the surrounding text when hovered or focused. */
+  a[data-preview-link]:not([data-no-preview]) {
+    color: var(--ink);
+    background: var(--purple-soft);
+    border: 1px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    padding: 0.02em 0.2em;
+    border-radius: 2px;
+    text-decoration: none;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  a[data-preview-link]:not([data-no-preview]):hover,
+  a[data-preview-link]:not([data-no-preview]):focus-visible {
+    background: var(--purple);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+
+  a[data-preview-link]:not([data-no-preview]):focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .note-preview {
+    position: fixed;
+    z-index: 100;
+    width: min(32rem, calc(100vw - 24px));
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem;
+    border: 2px solid var(--ink);
+    background: var(--paper-high);
+    box-shadow: 3px 3px 0 var(--blue-soft);
+    overflow-wrap: anywhere;
+  }
+
+  .note-preview:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 3px;
+  }
+
+  .note-preview .article-header {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .note-preview .article-header h2 {
+    font-size: 1.6rem;
+  }
+
+  .note-preview .article-header p,
+  .note-preview .article-body {
+    font-size: 0.95rem;
+  }
+
+  .note-preview pre {
+    overflow-x: auto;
+  }
+</style>
