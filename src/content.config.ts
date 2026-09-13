@@ -1,7 +1,8 @@
 /**
- * Register Astro's build-time content collections. Ordinary vault entries load
- * by collection ID, while authored collection indexes load from a dedicated
- * generated directory so they never enter entry queries or entry schemas.
+ * Register Astro's build-time blog, notes, and people content collections.
+ * Ordinary vault entries load by collection ID, while authored collection
+ * indexes load from a dedicated generated directory so they never enter entry
+ * queries or entry schemas.
  */
 import { defineCollection } from "astro:content";
 import {
@@ -9,6 +10,7 @@ import {
   collectionLoader,
 } from "./collections/loader";
 import { blogContentSchema } from "./collections/blog/schema.mjs";
+import { notesContentSchema } from "./collections/notes/schema.mjs";
 import { peopleContentSchema } from "./collections/people/schema.mjs";
 import { indexContentSchema } from "./collections/schema.mjs";
 
@@ -22,9 +24,14 @@ const people = defineCollection({
   schema: peopleContentSchema,
 });
 
+const notes = defineCollection({
+  loader: collectionLoader("notes"),
+  schema: notesContentSchema,
+});
+
 const collectionIndexes = defineCollection({
   loader: collectionIndexLoader(),
   schema: indexContentSchema,
 });
 
-export const collections = { blog, people, collectionIndexes };
+export const collections = { blog, notes, people, collectionIndexes };

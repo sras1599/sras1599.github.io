@@ -4,11 +4,7 @@
  * index document authored by the vault's blog marker. This page owns the blog's
  * publication ordering, feed filtering, card markup, and empty state.
  */
-import {
-  getCollection,
-  render,
-  type CollectionEntry,
-} from "astro:content";
+import { getCollection, render, type CollectionEntry } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { blogCollectionDefinition } from "../../collections/blog/definition.mjs";
 import { collectionEntryUrl } from "../../collections/definition.mjs";
@@ -41,7 +37,7 @@ function compareBlogEntries(
 <BaseLayout title={index.data.title} description={index.data.metaDescription}>
   <main>
     <section class="blog-header" aria-labelledby="blog-title">
-      <p class="eyebrow" id="blog-title">{index.data.title}</p>
+      <p class="eyebrow page-title" id="blog-title">{index.data.title}</p>
       <div class="blog-index-body">
         <Content />
       </div>
@@ -73,7 +69,9 @@ function compareBlogEntries(
               <p>{post.data.description}</p>
             </div>
             <ul aria-label="Tags">
-              {post.data.tags.map((tag: string) => <li>{tag}</li>)}
+              {post.data.tags.map((tag: string) => (
+                <li>{tag}</li>
+              ))}
             </ul>
           </article>
         ))

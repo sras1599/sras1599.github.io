@@ -1,0 +1,64 @@
+---
+/**
+ * Generate one /notes page for every imported note. Slash-separated IDs retain
+ * nested URLs, optional summary metadata renders only when present, and the
+ * shared article markup keeps cross-collection browser previews compatible.
+ */
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import NotePreview from "../../components/NotePreview.astro";
+import { notesCollectionDefinition } from "../../collections/notes/definition.mjs";
+
+interface Props {
+  note: CollectionEntry<"notes">;
+}
+
+export async function getStaticPaths() {
+  const notes = await getCollection("notes");
+
+  return notes.map((note) => ({
+    params: { slug: note.id },
+    props: { note },
+  }));
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+---
+
+<BaseLayout title={note.data.title} description={note.data.description}>
+  <main>
+    <article class="article">
+      <a class="back-link" href={notesCollectionDefinition.route}>
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="m15 18-6-6 6-6"></path>
+        </svg>
+        <span>Back to notes</span>
+      </a>
+      <header class="article-header">
+        <time datetime={note.data.publishDate.toISOString()}>
+          {
+            note.data.publishDate.toLocaleDateString("en", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          }
+        </time>
+        <h2>{note.data.title}</h2>
+        {note.data.description && <p>{note.data.description}</p>}
+        {
+          note.data.tags.length > 0 && (
+            <ul aria-label="Tags">
+              {note.data.tags.map((tag: string) => <li>{tag}</li>)}
+            </ul>
+          )
+        }
+      </header>
+      <div class="article-body">
+        <Content />
+      </div>
+    </article>
+  </main>
+  <NotePreview />
+</BaseLayout>

@@ -3,19 +3,10 @@ import {
   baseContentSchema,
   baseEntrySchema,
   nonemptyStringSchema,
+  publishDateSchema,
   selectionSchema,
   slugSegmentSchema,
 } from "../schema.mjs";
-
-const publishDateSchema = z
-  .string({ error: "must be a valid YYYY-MM-DD date" })
-  .refine(
-    (value) =>
-      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-      Number.isFinite(Date.parse(value)) &&
-      new Date(value).toISOString().slice(0, 10) === value,
-    "must be a valid YYYY-MM-DD date",
-  );
 
 export const blogFolderDefaultsSchema = selectionSchema.partial().extend({
   displayInFeed: z.boolean({ error: "must be a boolean" }).optional(),

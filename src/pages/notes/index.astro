@@ -1,0 +1,82 @@
+---
+/**
+ * Render /notes from the authored notes index and imported note entries. Notes
+ * are ordered newest first with stable ID tie-breaking, and their optional
+ * descriptions and tags are omitted from cards when authors do not supply them.
+ */
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { collectionEntryUrl } from "../../collections/definition.mjs";
+import { notesCollectionDefinition } from "../../collections/notes/definition.mjs";
+
+const indexes = await getCollection("collectionIndexes");
+const index = indexes.find(
+  (candidate) => candidate.data.collection === notesCollectionDefinition.id,
+);
+if (!index) {
+  throw new Error("Notes collection is missing its generated index document");
+}
+
+const notes = await getCollection("notes");
+notes.sort(compareNotes);
+const { Content } = await render(index);
+
+/** Order newer notes first and use stable entry IDs to break date ties. */
+function compareNotes(
+  left: CollectionEntry<"notes">,
+  right: CollectionEntry<"notes">,
+) {
+  const dateOrder =
+    right.data.publishDate.valueOf() - left.data.publishDate.valueOf();
+
+  return dateOrder || left.id.localeCompare(right.id, "en");
+}
+---
+
+<BaseLayout title={index.data.title} description={index.data.metaDescription}>
+  <main>
+    <section class="notes-header" aria-labelledby="notes-title">
+      <p class="eyebrow page-title" id="notes-title">{index.data.title}</p>
+      <div class="notes-index-body">
+        <Content />
+      </div>
+    </section>
+
+    <section class="post-list" aria-label="Notes">
+      {notes.length === 0 && <p>No notes yet.</p>}
+      {
+        notes.map((note) => (
+          <article class="post-card">
+            <div>
+              <time datetime={note.data.publishDate.toISOString()}>
+                {note.data.publishDate.toLocaleDateString("en", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+              <h2>
+                <a
+                  href={collectionEntryUrl(
+                    notesCollectionDefinition.route,
+                    note.id,
+                  )}
+                >
+                  {note.data.title}
+                </a>
+              </h2>
+              {note.data.description && <p>{note.data.description}</p>}
+            </div>
+            {note.data.tags.length > 0 && (
+              <ul aria-label="Tags">
+                {note.data.tags.map((tag: string) => (
+                  <li>{tag}</li>
+                ))}
+              </ul>
+            )}
+          </article>
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

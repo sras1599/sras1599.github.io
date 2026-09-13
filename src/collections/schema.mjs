@@ -1,7 +1,7 @@
 /**
  * Shared Zod schemas for collection definitions. These schemas validate the
- * common selection and identity fields used by entries plus the authored title
- * and description required by collection indexes.
+ * common selection and identity fields used by entries, the canonical authored
+ * date format, and the title and description required by collection indexes.
  */
 import { z } from "zod";
 import { collectionSlugPattern } from "./definition.mjs";
@@ -35,6 +35,16 @@ export const selectionSchema = z.object({
   publish: z.boolean({ error: "must be a boolean" }),
   preview: z.boolean({ error: "must be a boolean" }),
 });
+
+export const publishDateSchema = z
+  .string({ error: "must be a valid YYYY-MM-DD date" })
+  .refine(
+    (value) =>
+      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+      Number.isFinite(Date.parse(value)) &&
+      new Date(value).toISOString().slice(0, 10) === value,
+    "must be a valid YYYY-MM-DD date",
+  );
 
 export const baseEntrySchema = selectionSchema.extend({
   title: nonemptyStringSchema,

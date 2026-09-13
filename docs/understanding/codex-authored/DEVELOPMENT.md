@@ -38,6 +38,10 @@ tags:
 ---
 ```
 
+The `notes` marker accepts only `collection`, `title`, `metaDescription`,
+`publish`, and `preview`. Its `publish` and `preview` values are recursive folder
+defaults; note-level values override them.
+
 Marker properties are strict. `title` and `metaDescription`, together with the
 marker body, author the collection index. Public routes are defined in the website
 collection registry; declaring `route` or any other unsupported marker property is
@@ -76,6 +80,24 @@ calendar dates. Slugs use lowercase letters, digits, and single hyphens in
 slash-separated segments; each slug must be unique within its collection. Tags are
 an optional list of strings. Other properties are discarded from generated
 frontmatter. The former `draft` property is not used.
+
+Notes use the same selection and identity rules. A selected note requires
+`title`, `publishDate`, and `slug`; `description` and `tags` are optional:
+
+```yaml
+---
+publish: true
+title: "A short note"
+publishDate: 2026-09-12
+slug: a-short-note
+tags:
+  - learning
+---
+```
+
+Its slug determines `/notes/a-short-note`. The marker's `title`,
+`metaDescription`, and body render the `/notes` index, where notes appear newest
+first.
 
 The slug determines `/blog/an-example-article`, independent of the vault filename
 or folder. Changing a slug changes the URL; no automatic redirect is created.

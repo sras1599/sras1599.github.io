@@ -201,6 +201,9 @@ h3 {
 .article-header p {
   max-width: 46rem;
   color: var(--muted);
+}
+
+.page-title {
   font-size: clamp(1.05rem, 2vw, 1.25rem);
 }
 
@@ -386,6 +389,7 @@ h3 {
 
 .contact-section,
 .blog-header,
+.notes-header,
 .article {
   background: var(--paper-high);
   border: 3px solid var(--ink);
@@ -417,18 +421,21 @@ h3 {
   font-weight: 700;
 }
 
-.blog-header {
+.blog-header,
+.notes-header {
   margin: 3rem 0;
   box-shadow: 8px 8px 0 var(--yellow);
 }
 
-.blog-index-body img {
+.blog-index-body img,
+.notes-index-body img {
   display: block;
   max-width: 100%;
   height: auto;
 }
 
-.blog-index-body a {
+.blog-index-body a,
+.notes-index-body a {
   color: #004b73;
   font-weight: 700;
   text-decoration: underline;
