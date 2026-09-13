@@ -2,10 +2,13 @@
 /**
  * Provide the shared HTML document shell, metadata, fonts, and primary
  * navigation for website pages. Callers supply optional page title and
- * description text; the website-owned blog definition supplies its fixed link.
+ * description text; website-owned collection definitions supply fixed links.
+ * Desktop presents the brand and navigation in one row, while mobile centers
+ * the brand above a compact row containing all four navigation destinations.
  */
 import "../styles/global.css";
 import { blogCollectionDefinition } from "../collections/blog/definition.mjs";
+import { notesCollectionDefinition } from "../collections/notes/definition.mjs";
 
 interface Props {
   title?: string;
@@ -20,6 +23,7 @@ const {
 const pageTitle =
   title === "Raspreet Singh" ? title : `${title} | Raspreet Singh`;
 const blogRoute = blogCollectionDefinition.route;
+const notesRoute = notesCollectionDefinition.route;
 ---
 
 <!doctype html>
@@ -55,6 +59,7 @@ const blogRoute = blogCollectionDefinition.route;
         <nav class="site-nav" aria-label="Primary navigation">
           <a class="nav-work" href="/#work">Work</a>
           <a class="nav-blog" href={blogRoute}>Blog</a>
+          <a class="nav-notes" href={notesRoute}>Notes</a>
           <a class="nav-cta" href="/#contact">Contact</a>
         </nav>
       </header>
