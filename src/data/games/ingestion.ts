@@ -56,6 +56,16 @@ const connectionsColors = {
   "🟪": "purple",
 } as const;
 
+/**
+ * Remove zero-width spaces that native share sheets can insert into visible
+ * labels. For example, Tagline may copy `TAGLINE\u200B:` even though it renders
+ * as `TAGLINE:`. No meaningful result field relies on this formatting code
+ * point, so removing it before format detection and parsing is lossless.
+ */
+function normalizeSharedText(input: string): string {
+  return input.replaceAll("\u200B", "");
+}
+
 /** Format the laptop's current local calendar day without applying UTC shifts. */
 function localCalendarDate(now = new Date()): string {
   return format(now, "yyyy-MM-dd");
@@ -127,7 +137,7 @@ export function validateGameCandidate(
  * deliberately narrow so arbitrary text is not misclassified as a game share.
  */
 export function detectSharedGame(input: string): GameId {
-  const text = input.trim();
+  const text = normalizeSharedText(input).trim();
   if (!text) throw new Error("Paste a game result before parsing.");
 
   const matches: GameId[] = [];
@@ -299,16 +309,17 @@ export function parseSharedResult(
   input: string,
   options: { miniDate?: string } = {},
 ): NormalizedGameCandidate {
-  const game = detectSharedGame(input);
+  const text = normalizeSharedText(input);
+  const game = detectSharedGame(text);
 
   switch (game) {
     case "connections":
-      return parseConnections(input);
+      return parseConnections(text);
     case "mini":
-      return parseMini(input, options.miniDate);
+      return parseMini(text, options.miniDate);
     case "bracket-city":
-      return parseBracketCity(input);
+      return parseBracketCity(text);
     case "tagline":
-      return parseTagline(input);
+      return parseTagline(text);
   }
 }
