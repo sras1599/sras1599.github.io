@@ -79,6 +79,11 @@ to ownership, entry points, or the rules described here.
   [BaseLayout.astro](src/layouts/BaseLayout.astro) owns the document shell, SEO
   metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
+- [GameShowcaseFrame.astro](src/components/GameShowcaseFrame.astro) owns the game
+  showcase's shared typography, controls, responsive card grid, and card chrome.
+  [GameShowcaseMonth.astro](src/components/GameShowcaseMonth.astro) is the
+  presentation-only calendar renderer for normalized game results; it performs
+  no data loading and owns no navigation or URL state.
 - [blog/index.astro](src/pages/blog/index.astro) requires the generated blog index,
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.
   Hiding an entry from the feed does not unpublish its individual page.

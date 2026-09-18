@@ -1,1 +1,397 @@
-[]
+[
+  {
+    "date": "2026-08-01",
+    "mistakes": 4,
+    "solveOrder": []
+  },
+  {
+    "date": "2026-08-02",
+    "mistakes": 0,
+    "solveOrder": [
+      "blue",
+      "yellow",
+      "green",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-03",
+    "mistakes": 2,
+    "solveOrder": [
+      "yellow",
+      "blue",
+      "green",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-04",
+    "mistakes": 2,
+    "solveOrder": [
+      "purple",
+      "yellow",
+      "green",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-05",
+    "mistakes": 4,
+    "solveOrder": [
+      "yellow",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-08-06",
+    "mistakes": 0,
+    "solveOrder": [
+      "green",
+      "blue",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-07",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "blue",
+      "purple",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-08-08",
+    "mistakes": 4,
+    "solveOrder": []
+  },
+  {
+    "date": "2026-08-09",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "blue",
+      "purple",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-08-10",
+    "mistakes": 0,
+    "solveOrder": [
+      "blue",
+      "green",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-12",
+    "mistakes": 1,
+    "solveOrder": [
+      "yellow",
+      "purple",
+      "green",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-13",
+    "mistakes": 4,
+    "solveOrder": [
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-14",
+    "mistakes": 0,
+    "solveOrder": [
+      "blue",
+      "green",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-15",
+    "mistakes": 0,
+    "solveOrder": [
+      "blue",
+      "green",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-16",
+    "mistakes": 0,
+    "solveOrder": [
+      "green",
+      "purple",
+      "yellow",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-17",
+    "mistakes": 0,
+    "solveOrder": [
+      "green",
+      "yellow",
+      "purple",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-18",
+    "mistakes": 4,
+    "solveOrder": [
+      "yellow"
+    ]
+  },
+  {
+    "date": "2026-08-19",
+    "mistakes": 1,
+    "solveOrder": [
+      "green",
+      "blue",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-20",
+    "mistakes": 0,
+    "solveOrder": [
+      "blue",
+      "green",
+      "purple",
+      "yellow"
+    ]
+  },
+  {
+    "date": "2026-08-21",
+    "mistakes": 1,
+    "solveOrder": [
+      "purple",
+      "yellow",
+      "blue",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-08-24",
+    "mistakes": 4,
+    "solveOrder": [
+      "purple",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-08-25",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "green",
+      "purple",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-26",
+    "mistakes": 1,
+    "solveOrder": [
+      "green",
+      "yellow",
+      "blue",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-27",
+    "mistakes": 0,
+    "solveOrder": [
+      "green",
+      "purple",
+      "yellow",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-28",
+    "mistakes": 2,
+    "solveOrder": [
+      "yellow",
+      "green",
+      "blue",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-08-29",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "blue",
+      "purple",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-08-30",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "purple",
+      "green",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-08-31",
+    "mistakes": 0,
+    "solveOrder": [
+      "blue",
+      "green",
+      "purple",
+      "yellow"
+    ]
+  },
+  {
+    "date": "2026-09-01",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "purple",
+      "blue",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-09-02",
+    "mistakes": 4,
+    "solveOrder": [
+      "yellow"
+    ]
+  },
+  {
+    "date": "2026-09-03",
+    "mistakes": 0,
+    "solveOrder": [
+      "purple",
+      "yellow",
+      "green",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-09-04",
+    "mistakes": 1,
+    "solveOrder": [
+      "green",
+      "blue",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-09-05",
+    "mistakes": 4,
+    "solveOrder": []
+  },
+  {
+    "date": "2026-09-06",
+    "mistakes": 2,
+    "solveOrder": [
+      "yellow",
+      "green",
+      "purple",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-09-07",
+    "mistakes": 4,
+    "solveOrder": []
+  },
+  {
+    "date": "2026-09-08",
+    "mistakes": 4,
+    "solveOrder": [
+      "yellow",
+      "green"
+    ]
+  },
+  {
+    "date": "2026-09-09",
+    "mistakes": 0,
+    "solveOrder": [
+      "purple",
+      "yellow",
+      "green",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-09-11",
+    "mistakes": 0,
+    "solveOrder": [
+      "green",
+      "blue",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-09-12",
+    "mistakes": 2,
+    "solveOrder": [
+      "green",
+      "blue",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-09-13",
+    "mistakes": 3,
+    "solveOrder": [
+      "purple",
+      "green",
+      "yellow",
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-09-14",
+    "mistakes": 4,
+    "solveOrder": [
+      "blue"
+    ]
+  },
+  {
+    "date": "2026-09-15",
+    "mistakes": 4,
+    "solveOrder": [
+      "purple"
+    ]
+  },
+  {
+    "date": "2026-09-16",
+    "mistakes": 4,
+    "solveOrder": [
+      "green",
+      "yellow"
+    ]
+  },
+  {
+    "date": "2026-09-17",
+    "mistakes": 4,
+    "solveOrder": [
+      "green",
+      "blue"
+    ]
+  }
+]
