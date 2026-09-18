@@ -3,6 +3,8 @@
 import { Image } from "astro:assets";
 
 import BaseLayout from "../layouts/BaseLayout.astro";
+import GameShowcasePrototype from "../components/GameShowcasePrototype.astro";
+import profileImage from "../assets/profile.webp";
 
 const projects = [
   {
@@ -60,6 +62,8 @@ const links = [
         />
       </div>
     </section>
+
+    {import.meta.env.DEV && <GameShowcasePrototype />}
 
     <section
       class="section work-section"

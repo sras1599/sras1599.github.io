@@ -1,0 +1,1553 @@
+---
+/**
+ * Prototype the selected calendar-view design inside the accepted two-by-two
+ * homepage layout. All September 2026 records are synthetic; no result is
+ * stored, fetched, or published. This development-only component is
+ * intentionally throwaway and must not become the production implementation.
+ */
+import GameShowcaseTrendPrototype from "./GameShowcaseTrendPrototype.astro";
+
+type ConnectionResult = {
+  order: string[];
+  mistakes: number;
+  failed?: boolean;
+};
+
+const variants = [
+  {
+    key: "B",
+    label: "Poster blocks",
+    note: "Denser flat-roof buildings echo graphic travel-poster shapes.",
+  },
+];
+const connectionResults = new Map<number, ConnectionResult>([
+  [1, { order: ["yellow", "green", "blue", "purple"], mistakes: 0 }],
+  [2, { order: ["green", "yellow", "purple", "blue"], mistakes: 1 }],
+  [3, { order: ["purple", "green", "yellow", "blue"], mistakes: 3 }],
+  [4, { order: ["green", "yellow"], mistakes: 4, failed: true }],
+  [5, { order: ["yellow", "blue", "green", "purple"], mistakes: 1 }],
+  [6, { order: ["green", "yellow", "blue", "purple"], mistakes: 0 }],
+  [8, { order: ["purple", "green", "yellow", "blue"], mistakes: 2 }],
+  [9, { order: ["yellow", "green", "blue", "purple"], mistakes: 0 }],
+  [11, { order: ["green", "purple", "yellow", "blue"], mistakes: 2 }],
+  [12, { order: ["yellow", "blue", "green", "purple"], mistakes: 1 }],
+  [14, { order: ["yellow", "green", "purple", "blue"], mistakes: 1 }],
+  [16, { order: ["green", "yellow", "blue", "purple"], mistakes: 0 }],
+]);
+const miniResults = new Map([
+  [1, 44],
+  [2, 38],
+  [3, 104],
+  [4, 52],
+  [5, 35],
+  [6, 41],
+  [8, 63],
+  [9, 47],
+  [11, 33],
+  [12, 97],
+  [14, 126],
+  [16, 39],
+]);
+const bracketResults = new Map([
+  [1, 82],
+  [2, 69],
+  [3, 94],
+  [4, 100],
+  [5, 76],
+  [6, 88],
+  [8, 100],
+  [9, 91],
+  [11, 63],
+  [12, 97],
+  [14, 85],
+  [16, 100],
+]);
+const taglineResults = new Map([
+  [1, 3],
+  [2, 2],
+  [3, 3],
+  [4, 1],
+  [5, 3],
+  [6, 3],
+  [8, 2],
+  [9, 3],
+  [11, 1],
+  [12, 2],
+  [14, 3],
+  [16, 3],
+]);
+
+const calendarCells = [
+  null,
+  null,
+  ...Array.from({ length: 30 }, (_, index) => index + 1),
+];
+const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
+const prototypeToday = 17;
+const formatTime = (seconds: number) =>
+  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+const timeParticles = (seconds: number) =>
+  Array.from({ length: Math.min(120, seconds) });
+const bracketRank = (score: number, kingmaker: boolean) => {
+  if (score === 100)
+    return kingmaker
+      ? { icon: "♔", label: "Kingmaker" }
+      : { icon: "♛", label: "Puppet Master" };
+  if (score >= 95) return { icon: "👑", label: "Top rank" };
+  if (score >= 80) return { icon: "🎩", label: "High rank" };
+  if (score >= 70) return { icon: "🕵", label: "Middle rank" };
+  return { icon: "👮", label: "Chief of Police" };
+};
+---
+
+<section class="game-prototype section" aria-labelledby="game-prototype-title">
+  <div class="section-heading">
+    <p class="eyebrow">Prototype — synthetic data</p>
+    <h2 id="game-prototype-title">A month in word games</h2>
+    <p>
+      Month is the tentative default. Trends uses a semantic gradient-area
+      spline over six months of synthetic recorded results.
+    </p>
+  </div>
+
+  <div class="showcase-view-switcher" aria-label="Showcase view">
+    <button type="button" data-showcase-view-button="month" aria-pressed="true">
+      Month
+    </button>
+    <button type="button" data-showcase-view-button="trends" aria-pressed="false">
+      Trends
+    </button>
+  </div>
+
+  <div data-showcase-view="month">
+    <div class="month-toolbar" aria-label="Prototype month selection">
+      <button type="button" aria-label="Previous month">‹</button>
+      <strong>September <span>2026</span></strong>
+      <button type="button" disabled aria-label="Next month">›</button>
+    </div>
+
+    {
+      variants.map((variant, variantIndex) => (
+        <div
+          class="prototype-variant"
+          data-game-variant={variant.key}
+          hidden={variantIndex !== 0}
+        >
+        <div class="prototype-intro">
+          <>
+            <strong>
+              {variant.key} — {variant.label}
+            </strong>
+            <span>{variant.note}</span>
+          </>
+        </div>
+        <div class="game-card-grid">
+          <article class="game-card connections-card">
+            <header>
+              <>
+                <h3>Connections</h3>
+                <span>mistakes + solve order</span>
+              </>
+            </header>
+            <div class="weekday-row">
+              {weekdays.map((day) => (
+                <b>{day}</b>
+              ))}
+            </div>
+            <div class="month-grid connections-calendar">
+              {calendarCells.map((day) => {
+                const result = day ? connectionResults.get(day) : undefined;
+                return day === null ? (
+                  <i class="calendar-blank" />
+                ) : (
+                  <button
+                    class:list={[
+                      "calendar-day",
+                      { missing: !result, failed: result?.failed },
+                    ]}
+                    title={
+                      result
+                        ? `September ${day}: ${result.failed ? "unsolved" : `${result.mistakes} mistakes`}`
+                        : `September ${day}: no result`
+                    }
+                  >
+                    {result ? (
+                      <span class="connection-glyph">
+                        {result.order.map((color) => (
+                          <i class={`category-${color}`} />
+                        ))}
+                      </span>
+                    ) : (
+                      <i class="no-result" />
+                    )}
+                    <small>{day}</small>
+                    {result && result.mistakes > 0 && (
+                      <em aria-label={`${result.mistakes} mistakes`}>
+                        {"×".repeat(result.mistakes)}
+                      </em>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article class="game-card mini-card">
+            <header>
+              <>
+                <h3>Mini</h3>
+                <span>one grain per second</span>
+              </>
+            </header>
+            <div class="weekday-row">
+              {weekdays.map((day) => (
+                <b>{day}</b>
+              ))}
+            </div>
+            <div class="month-grid value-calendar">
+              {calendarCells.map((day) => {
+                const seconds = day ? miniResults.get(day) : undefined;
+                const future = day ? day > prototypeToday : false;
+                return day === null ? (
+                  <i class="calendar-blank" />
+                ) : (
+                  <button
+                    class:list={[
+                      "calendar-day",
+                      { missing: !seconds && !future, future },
+                    ]}
+                    title={
+                      seconds
+                        ? `September ${day}: ${formatTime(seconds)}`
+                        : future
+                          ? `September ${day}: future date`
+                          : `September ${day}: no result`
+                    }
+                  >
+                    {seconds ? (
+                      <span class="particle-result">
+                        <span class="particles" aria-hidden="true">
+                          {timeParticles(seconds).map((_, index) => (
+                            <i
+                              class={
+                                index < 39
+                                  ? "particle-good"
+                                  : index < 79
+                                    ? "particle-average"
+                                    : "particle-slow"
+                              }
+                              style={`--particle-row: ${10 - Math.floor(index / 12)}; --particle-column: ${(index % 12) + 1}`}
+                            />
+                          ))}
+                        </span>
+                        <strong>{formatTime(seconds)}</strong>
+                      </span>
+                    ) : (
+                      <i class="no-result" />
+                    )}
+                    <small>{day}</small>
+                  </button>
+                );
+              })}
+            </div>
+            <p class="chart-key">
+              under 40 green · 40–79 yellow · 80+ red · one grain = 1 second
+            </p>
+          </article>
+
+          <article class="game-card bracket-card">
+            <header>
+              <>
+                <h3>Bracket City</h3>
+                <span>{variant.label}</span>
+              </>
+            </header>
+            <div class="weekday-row">
+              {weekdays.map((day) => (
+                <b>{day}</b>
+              ))}
+            </div>
+            <div class="month-grid value-calendar">
+              {calendarCells.map((day) => {
+                const score = day ? bracketResults.get(day) : undefined;
+                const kingmaker = day === 4;
+                const rank = score ? bracketRank(score, kingmaker) : undefined;
+                const future = day ? day > prototypeToday : false;
+                const scoreClass = score
+                  ? score >= 95
+                    ? "score-high"
+                    : score >= 80
+                      ? "score-mid"
+                      : "score-low"
+                  : undefined;
+                return day === null ? (
+                  <i class="calendar-blank" />
+                ) : (
+                  <button
+                    class:list={[
+                      "calendar-day",
+                      "city-day",
+                      { missing: !score && !future, future },
+                    ]}
+                    title={
+                      score
+                        ? `September ${day}: ${score}, ${rank!.label}`
+                        : future
+                          ? `September ${day}: future date`
+                          : `September ${day}: no result`
+                    }
+                  >
+                    {score ? (
+                      <span
+                        class:list={[
+                          "score-visual",
+                          "score-signal",
+                          `score-signal-${variant.key.toLowerCase()}`,
+                          scoreClass,
+                        ]}
+                      >
+                        {Array.from({ length: 10 }, (_, segment) => (
+                          <i
+                            class:list={{ active: score >= (segment + 1) * 10 }}
+                          />
+                        ))}
+                        <strong>{score}</strong>
+                      </span>
+                    ) : (
+                      <i class="no-result" />
+                    )}
+                    <small>{day}</small>
+                  </button>
+                );
+              })}
+            </div>
+            <p class="chart-key">color + completion = score · icon = rank</p>
+          </article>
+
+          <article class="game-card tagline-card">
+            <header>
+              <>
+                <h3>Tagline</h3>
+                <span>stars / 3</span>
+              </>
+            </header>
+            <div class="weekday-row">
+              {weekdays.map((day) => (
+                <b>{day}</b>
+              ))}
+            </div>
+            <div class="month-grid tagline-calendar">
+              {calendarCells.map((day) => {
+                const stars = day ? taglineResults.get(day) : undefined;
+                const future = day ? day > prototypeToday : false;
+                return day === null ? (
+                  <i class="calendar-blank" />
+                ) : (
+                  <div
+                    class:list={[
+                      "calendar-day",
+                      { missing: !stars && !future, future },
+                    ]}
+                  >
+                    {stars ? (
+                      <span aria-label={`${stars} of 3 stars`}>
+                        {"★".repeat(stars)}
+                        <i>{"☆".repeat(3 - stars)}</i>
+                      </span>
+                    ) : (
+                      <i class="no-result" />
+                    )}
+                    <small>{day}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        </div>
+        </div>
+      ))
+    }
+  </div>
+
+  <div data-showcase-view="trends" hidden>
+    <GameShowcaseTrendPrototype />
+  </div>
+</section>
+
+<script>
+  /**
+   * Switch between the two proposed public views while keeping the prototype's
+   * state visible in the URL. A fresh URL deliberately falls back to Month.
+   */
+  const prototype = document.querySelector<HTMLElement>(".game-prototype");
+
+  if (prototype) {
+    const viewButtons = prototype.querySelectorAll<HTMLButtonElement>(
+      "[data-showcase-view-button]",
+    );
+    const views = prototype.querySelectorAll<HTMLElement>(
+      "[data-showcase-view]",
+    );
+
+    const selectView = (view: "month" | "trends") => {
+      viewButtons.forEach((button) => {
+        button.setAttribute(
+          "aria-pressed",
+          String(button.dataset.showcaseViewButton === view),
+        );
+      });
+      views.forEach((panel) => {
+        panel.hidden = panel.dataset.showcaseView !== view;
+      });
+
+      const url = new URL(window.location.href);
+      if (view === "month") {
+        url.searchParams.delete("games");
+      } else {
+        url.searchParams.set("games", "trends");
+        if (!url.searchParams.has("range")) url.searchParams.set("range", "6m");
+      }
+      window.history.replaceState({}, "", url);
+    };
+
+    const requestedView = new URL(window.location.href).searchParams.get("games");
+    selectView(requestedView === "trends" ? "trends" : "month");
+
+    viewButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        selectView(
+          button.dataset.showcaseViewButton === "trends" ? "trends" : "month",
+        );
+      });
+    });
+  }
+</script>
+
+<style>
+  .game-prototype {
+    position: relative;
+  }
+  .section-heading p:last-child {
+    color: var(--muted);
+  }
+  .showcase-view-switcher {
+    display: flex;
+    width: fit-content;
+    margin: -1rem auto 1.25rem;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .showcase-view-switcher button {
+    padding: 0.5rem 0.9rem;
+    border: 0;
+    background: var(--paper-high);
+    font: 700 0.68rem "Space Mono", monospace;
+  }
+  .showcase-view-switcher button[aria-pressed="true"] {
+    color: var(--paper-high);
+    background: var(--ink);
+  }
+  .month-toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin: -1rem 0 1.75rem;
+  }
+  .month-toolbar button {
+    display: grid;
+    width: 2.35rem;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    background: var(--paper-high);
+    font-size: 1.4rem;
+  }
+  .month-toolbar button:disabled {
+    opacity: 0.25;
+  }
+  .month-toolbar strong {
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--ink);
+    border-radius: 0.4rem;
+    font:
+      700 0.78rem "Space Mono",
+      monospace;
+  }
+  .month-toolbar strong span {
+    margin-left: 0.6rem;
+  }
+  .prototype-intro {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font:
+      0.78rem "Space Mono",
+      monospace;
+  }
+  .prototype-intro span {
+    color: var(--muted);
+    text-align: right;
+  }
+  .game-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+  .game-card {
+    min-width: 0;
+    padding: 1rem;
+    background: var(--paper-high);
+    border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .game-card header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--outline);
+  }
+  .game-card h3 {
+    font-size: 1.2rem;
+  }
+  .game-card header span,
+  .chart-key {
+    color: var(--muted);
+    font:
+      0.64rem "Space Mono",
+      monospace;
+    text-transform: uppercase;
+  }
+  .weekday-row,
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.28rem;
+  }
+  .weekday-row {
+    margin: 0.9rem 0 0.45rem;
+  }
+  .weekday-row b {
+    text-align: center;
+    font:
+      700 0.58rem "Space Mono",
+      monospace;
+  }
+  .calendar-blank {
+    aspect-ratio: 1;
+  }
+  .calendar-day {
+    position: relative;
+    display: grid;
+    aspect-ratio: 1;
+    place-items: center;
+    min-width: 0;
+    padding: 0.15rem;
+    border: 1px solid var(--outline);
+    background: var(--paper-high);
+    cursor: help;
+  }
+  .calendar-day small {
+    position: absolute;
+    right: 0.18rem;
+    bottom: 0.08rem;
+    color: var(--muted);
+    font:
+      0.48rem "Space Mono",
+      monospace;
+  }
+  .calendar-day > em {
+    position: absolute;
+    top: 0.02rem;
+    left: 50%;
+    translate: -50% 0;
+    color: #a52415;
+    font:
+      normal 800 clamp(0.38rem, 1vw, 0.58rem) "Space Mono",
+      monospace;
+    letter-spacing: -0.08em;
+    white-space: nowrap;
+  }
+  .connection-glyph {
+    display: grid;
+    width: 72%;
+    height: 57%;
+    margin-top: 0.3rem;
+    overflow: hidden;
+    border: 1px solid var(--ink);
+  }
+  .connection-glyph i {
+    min-height: 0.18rem;
+    border-bottom: 1px solid rgba(26, 28, 26, 0.55);
+  }
+  .connection-glyph i:last-child {
+    border-bottom: 0;
+  }
+  .category-yellow {
+    background: #f9df6d;
+  }
+  .category-green {
+    background: #a0c35a;
+  }
+  .category-blue {
+    background: #b0c4ef;
+  }
+  .category-purple {
+    background: #ba81c5;
+  }
+  .calendar-day.failed {
+    background: var(--orange-soft);
+    border-width: 2px;
+  }
+  .no-result {
+    width: 0.38rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #d3d3d3;
+  }
+  .value-calendar .calendar-day strong {
+    font:
+      700 clamp(0.55rem, 1.25vw, 1rem) "Space Mono",
+      monospace;
+  }
+  .value-calendar .great {
+    background: var(--green-soft);
+  }
+  .value-calendar .good {
+    background: var(--yellow);
+  }
+  .value-calendar .slow {
+    background: var(--orange-soft);
+  }
+  .value-calendar .rank-icon {
+    color: #7229a7;
+    font: 1.25rem serif;
+  }
+  .calendar-day.future {
+    border-color: transparent;
+    background: transparent;
+  }
+  .calendar-day.future .no-result {
+    width: 0.3rem;
+    background: #dedede;
+  }
+  .calendar-day.missing:not(.future) {
+    border-style: dashed;
+  }
+  .particle-result {
+    position: absolute;
+    inset: 0.75rem 0.15rem;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .particles {
+    position: absolute;
+    inset: 0.02rem;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+    gap: 2%;
+    overflow: hidden;
+    opacity: 0.4;
+  }
+  .particles i {
+    grid-row: var(--particle-row);
+    grid-column: var(--particle-column);
+    width: 78%;
+    aspect-ratio: 1;
+    place-self: center;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.35px rgba(26, 28, 26, 0.2);
+  }
+  .particles .particle-good {
+    background: var(--green);
+  }
+  .particles .particle-average {
+    background: #e0a800;
+  }
+  .particles .particle-slow {
+    background: #df4c36;
+  }
+  .particle-result strong {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    text-shadow:
+      0 0 3px white,
+      0 0 3px white,
+      0 0 6px white;
+  }
+  .city-day {
+    overflow: hidden;
+  }
+  .city-plot {
+    position: absolute;
+    inset: 0.15rem 0.3rem 0.75rem;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+  }
+  .building-mark {
+    position: relative;
+    display: block;
+    width: 50%;
+    height: var(--building-height);
+    align-self: end;
+    margin-bottom: 0.72rem;
+    color: var(--orange);
+  }
+  .building-mark.score-high {
+    color: var(--green);
+  }
+  .building-mark.score-mid {
+    color: #e4ad16;
+  }
+  .building-mark.score-low {
+    color: var(--orange);
+  }
+  .building-mark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .building-mark path {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+    vector-effect: non-scaling-stroke;
+  }
+  .building-mark .building-fill {
+    fill: currentColor;
+    stroke: var(--ink);
+  }
+  .building-mark .building-plane {
+    fill: color-mix(in srgb, currentColor 72%, var(--purple));
+    stroke: var(--ink);
+  }
+  .building-mark .building-roof {
+    fill: color-mix(in srgb, currentColor 58%, white);
+    stroke: var(--ink);
+  }
+  .building-mark .building-window {
+    fill: var(--paper-high);
+    stroke: none;
+  }
+  .building-mark .building-accent {
+    stroke: var(--purple);
+    stroke-width: 2.2;
+  }
+  .building-mark > em {
+    position: absolute;
+    z-index: 3;
+    top: -0.85rem;
+    left: 50%;
+    translate: -50% 0;
+    color: #7229a7;
+    font: normal 0.75rem serif;
+    line-height: 1;
+  }
+  .building-mark-a {
+    width: 43%;
+  }
+  .building-mark-b {
+    width: 48%;
+  }
+  .building-mark-c {
+    width: 45%;
+  }
+  .building-mark-d {
+    width: 52%;
+  }
+  .building-mark-e {
+    width: 58%;
+  }
+  .tetris-pile {
+    position: relative;
+    display: flex;
+    width: 58%;
+    height: var(--pile-height);
+    align-self: end;
+    margin-bottom: 0.72rem;
+    flex-direction: column-reverse;
+    color: var(--orange);
+  }
+  .tetris-pile.score-high {
+    color: var(--green);
+  }
+  .tetris-pile.score-mid {
+    color: #e4ad16;
+  }
+  .tetris-pile.score-low {
+    color: var(--orange);
+  }
+  .tetromino {
+    display: grid;
+    flex: 1 1 0;
+    min-height: 0;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+  .tetromino b {
+    min-width: 0;
+    min-height: 0;
+    border: 0.5px solid rgba(26, 28, 26, 0.55);
+    background: currentColor;
+  }
+  .tetris-pile > strong {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--ink);
+    font:
+      800 clamp(0.55rem, 1.25vw, 0.78rem) "Space Mono",
+      monospace;
+    text-shadow:
+      0 0 3px white,
+      0 0 4px white,
+      0 0 5px white;
+  }
+  .tetris-pile > em {
+    position: absolute;
+    z-index: 3;
+    top: -0.85rem;
+    left: 50%;
+    translate: -50% 0;
+    color: #7229a7;
+    font: normal 0.75rem serif;
+    line-height: 1;
+  }
+  .tetris-pile-b {
+    border-left: 2px solid currentColor;
+    padding-left: 2px;
+  }
+  .tetris-pile-b .tetromino:nth-of-type(4n + 1) {
+    color: var(--blue);
+  }
+  .tetris-pile-b .tetromino:nth-of-type(4n + 2) {
+    color: var(--yellow);
+  }
+  .tetris-pile-b .tetromino:nth-of-type(4n + 3) {
+    color: var(--purple);
+  }
+  .tetris-pile-b .tetromino:nth-of-type(4n) {
+    color: var(--teal);
+  }
+  .tetris-pile-c .tetromino b {
+    border-color: currentColor;
+    background: color-mix(in srgb, currentColor 24%, transparent);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.55);
+  }
+  .score-visual {
+    position: relative;
+    display: block;
+    width: 70%;
+    height: 58%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+    color: var(--orange);
+  }
+  .score-visual.score-high {
+    color: var(--green);
+  }
+  .score-visual.score-mid {
+    color: #e4ad16;
+  }
+  .score-visual.score-low {
+    color: var(--orange);
+  }
+  .score-visual strong {
+    color: var(--ink);
+    font:
+      800 clamp(0.46rem, 1vw, 0.62rem) "Space Mono",
+      monospace;
+  }
+  .score-balloon {
+    width: 46%;
+    border-left: 1px dashed rgba(26, 28, 26, 0.28);
+  }
+  .score-balloon > i {
+    position: absolute;
+    left: 50%;
+    display: grid;
+    width: clamp(0.85rem, 2vw, 1.15rem);
+    aspect-ratio: 1;
+    translate: -50% 50%;
+    place-items: center;
+    border: 1px solid var(--ink);
+    border-radius: 52% 48% 48% 52%;
+    background: currentColor;
+  }
+  .score-balloon > i::after {
+    content: "";
+    position: absolute;
+    bottom: -0.25rem;
+    width: 1px;
+    height: 0.25rem;
+    background: var(--ink);
+  }
+  .score-balloon > i > em {
+    position: absolute;
+    top: -1rem;
+    color: #7229a7;
+    font: normal 0.75rem serif;
+  }
+  .score-gauge {
+    width: 28%;
+    overflow: visible;
+    border: 1px solid var(--ink);
+    border-radius: 1rem;
+    background: rgba(26, 28, 26, 0.07);
+  }
+  .score-gauge > i {
+    position: absolute;
+    inset: auto 0 0;
+    border-radius: 0 0 1rem 1rem;
+    background: currentColor;
+    opacity: 0.72;
+  }
+  .score-gauge > strong {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  .score-gauge > em {
+    position: absolute;
+    left: 50%;
+    translate: -50% 50%;
+    color: #7229a7;
+    font: normal 0.75rem serif;
+  }
+  .score-orbit {
+    display: grid;
+    width: 62%;
+    aspect-ratio: 1;
+    height: auto;
+    place-items: center;
+  }
+  .score-orbit svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    rotate: -90deg;
+  }
+  .score-orbit circle {
+    fill: none;
+    stroke-width: 4;
+  }
+  .score-orbit .orbit-track {
+    stroke: rgba(26, 28, 26, 0.12);
+  }
+  .score-orbit .orbit-score {
+    stroke: currentColor;
+    stroke-linecap: round;
+  }
+  .score-orbit > strong {
+    z-index: 1;
+  }
+  .score-orbit > em {
+    position: absolute;
+    top: -0.75rem;
+    color: #7229a7;
+    font: normal 0.75rem serif;
+  }
+  .score-mountain {
+    width: 72%;
+  }
+  .score-mountain svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .score-mountain path {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+  .score-mountain > i {
+    position: absolute;
+    display: grid;
+    width: 0.45rem;
+    aspect-ratio: 1;
+    translate: -50% 50%;
+    place-items: center;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .score-mountain > i em {
+    position: absolute;
+    bottom: 0.4rem;
+    color: #7229a7;
+    font: normal 0.75rem serif;
+  }
+  .score-mountain > strong {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+  }
+  .score-signal {
+    display: flex;
+    width: 82%;
+    height: 75%;
+    margin-bottom: 0.55rem;
+    align-items: end;
+    justify-content: center;
+    gap: 2%;
+  }
+  .score-signal > i {
+    position: relative;
+    width: 8%;
+    border: 1px solid rgba(26, 28, 26, 0.2);
+    border-bottom: 0;
+    background: rgba(26, 28, 26, 0.07);
+  }
+  .score-signal > i::before {
+    content: "";
+    position: absolute;
+    inset: 18% 24% auto;
+    height: 8%;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow:
+      0 0.35rem 0 rgba(255, 255, 255, 0.72),
+      0 0.7rem 0 rgba(255, 255, 255, 0.72);
+  }
+  .score-signal > i:nth-child(1) {
+    height: 38%;
+  }
+  .score-signal > i:nth-child(2) {
+    height: 58%;
+  }
+  .score-signal > i:nth-child(3) {
+    height: 45%;
+  }
+  .score-signal > i:nth-child(4) {
+    height: 72%;
+  }
+  .score-signal > i:nth-child(5) {
+    height: 52%;
+  }
+  .score-signal > i:nth-child(6) {
+    height: 84%;
+  }
+  .score-signal > i:nth-child(7) {
+    height: 63%;
+  }
+  .score-signal > i:nth-child(8) {
+    height: 76%;
+  }
+  .score-signal > i:nth-child(9) {
+    height: 48%;
+  }
+  .score-signal > i:nth-child(10) {
+    height: 92%;
+  }
+  .score-signal > i:nth-child(3n) {
+    clip-path: polygon(0 13%, 50% 0, 100% 13%, 100% 100%, 0 100%);
+  }
+  .score-signal > i:nth-child(4n) {
+    clip-path: polygon(
+      0 100%,
+      0 10%,
+      32% 10%,
+      32% 0,
+      68% 0,
+      68% 10%,
+      100% 10%,
+      100% 100%
+    );
+  }
+  .score-signal > i.active {
+    border-color: var(--ink);
+    background: currentColor;
+    opacity: 0.48;
+  }
+  .score-signal > strong {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding-top: 0.25rem;
+    font-size: clamp(1.25rem, 3vw, 1.65rem);
+    text-shadow:
+      0 0 2px white,
+      0 0 4px white,
+      0 0 7px white,
+      0 0 10px white;
+  }
+  .score-signal-b {
+    width: 88%;
+    gap: 0;
+  }
+  .score-signal-b > i {
+    width: 10%;
+    border-color: rgba(26, 28, 26, 0.28);
+  }
+  .score-signal-b > i:nth-child(3n),
+  .score-signal-b > i:nth-child(4n) {
+    clip-path: none;
+  }
+  .score-signal-b > i:nth-child(odd) {
+    height: 68%;
+  }
+  .score-signal-b > i:nth-child(even) {
+    height: 88%;
+  }
+  .score-signal-b > i::before {
+    inset-inline: 18%;
+  }
+  .score-signal-c > i {
+    border: 1.5px solid rgba(26, 28, 26, 0.18);
+    background: transparent;
+  }
+  .score-signal-c > i.active {
+    border-color: currentColor;
+    background: color-mix(in srgb, currentColor 13%, transparent);
+    opacity: 1;
+  }
+  .score-signal-c > i::before {
+    background: currentColor;
+    box-shadow:
+      0 0.35rem 0 currentColor,
+      0 0.7rem 0 currentColor;
+    opacity: 0.7;
+  }
+  :is(
+    .tiered-stack,
+    .crane-lift,
+    .cross-scaffold,
+    .rising-roof,
+    .skeleton-skyline
+  ).score-high {
+    color: var(--green);
+  }
+  :is(
+    .tiered-stack,
+    .crane-lift,
+    .cross-scaffold,
+    .rising-roof,
+    .skeleton-skyline
+  ).score-mid {
+    color: #e4ad16;
+  }
+  :is(
+    .tiered-stack,
+    .crane-lift,
+    .cross-scaffold,
+    .rising-roof,
+    .skeleton-skyline
+  ).score-low {
+    color: var(--orange);
+  }
+  :is(.tiered-stack, .cross-scaffold, .rising-roof, .skeleton-skyline) > em {
+    position: absolute;
+    z-index: 3;
+    top: -0.9rem;
+    left: 50%;
+    translate: -50% 0;
+    color: #7229a7;
+    font: normal 0.78rem serif;
+    line-height: 1;
+  }
+  .tiered-stack {
+    position: relative;
+    display: flex;
+    width: 58%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+  .tiered-stack > i {
+    flex: 0 0 clamp(0.14rem, 0.42vw, 0.25rem);
+    border-top: 1px solid color-mix(in srgb, currentColor 45%, white);
+    border-bottom: 1px solid color-mix(in srgb, currentColor 60%, black);
+    background: linear-gradient(
+      90deg,
+      currentColor 0 76%,
+      color-mix(in srgb, currentColor 72%, black) 76% 100%
+    );
+    clip-path: polygon(7% 0, 100% 0, 93% 100%, 0 100%);
+  }
+  .tiered-stack > .tier-0 {
+    width: 100%;
+  }
+  .tiered-stack > .tier-1 {
+    width: 76%;
+  }
+  .tiered-stack > .tier-2 {
+    width: 52%;
+  }
+  .brick-wall {
+    position: relative;
+    display: grid;
+    width: 54%;
+    height: 43%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 5%;
+  }
+  .brick-wall > i {
+    border: 1px dashed rgba(26, 28, 26, 0.3);
+  }
+  .brick-wall > i.built {
+    border-style: solid;
+    border-color: currentColor;
+    background: currentColor;
+    opacity: 0.72;
+  }
+  .crane-lift {
+    position: relative;
+    display: block;
+    width: 55%;
+    height: 58%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+  }
+  .crane-lift > i {
+    position: absolute;
+    inset: 0 auto 0 18%;
+    width: 1px;
+    border-left: 2px solid currentColor;
+  }
+  .crane-lift > i::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -0.1rem;
+    width: 1.6rem;
+    border-top: 2px solid currentColor;
+  }
+  .crane-lift > b {
+    position: absolute;
+    top: 0;
+    right: 12%;
+    height: 100%;
+    border-left: 1px dashed rgba(26, 28, 26, 0.35);
+  }
+  .crane-lift > em {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    translate: 50% 50%;
+    color: #7229a7;
+    font: normal 0.78rem serif;
+    line-height: 1;
+  }
+  .cross-scaffold {
+    position: relative;
+    display: flex;
+    width: 38%;
+    height: 52%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+    flex-direction: column;
+  }
+  .cross-scaffold > i {
+    flex: 1;
+    border: 1px dashed rgba(26, 28, 26, 0.3);
+    background:
+      linear-gradient(
+        35deg,
+        transparent 47%,
+        rgba(26, 28, 26, 0.28) 48% 52%,
+        transparent 53%
+      ),
+      linear-gradient(
+        -35deg,
+        transparent 47%,
+        rgba(26, 28, 26, 0.28) 48% 52%,
+        transparent 53%
+      );
+  }
+  .cross-scaffold > i.built {
+    border-style: solid;
+    border-color: currentColor;
+    background:
+      linear-gradient(
+        35deg,
+        transparent 47%,
+        currentColor 48% 52%,
+        transparent 53%
+      ),
+      linear-gradient(
+        -35deg,
+        transparent 47%,
+        currentColor 48% 52%,
+        transparent 53%
+      );
+  }
+  .rising-roof {
+    position: relative;
+    display: block;
+    width: 42%;
+    height: 54%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+    border-bottom: 1px solid var(--ink);
+  }
+  .rising-roof > i {
+    position: absolute;
+    right: 12%;
+    bottom: 0;
+    left: 12%;
+    height: var(--score);
+    border-inline: 1px solid currentColor;
+    background: color-mix(in srgb, currentColor 18%, transparent);
+  }
+  .rising-roof > b {
+    position: absolute;
+    right: 0;
+    bottom: var(--score);
+    left: 0;
+    height: 2px;
+    background: currentColor;
+    transform: skewY(-18deg);
+    transform-origin: left;
+  }
+  .skeleton-skyline {
+    position: relative;
+    display: flex;
+    width: 60%;
+    height: 53%;
+    align-self: end;
+    margin-bottom: 0.72rem;
+    align-items: end;
+    justify-content: space-between;
+  }
+  .skeleton-skyline > i {
+    width: 24%;
+    border: 1px solid currentColor;
+    border-bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0 0.28rem,
+      currentColor 0.28rem 0.31rem
+    );
+    opacity: 0.75;
+  }
+  .heat-key {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.6rem;
+    color: var(--muted);
+    font:
+      0.55rem "Space Mono",
+      monospace;
+  }
+  .heat-key i {
+    width: 0.7rem;
+    aspect-ratio: 1;
+    border: 1px solid var(--outline);
+  }
+  .heat-key .great {
+    background: var(--green-soft);
+  }
+  .heat-key .good {
+    background: var(--yellow);
+  }
+  .heat-key .slow {
+    background: var(--orange-soft);
+  }
+  .tagline-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 0.75fr);
+    gap: 0.8rem;
+    padding-top: 0.8rem;
+  }
+  .tagline-list {
+    display: grid;
+    max-height: 13rem;
+    overflow-y: auto;
+    border: 1px solid var(--outline);
+  }
+  .tagline-result {
+    display: grid;
+    grid-template-columns: 4.2rem 1fr;
+    align-items: center;
+    padding: 0.5rem 0.6rem;
+    border: 0;
+    border-bottom: 1px solid #d2d2d2;
+    background: var(--paper-high);
+    text-align: left;
+    cursor: default;
+  }
+  .tagline-result:hover,
+  .tagline-result:focus {
+    background: var(--yellow);
+    outline: none;
+  }
+  .tagline-result time {
+    font-size: 0.6rem;
+  }
+  .tagline-result span {
+    color: #c58e00;
+    letter-spacing: 0.08rem;
+    white-space: nowrap;
+  }
+  .tagline-result span i {
+    color: #b8b8b8;
+    font-style: normal;
+  }
+  .tagline-calendar .calendar-day > span {
+    color: #c58e00;
+    font-size: clamp(0.48rem, 1.4vw, 0.8rem);
+    letter-spacing: -0.08em;
+    white-space: nowrap;
+  }
+  .tagline-calendar .calendar-day > span i {
+    color: #b8b8b8;
+    font-style: normal;
+  }
+  .tagline-detail {
+    align-self: stretch;
+    padding: 0.8rem;
+    background: var(--purple-soft);
+    border: 1px solid var(--ink);
+  }
+  .tagline-detail p {
+    margin: 0 0 0.6rem;
+    font:
+      700 0.72rem "Space Mono",
+      monospace;
+  }
+  .tagline-detail strong {
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  .tagline-detail span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.7rem;
+  }
+  .track-axis,
+  .band-axis {
+    display: flex;
+    justify-content: space-between;
+    margin: 1rem 4rem 0.35rem 4.4rem;
+    color: var(--muted);
+    font:
+      0.54rem "Space Mono",
+      monospace;
+  }
+  .track-axis b {
+    color: var(--ink);
+    font-size: 0.52rem;
+  }
+  .track-list,
+  .band-list {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .track-row,
+  .band-row {
+    display: grid;
+    grid-template-columns: 3.8rem 1fr 2.7rem;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .track-row time,
+  .band-row time {
+    font-size: 0.58rem;
+  }
+  .track-row > strong,
+  .band-row > strong {
+    font:
+      700 0.65rem "Space Mono",
+      monospace;
+    text-align: right;
+  }
+  .track {
+    height: 0.75rem;
+    background: var(--paper-low);
+    border: 1px solid var(--outline);
+  }
+  .track i {
+    display: block;
+    height: 100%;
+    background: var(--blue);
+    border-right: 2px solid var(--ink);
+  }
+  .bracket-tracks .track i {
+    background: var(--green);
+  }
+  .band {
+    position: relative;
+    height: 1.15rem;
+    background: linear-gradient(
+      90deg,
+      var(--green-soft),
+      var(--yellow),
+      var(--orange-soft)
+    );
+    border-block: 1px solid var(--outline);
+  }
+  .band i {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    width: 1rem;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    place-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--paper-high);
+    font: normal 700 0.7rem serif;
+  }
+  .bracket-bands .band {
+    background: linear-gradient(
+      90deg,
+      var(--orange-soft),
+      var(--yellow),
+      var(--green-soft)
+    );
+  }
+  @media (max-width: 820px) {
+    .game-card-grid {
+      grid-template-columns: 1fr;
+    }
+    .prototype-intro {
+      display: grid;
+    }
+    .prototype-intro span {
+      text-align: left;
+    }
+  }
+  @media (max-width: 520px) {
+    .tagline-layout {
+      grid-template-columns: 1fr;
+    }
+    .tagline-detail {
+      min-height: 7rem;
+    }
+  }
+</style>
