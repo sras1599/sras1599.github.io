@@ -1,4 +1,7 @@
 ---
+// Renders the homepage hero, development-only game showcase, work, and contact sections.
+import { Image } from "astro:assets";
+
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const projects = [
@@ -48,10 +51,12 @@ const links = [
       </div>
       <div class="hero-art">
         <span class="blob blob-blue" aria-hidden="true"></span>
-        <img
+        <Image
           class="hero-profile"
-          src="/assets/profile.webp"
+          src={profileImage}
           alt="Raspreet Singh"
+          loading="eager"
+          fetchpriority="high"
         />
       </div>
     </section>
