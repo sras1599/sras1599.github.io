@@ -1,0 +1,148 @@
+---
+/**
+ * Render the development-only, single-result ingestion workflow. Paste and
+ * manual entry feed one editable normalized-record form; browser-safe shared
+ * parsers provide immediate feedback, while the injected local endpoint owns
+ * persisted-data preview, duplicate detection, and saving.
+ */
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Ingest game data</title>
+  </head>
+  <body>
+    <main class="admin-shell">
+      <a href="/admin">← Development tools</a>
+      <h1>Ingest game data</h1>
+      <p>Add one local game result. Nothing is published by this tool.</p>
+
+      <div class="mode-switch" role="group" aria-label="Entry mode">
+        <button type="button" data-mode-button="paste" aria-pressed="true">
+          Paste result
+        </button>
+        <button type="button" data-mode-button="manual" aria-pressed="false">
+          Enter manually
+        </button>
+      </div>
+
+      <section data-mode-panel="paste" aria-labelledby="paste-title">
+        <h2 id="paste-title">Paste result</h2>
+        <label for="shared-result">Native game share</label>
+        <textarea id="shared-result" rows="10" spellcheck="false"></textarea>
+        <div class="actions">
+          <button type="button" class="primary" data-parse>Parse</button>
+        </div>
+        <div class="message error" data-parse-error hidden role="alert">
+          <p></p>
+          <button type="button" data-switch-manual>Enter manually instead</button>
+        </div>
+      </section>
+
+      <section data-mode-panel="manual" aria-labelledby="manual-title" hidden>
+        <h2 id="manual-title">Enter manually</h2>
+        <label for="manual-game">Game</label>
+        <select id="manual-game">
+          <option value="">Choose a game</option>
+          <option value="connections">Connections</option>
+          <option value="mini">Mini</option>
+          <option value="bracket-city">Bracket City</option>
+          <option value="tagline">Tagline</option>
+        </select>
+      </section>
+
+      <section data-editor hidden aria-labelledby="preview-title">
+        <h2 id="preview-title">Normalized preview</h2>
+        <p>Edit any field before saving. Changes are revalidated here and by the local server.</p>
+        <form data-record-form novalidate>
+          <div class="field">
+            <label for="preview-game">Game</label>
+            <input id="preview-game" disabled />
+          </div>
+          <div class="field">
+            <label for="record-date">Date</label>
+            <input id="record-date" name="date" type="date" required />
+            <small data-field-error="date"></small>
+          </div>
+          <div data-game-fields></div>
+        </form>
+        <div class="message error" data-preview-error hidden role="alert"></div>
+        <div class="duplicate" data-duplicate hidden>
+          <h3>A result already exists for this date</h3>
+          <div class="record-comparison">
+            <div>
+              <h4>Existing</h4>
+              <pre data-existing-record></pre>
+            </div>
+            <div>
+              <h4>Proposed</h4>
+              <pre data-proposed-record></pre>
+            </div>
+          </div>
+          <p>Normal Save is unavailable. Replace only if the proposed record is correct.</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" data-save disabled>Save</button>
+          <button type="button" class="danger" data-replace hidden>
+            Replace existing result
+          </button>
+        </div>
+      </section>
+
+      <section class="message success" data-success hidden aria-live="polite">
+        <h2>Saved locally</h2>
+        <pre data-saved-record></pre>
+        <p>File: <code data-target-file></code></p>
+        <p>
+          This result is local and unpublished until you review the data file,
+          commit it, and push it.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      import "./ingest-client";
+    </script>
+  </body>
+</html>
+
+<style>
+  :global(*) { box-sizing: border-box; }
+  body { margin: 0; color: #1a1c1a; background: #faf9f6; font: 1rem/1.55 system-ui, sans-serif; }
+  button, input, select, textarea { font: inherit; }
+  button, input, select, textarea, section, .message { border: 1px solid #757575; border-radius: 0.35rem; }
+  button { cursor: pointer; padding: 0.65rem 1rem; background: #fff; }
+  button:disabled { cursor: not-allowed; opacity: 0.55; }
+  a { color: #154f7a; }
+  h1 { margin-bottom: 0.25rem; }
+  h2 { margin-top: 0; }
+  .admin-shell { width: min(58rem, calc(100% - 2rem)); margin: 2.5rem auto 5rem; }
+  .mode-switch { display: grid; grid-template-columns: 1fr 1fr; margin: 2rem 0 1rem; }
+  .mode-switch button { border-radius: 0; }
+  .mode-switch button:first-child { border-radius: 0.35rem 0 0 0.35rem; }
+  .mode-switch button:last-child { border-left: 0; border-radius: 0 0.35rem 0.35rem 0; }
+  .mode-switch button[aria-pressed="true"] { color: #fff; background: #154f7a; }
+  section { margin-top: 1rem; padding: 1.25rem; background: #fff; }
+  label { display: block; margin: 0.8rem 0 0.3rem; font-weight: 650; }
+  input, select, textarea { width: 100%; padding: 0.65rem; background: #fff; }
+  textarea { resize: vertical; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+  .primary { color: #fff; background: #154f7a; }
+  .danger { color: #fff; background: #8e2525; }
+  .message { padding: 1rem; }
+  .error { margin-top: 1rem; color: #761c1c; background: #fff0f0; border-color: #c56b6b; }
+  .success { background: #effbef; border-color: #5d985d; }
+  .field small { display: block; min-height: 1.4em; color: #a11f1f; }
+  .connection-order { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .duplicate { margin-top: 1rem; padding: 1rem; border: 2px solid #b55c1b; background: #fff8ec; }
+  .record-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  pre { overflow-x: auto; padding: 0.75rem; background: #f2f2f2; }
+  code { overflow-wrap: anywhere; }
+  [hidden] { display: none !important; }
+  @media (max-width: 38rem) {
+    .record-comparison, .connection-order { grid-template-columns: 1fr; }
+  }
+</style>

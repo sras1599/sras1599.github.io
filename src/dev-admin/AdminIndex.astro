@@ -1,0 +1,42 @@
+---
+/**
+ * Render the deliberately small index for development-only website tools. This
+ * file is injected by the development integration and is not a discoverable
+ * production page. It has no connection to the public site's navigation.
+ */
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Development tools</title>
+  </head>
+  <body>
+    <main>
+      <h1>Development tools</h1>
+      <ul>
+        <li><a href="/admin/ingest-game-data">Ingest game data</a></li>
+      </ul>
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    color: #1a1c1a;
+    background: #faf9f6;
+    font: 1rem/1.6 system-ui, sans-serif;
+  }
+
+  main {
+    width: min(42rem, calc(100% - 2rem));
+    margin: 4rem auto;
+  }
+
+  a {
+    color: #154f7a;
+  }
+</style>

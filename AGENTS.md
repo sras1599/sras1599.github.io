@@ -120,6 +120,11 @@ to ownership, entry points, or the rules described here.
   workflow intended for the separate vault repository, not an active workflow here.
   Deployment setup and credential roles are documented in
   [Deployment.md](docs/understanding/codex-authored/Deployment.md).
+- [integration.mjs](src/dev-admin/integration.mjs) injects `/admin`, the single-result
+  game ingestion page, and its same-origin preview/save endpoint only for Astro's
+  development command. These sources stay outside `src/pages` so production builds
+  emit no admin route. Browser parsing and schema feedback reuse `src/data/games/`;
+  filesystem preview and writes remain behind the Node-only persistence boundary.
 
 ### Supporting documentation
 
