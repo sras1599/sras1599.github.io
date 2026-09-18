@@ -1,9 +1,11 @@
 /**
  * Define the authoritative normalized records for the four games shown on the
  * website. These browser-safe Zod schemas are shared by persisted JSON reads,
- * future ingestion, and rendering. They accept only the fields the showcase
- * owns; presentation values and filesystem behavior belong elsewhere.
+ * ingestion, and rendering. They accept only the fields the showcase owns;
+ * presentation values and filesystem behavior belong elsewhere. Shared
+ * validation-message formatting keeps schema errors consistent across callers.
  */
+import { isMatch } from "date-fns";
 import { z } from "zod";
 
 export const gameIds = [
@@ -16,14 +18,27 @@ export const gameIds = [
 export const gameIdSchema = z.enum(gameIds);
 export type GameId = z.infer<typeof gameIdSchema>;
 
+/** Render a Zod issue path as the normalized field a user should inspect. */
+export function formatGameResultField(path: PropertyKey[]): string {
+  if (path.length === 0) {
+    return "record";
+  }
+
+  return path.reduce<string>((formatted, segment) => {
+    if (typeof segment === "number") {
+      return `${formatted}[${segment}]`;
+    }
+
+    return formatted ? `${formatted}.${String(segment)}` : String(segment);
+  }, "");
+}
+
 /** Validate a real local calendar date written without a time or time zone. */
 export const gameDateSchema = z
   .string({ error: "must be a valid YYYY-MM-DD date" })
   .refine(
     (value) =>
-      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-      Number.isFinite(Date.parse(value)) &&
-      new Date(value).toISOString().slice(0, 10) === value,
+      /^\d{4}-\d{2}-\d{2}$/.test(value) && isMatch(value, "yyyy-MM-dd"),
     "must be a valid YYYY-MM-DD date",
   );
 

@@ -69,8 +69,9 @@ repository, and a push triggers the existing static deployment workflow.
 - Raw pasted share text is discarded after parsing and never displayed publicly.
   Keep only small synthetic parser examples in source control.
 - Reject duplicate game/date records unless replacement is explicitly requested.
-- Provide a CLI fallback and automation surface, but make a development-only UI
-  the normal ingestion workflow.
+- The development-only UI is the sole workflow for ingesting an individual game
+  result. Do not provide a CLI fallback or automation surface for this purpose;
+  any future CLI serves a separate concern outside this feature.
 - `/admin` and `/admin/ingest-game-data` must exist only during local development
   and must not be emitted by production builds. The index is a plain list of
   available development tools.
@@ -78,11 +79,12 @@ repository, and a push triggers the existing static deployment workflow.
   editable parsed fields, an explicit preview/save step, intentional duplicate
   replacement, and a reminder that saving locally does not publish until commit
   and push.
-- Neither interface commits, pushes, deploys, or writes to the vault.
+- The ingestion UI never commits, pushes, deploys, or writes to the vault.
 
 ## Explicit exclusions
 
 - No backend, database, authentication system, or production admin route.
+- No command-line or automation path for per-result ingestion.
 - No social comparison, combined cross-game score, records feature, or streaks.
 - No CSV importer, zooming, or separate public games page.
 - Do not retain native share text after parsing.
@@ -94,7 +96,7 @@ them in order when implementing the whole feature because later phases consume
 contracts established by earlier ones.
 
 1. [Data contracts and repository storage](01-data-contracts.md)
-2. [Ingestion engine and CLI](02-ingestion-engine-and-cli.md)
+2. [Ingestion engine](02-ingestion-engine.md)
 3. [Development-only admin UI](03-development-admin-ui.md)
 4. [Homepage Month view](04-month-view.md)
 5. [Trends view](05-trends-view.md)

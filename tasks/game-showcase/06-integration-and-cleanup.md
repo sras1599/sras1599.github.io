@@ -12,8 +12,9 @@ features. It is a focused completion and cleanup pass.
 ## Expected inputs
 
 - Phase 1: authoritative schemas, JSON files, and validated read contract.
-- Phase 2: shared parser/persistence engine and `npm run games:add`.
-- Phase 3: development-only `/admin` routes using that engine.
+- Phase 2: shared parser/persistence engine with no user-facing entry point.
+- Phase 3: development-only `/admin` routes providing the sole per-result
+  ingestion workflow.
 - Phase 4: responsive Month view on the homepage.
 - Phase 5: lazy-loaded Trends view and range summaries.
 
@@ -38,14 +39,14 @@ Document the actual local workflow in existing development documentation or a
 focused nearby document:
 
 1. Run the normal development command.
-2. Open `/admin/ingest-game-data` or use `npm run games:add`.
+2. Open `/admin/ingest-game-data`.
 3. Parse or enter one result, review it, and save.
 4. Inspect the changed JSON file.
 5. Commit and push through the user's normal Git workflow.
 6. Let the existing GitHub Pages deployment rebuild the static site.
 
 Make clear that admin routes do not exist in production, saving is local, and raw
-share text is discarded.
+share text is discarded. Do not document a CLI alternative for this workflow.
 
 ## Cleanup
 
@@ -77,6 +78,7 @@ Confirm the feature has not introduced:
 - Streaks, records, social comparison, a combined score, CSV import, zooming, or
   a separate public games page.
 - Automatic commits, pushes, or deployments.
+- A command-line or automation path for ingesting an individual result.
 - Retained native share text.
 - Automated tests unless separately requested.
 

@@ -54,7 +54,7 @@ mistakes regardless of any other representation.
 ### Bracket City
 
 - `date`: local calendar date in `YYYY-MM-DD` form
-- `score`: finite number from `0` through `100`
+- `score`: integer from `0` through `100`
 
 ### Tagline
 

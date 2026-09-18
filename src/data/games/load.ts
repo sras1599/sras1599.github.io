@@ -12,26 +12,12 @@ import taglineJson from "./tagline.json";
 import {
   bracketCityResultSchema,
   connectionsResultSchema,
+  formatGameResultField,
   miniResultSchema,
   taglineResultSchema,
   type GameData,
   type GameId,
 } from "./contracts";
-
-/** Render a Zod path as the persisted field a data owner should inspect. */
-function formatFieldPath(path: PropertyKey[]): string {
-  if (path.length === 0) {
-    return "record";
-  }
-
-  return path.reduce<string>((formatted, segment) => {
-    if (typeof segment === "number") {
-      return `${formatted}[${segment}]`;
-    }
-
-    return formatted ? `${formatted}.${String(segment)}` : String(segment);
-  }, "");
-}
 
 /**
  * Validate one game's complete persisted array. Failures retain the game ID,
@@ -58,15 +44,15 @@ function validateResults<Result extends { date: string }>(
     if (!parsed.success) {
       const candidateDate =
         typeof candidate === "object" &&
-        candidate !== null &&
-        "date" in candidate &&
-        typeof candidate.date === "string"
+          candidate !== null &&
+          "date" in candidate &&
+          typeof candidate.date === "string"
           ? `, date ${JSON.stringify(candidate.date)}`
           : "";
       const issues = parsed.error.issues
         .map(
           (issue) =>
-            `field ${formatFieldPath(issue.path)}: ${issue.message}`,
+            `field ${formatGameResultField(issue.path)}: ${issue.message}`,
         )
         .join("; ");
 

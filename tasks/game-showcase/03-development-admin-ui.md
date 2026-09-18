@@ -2,16 +2,16 @@
 
 ## Objective
 
-Build the normal local ingestion experience at `/admin/ingest-game-data` plus a
-plain `/admin` index. Both routes and every write endpoint must exist only during
-Astro development and must be absent from production output.
+Build the sole per-result ingestion experience at `/admin/ingest-game-data` plus
+a plain `/admin` index. Both routes and every write endpoint must exist only
+during Astro development and must be absent from production output.
 
 ## Prerequisite contract
 
 Phase 2 should expose browser-safe parsing/validation operations and Node-only
 preview/save operations backed by the Phase 1 Zod schemas. Reuse them. Do not
 create separate parsing rules, schemas, duplicate handling, or JSON writing in
-the page component.
+the page component. There is no CLI fallback for ingesting an individual result.
 
 This is a static Astro site. An ordinary file in `src/pages/admin/` would still
 be emitted during a production build even if its content were visually hidden.
@@ -38,7 +38,7 @@ Use a side-by-side segmented control with two modes.
 ### Paste result
 
 - Selected by default.
-- Provides a multiline textarea and Parse action; no `.done` sentinel is needed.
+- Provides a multiline textarea and Parse action.
 - Auto-detects the game using the shared parser.
 - Shows the parsed game, date, and game-specific fields in an editable preview
   before Save is enabled.
@@ -77,6 +77,7 @@ implement production authentication for a route that must not exist in productio
 ## Boundaries
 
 - Do not build a production admin page or API.
+- Do not add a CLI or automation path for per-result ingestion.
 - Do not add bulk upload, CSV, history tables, editing dashboards, or deletion.
 - Do not store pasted raw text after parsing.
 - Do not link admin tools from public navigation.

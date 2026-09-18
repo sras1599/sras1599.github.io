@@ -1,10 +1,10 @@
-# Phase 2 — Ingestion engine and CLI
+# Phase 2 — Ingestion engine
 
 ## Objective
 
-Implement shared parsing, normalization, validation, persistence, and a CLI for
-adding game results. The engine must be reusable by the development admin UI in
-Phase 3. This phase does not create browser pages or public charts.
+Implement shared parsing, normalization, validation, and persistence for the
+development admin UI in Phase 3. This phase does not create a user-facing entry
+point, browser pages, a CLI, or public charts.
 
 ## Prerequisite contract
 
@@ -13,16 +13,16 @@ chronological JSON files, and a read-only loader. If those exact files do not ye
 exist, inspect the current repository and establish the minimal equivalent before
 building ingestion. Do not create a second competing schema system.
 
-The project is ESM and uses Node scripts under `scripts/`. Read `AGENTS.md` and
-the existing scripts before choosing module boundaries. Browser-safe parsing and
-Node-only persistence must remain visibly separate.
+The project is ESM. Read `AGENTS.md` and the existing code before choosing module
+boundaries. Browser-safe parsing and Node-only persistence must remain visibly
+separate.
 
 ## Share formats to support
 
 ### Connections
 
 Extract only the date, mistake count, and completed-category solve order.
-Representative input:
+An archived result prefixes its date line with `Archive`:
 
 ```text
 Archive September 13, 2026
@@ -36,9 +36,13 @@ Connections Puzzle #1190
 🟦🟦🟦🟦
 ```
 
+The same day's shared result contains the same date line without that prefix,
+for example `September 13, 2026`.
+
 Derive the normalized fields from this visual representation:
 
-- Parse `date` from the archive date line.
+- Parse `date` from the date line, accepting an optional leading `Archive` word.
+  The parsed date remains editable in the Phase 3 preview before saving.
 - Each row of four equal colors is a completed category. Append that color to
   `solveOrder` in the order the completed rows appear.
 - Each mixed-color row is a mistake. Store the number of these rows as
@@ -71,7 +75,8 @@ Total Score: 69.0
 ```
 
 Ignore difficulty, rank, wrong guesses, peeks, answers revealed, the shared URL,
-and decorative score blocks. They are not part of the normalized result.
+and decorative score blocks. They are not part of the normalized result. Truncate
+the score to an integer while parsing.
 
 ### Tagline
 
@@ -85,8 +90,8 @@ Hints Used: 0️⃣
 ```
 
 Discard every other line, including letters and hints. Do not derive stars from
-hints. Input without an explicit star result fails parsing; the CLI's date
-override may supply or replace the date as usual.
+hints. Input without an explicit date and star result fails parsing and can be
+entered manually through the Phase 3 UI instead.
 
 ## Shared ingestion engine
 
@@ -105,33 +110,14 @@ replacement strategy. Raw text exists only in memory during parsing. Keep small
 synthetic examples near the parser as documentation, but do not retain user input
 or add a test suite.
 
-## CLI workflow
-
-Add `npm run games:add`. Its default interactive flow is:
-
-1. Prompt for one pasted result.
-2. Accept `.done` on its own line to finish multiline input.
-3. Auto-detect, parse, and show a normalized preview.
-4. Ask for confirmation before saving.
-5. Report the updated file and record.
-6. Ask whether to add another result.
-
-Support these correction and automation paths without creating a general import
-framework:
-
-- `--date YYYY-MM-DD` supplies or overrides the result date.
-- `--replace` intentionally replaces the same game/date record.
-- `--manual <game>` prompts for that game's known fields after parsing fails.
-- `--file <path>` reads one result for a history script.
-- `--yes` skips confirmation for deliberate automation.
-
-Do not parse multiple concatenated results in one invocation. A history script
-can invoke the command or engine once per result. Do not add CSV support.
-
 ## Boundaries
 
-- The command never commits, pushes, deploys, or edits the vault.
-- Do not add production HTTP endpoints or duplicate schema validation in prompts.
+- Phase 3's development UI is the only supported workflow for ingesting an
+  individual result. Do not add a CLI or automation entry point for this purpose.
+- The engine never commits, pushes, deploys, or edits the vault.
+- Do not add production HTTP endpoints or duplicate schema validation in UI
+  controls.
+- Parse one shared result at a time. Do not add bulk or CSV ingestion.
 - Do not silently repair malformed records or replace duplicates.
 - Do not add automated tests unless separately requested.
 
@@ -139,13 +125,16 @@ can invoke the command or engine once per result. Do not add CSV support.
 
 - All four native formats normalize into Phase 1 records.
 - Preview and parse operations do not mutate files.
-- Confirmed saves are chronological and schema-valid.
-- Duplicate saves fail; `--replace` is explicit.
-- Mini accepts date overrides and otherwise uses the local date.
+- Explicitly requested saves are chronological and schema-valid.
+- Duplicate saves fail unless replacement is explicitly requested.
+- Mini defaults to the local date, which remains editable before saving in the
+  Phase 3 UI.
 - Errors identify the invalid portion and leave persisted data intact.
+- No CLI or other user-facing ingestion entry point is introduced.
 
 ## User verification
 
-The implementing agent must not run the command. It should give the user concrete
-manual examples for parsing each game, rejecting and replacing a duplicate, and
-checking that cancelled or failed parsing leaves JSON unchanged.
+The implementing agent must not run verification commands. It should identify
+the parser and persistence boundaries for review and provide concrete examples
+for exercising parsing, cancellation, duplicate rejection, and replacement once
+the Phase 3 UI is available.
