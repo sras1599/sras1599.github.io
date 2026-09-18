@@ -1,4 +1,4 @@
-# Phase 5 — Trends view
+# Phase 6 — Trends view
 
 ## Objective
 
@@ -8,10 +8,10 @@ range-level summary. It deliberately does not repeat calendar-level detail.
 
 ## Prerequisite contract
 
-Phase 4 should provide the homepage section, responsive card grid, view shell,
-and URL-state ownership. Phase 1 supplies validated chronological records. If
-those boundaries differ, adapt to the current focused implementation rather than
-creating a parallel showcase.
+Phase 4 should provide the shared showcase frame and responsive card grid. Phase
+5 should provide the homepage section and URL-state ownership. Phase 1 supplies
+validated chronological records. Consume those interfaces rather than creating
+a parallel showcase.
 
 Use a maintained library for standard axes, scales, and marks. Observable Plot is
 the preferred choice agreed during design. Add it as a focused dependency and
@@ -70,6 +70,13 @@ With no records, show `No games recorded in this range`. With exactly one record
 show one performance-colored dot at its real date and the standard summary. Draw
 the spline and area only with at least two records.
 
+## Prototype comparison page
+
+Extend the development-only `/admin/game-showcase-prototypes` page so the
+production Trends presentation and the accepted synthetic trend prototype can
+be inspected beside each other at the same viewport. Keep comparison fixtures
+and synthetic histories out of public modules and the homepage data path.
+
 ## Performance and accessibility
 
 - First Trends selection should become usable quickly and should not fetch data;
@@ -92,6 +99,8 @@ the spline and area only with at least two records.
 - Only the selected range's recorded results affect charts and summaries.
 - Four monotone gradient-area splines use correct axes, directions, colors, and
   summary statistics.
+- The development-only comparison page shows production Trends rendering beside
+  its prototype reference.
 - Sparse and empty ranges use the agreed fallbacks.
 - Trend code is not eagerly loaded by default Month.
 - Missing dates are neither displayed nor included in calculations.
@@ -101,5 +110,5 @@ the spline and area only with at least two records.
 The implementing agent must not build or start the site. It may add the agreed
 chart dependency with the repository's normal package-manager workflow, requesting
 approval if the environment requires it. It should then ask the user to inspect
-all ranges, URL restoration, threshold crossings, empty/one-result ranges, and
-mobile axes.
+the production/prototype comparison, all ranges, URL restoration, threshold
+crossings, empty/one-result ranges, and mobile axes.

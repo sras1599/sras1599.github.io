@@ -98,11 +98,13 @@ contracts established by earlier ones.
 1. [Data contracts and repository storage](01-data-contracts.md)
 2. [Ingestion engine](02-ingestion-engine.md)
 3. [Development-only admin UI](03-development-admin-ui.md)
-4. [Homepage Month view](04-month-view.md)
-5. [Trends view](05-trends-view.md)
-6. [Integration, accessibility, and prototype cleanup](06-integration-and-cleanup.md)
+4. [Showcase presentation modules](04-showcase-presentation.md)
+5. [Homepage Month view](05-month-view.md)
+6. [Trends view](06-trends-view.md)
+7. [Integration, accessibility, and prototype cleanup](07-integration-and-cleanup.md)
 
 The existing `GameShowcasePrototype.astro` and
 `GameShowcaseTrendPrototype.astro` files are disposable design references, not
-production foundations. Phase 6 removes them after their validated decisions
-have been implemented properly.
+production data or state owners. Phase 4 extracts their accepted presentation
+into production modules, and Phase 7 removes the remaining prototype fixtures
+after their decisions have been implemented and compared.

@@ -42,7 +42,6 @@ for example `September 13, 2026`.
 Derive the normalized fields from this visual representation:
 
 - Parse `date` from the date line, accepting an optional leading `Archive` word.
-  The parsed date remains editable in the Phase 3 preview before saving.
 - Each row of four equal colors is a completed category. Append that color to
   `solveOrder` in the order the completed rows appear.
 - Each mixed-color row is a mistake. Store the number of these rows as

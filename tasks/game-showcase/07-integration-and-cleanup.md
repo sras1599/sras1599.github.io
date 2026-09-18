@@ -1,4 +1,4 @@
-# Phase 6 — Integration, accessibility, and prototype cleanup
+# Phase 7 — Integration, accessibility, and prototype cleanup
 
 ## Objective
 
@@ -15,8 +15,10 @@ features. It is a focused completion and cleanup pass.
 - Phase 2: shared parser/persistence engine with no user-facing entry point.
 - Phase 3: development-only `/admin` routes providing the sole per-result
   ingestion workflow.
-- Phase 4: responsive Month view on the homepage.
-- Phase 5: lazy-loaded Trends view and range summaries.
+- Phase 4: production-owned showcase presentation modules and a development-only
+  prototype comparison page.
+- Phase 5: responsive Month integration on the homepage.
+- Phase 6: lazy-loaded Trends view and range summaries.
 
 If an input is absent, report the unmet phase rather than silently implementing
 its full scope inside cleanup.
@@ -51,9 +53,9 @@ share text is discarded. Do not document a CLI alternative for this workflow.
 ## Cleanup
 
 - Remove `GameShowcasePrototype.astro`,
-  `GameShowcaseTrendPrototype.astro`, their development-only homepage mount, and
-  prototype-only styles/scripts after production components implement the chosen
-  designs.
+  `GameShowcaseTrendPrototype.astro`, the development-only comparison page and
+  route, and prototype-only styles/scripts after production modules implement
+  the chosen designs.
 - Remove abandoned variation CSS, synthetic prototype histories, variant URL
   switches, and design-review copy.
 - Remove unused imports and dependencies from iteration, preserving Observable
