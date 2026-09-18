@@ -37,7 +37,7 @@ for semantic gradients when the library does not own that styling cleanly.
 - Connect recorded values with a monotone spline that passes through observations
   without overshooting adjacent values.
 - Do not render individual-result dots with two or more results and do not add
-  granular tooltips. Month owns exact daily inspection.
+  per-result annotations. Month owns exact daily inspection.
 - Draw a translucent area below the spline. Its color changes along the time axis
   to match the spline's performance color, then fades downward. It must not use
   unrelated decorative colors.
@@ -83,7 +83,7 @@ the spline and area only with at least two records.
 
 - No rolling averages, secondary trend line, point cloud, missing-data encoding,
   zoom, records, or cross-game aggregation.
-- Do not duplicate Month tooltips or load data from a runtime service.
+- Do not load data from a runtime service.
 - Do not add automated tests unless separately requested.
 
 ## Acceptance criteria

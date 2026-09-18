@@ -54,18 +54,11 @@ mistakes regardless of any other representation.
 ### Bracket City
 
 - `date`: local calendar date in `YYYY-MM-DD` form
-- `difficulty`: normalized non-empty difficulty label from the share result (might not be available)
 - `score`: finite number from `0` through `100`
-- `rank`: normalized non-empty rank label
-- `wrongGuesses`: non-negative integer
-- `peeks`: non-negative integer
-- `answersRevealed`: non-negative integer
 
 ### Tagline
 
 - `date`: local calendar date in `YYYY-MM-DD` form
-- `letters`: uppercase ASCII letters
-- `hintsUsed`: non-negative integer
 - `stars`: integer from `1` through `3`
 
 ## Shared read contract
@@ -83,8 +76,8 @@ Node-only module so browser code cannot acquire filesystem capabilities.
 ## Boundaries
 
 - Store only fields used by the agreed feature.
-- Do not store raw share text, parser intermediates, display colors, computed
-  averages, formatted durations, month cells, or trend coordinates.
+- Do not store display colors, computed averages, formatted durations, month
+  cells, or trend coordinates.
 - Do not introduce a registry or adapter framework for four fixed games.
 - Do not touch the vault importer, generated Markdown, or deployment workflow.
 - Do not add automated tests unless the user separately requests them.
@@ -95,7 +88,7 @@ Node-only module so browser code cannot acquire filesystem capabilities.
 - One Zod contract is authoritative for storage, ingestion, and rendering.
 - Invalid dates, values, duplicates, or ordering fail with useful context.
 - Public loaders perform no writes and expose normalized typed results.
-- No raw pasted result text is persisted.
+- Storage schemas contain only the specified normalized fields.
 
 ## User verification
 

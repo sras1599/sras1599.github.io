@@ -21,8 +21,8 @@ Node-only persistence must remain visibly separate.
 
 ### Connections
 
-Parse the archive date, puzzle number, emoji rows, solved/failed state, mistake
-count, and completed-category solve order. Representative shape:
+Extract only the date, mistake count, and completed-category solve order.
+Representative input:
 
 ```text
 Archive September 13, 2026
@@ -36,8 +36,17 @@ Connections Puzzle #1190
 🟦🟦🟦🟦
 ```
 
-A row of four equal colors is a completed category. Other emoji rows are
-mistakes. A result that does not complete all four categories is failed.
+Derive the normalized fields from this visual representation:
+
+- Parse `date` from the archive date line.
+- Each row of four equal colors is a completed category. Append that color to
+  `solveOrder` in the order the completed rows appear.
+- Each mixed-color row is a mistake. Store the number of these rows as
+  `mistakes`; four mistakes represents a failed result.
+
+Ignore the puzzle number and do not store a separate solved/failed value. Success
+or failure is fully represented by `mistakes`, while a failed result's
+`solveOrder` may contain only the categories completed before the fourth mistake.
 
 ### Mini
 
@@ -47,7 +56,7 @@ override for history.
 
 ### Bracket City
 
-Parse date, difficulty, rank, wrong guesses, peeks, answers revealed, and score:
+Parse the date and score from the full shared result:
 
 ```text
 [Bracket City]
@@ -61,12 +70,12 @@ Rank: 👮 (Chief of Police)
 Total Score: 69.0
 ```
 
-Ignore the shared URL and decorative score blocks. Store normalized labels, not
-the rank emoji.
+Ignore difficulty, rank, wrong guesses, peeks, answers revealed, the shared URL,
+and decorative score blocks. They are not part of the normalized result.
 
 ### Tagline
 
-Support both a full dated format and a simple undated format:
+Parse only the date and the number of explicit star glyphs from a shared result:
 
 ```text
 TAGLINE: September 16, 2026
@@ -75,14 +84,9 @@ Hints Used: 0️⃣
 ⭐⭐⭐
 ```
 
-```text
-Letters: ABDELMS
-Hints: 0
-```
-
-For undated input, use an explicit date override when supplied; otherwise use the
-local calendar date. Derive stars only when native text omits them, using the
-game's three-star/hint rule, then validate.
+Discard every other line, including letters and hints. Do not derive stars from
+hints. Input without an explicit star result fails parsing; the CLI's date
+override may supply or replace the date as usual.
 
 ## Shared ingestion engine
 
@@ -137,7 +141,7 @@ can invoke the command or engine once per result. Do not add CSV support.
 - Preview and parse operations do not mutate files.
 - Confirmed saves are chronological and schema-valid.
 - Duplicate saves fail; `--replace` is explicit.
-- Mini and simple Tagline accept date overrides and otherwise use local dates.
+- Mini accepts date overrides and otherwise uses the local date.
 - Errors identify the invalid portion and leave persisted data intact.
 
 ## User verification

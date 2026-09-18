@@ -35,15 +35,14 @@ repository, and a push triggers the existing static deployment workflow.
   heights. Each ten-point threshold illuminates another translucent building.
   The exact score is prominent over the skyline. Use green for `85–100`, yellow
   for `60–84`, and red below `60`. Do not show rank icons in the cell.
-- **Tagline:** show a fixed-width three-star result in each played day. No hover
-  detail is required.
+- **Tagline:** show a fixed-width three-star result in each played day.
 
 ## Trends visualization
 
 - Use real calendar dates on the horizontal axis and only recorded results.
   Missing dates receive no mark, zero, inferred record, or special encoding.
 - Draw a monotone spline through the recorded values. Do not use a rolling line,
-  individual point dots, or granular tooltips.
+  individual point dots, or per-result annotations.
 - Fill the area under the spline with a translucent performance gradient that
   changes over time with the spline: green is good, yellow average, and red poor.
   Use narrow smooth transitions around each game's thresholds.

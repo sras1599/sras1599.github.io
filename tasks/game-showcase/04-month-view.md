@@ -35,8 +35,6 @@ layout is two columns and mobile is one column.
 - A played day contains horizontal category-color bands in actual solve order.
   Failed results may contain only completed bands and remain visibly failed.
 - Place repeated `×` marks above the bands for mistakes.
-- Hover/focus text may state date, solved/failed status, mistakes, and solve order.
-  The visual must remain understandable without hover.
 
 ## Mini card
 
@@ -54,21 +52,19 @@ layout is two columns and mobile is one column.
 - Each ten-point threshold illuminates another building. Keep buildings
   translucent enough that the large centered score remains readable.
 - Use green for `85–100`, yellow for `60–84`, and red below `60`.
-- Do not render rank icons. Hover/focus detail may include date, exact score,
-  rank, difficulty, wrong guesses, peeks, and answers revealed.
+- Do not render rank icons.
 
 ## Tagline card
 
 - Render a fixed three-character star field: filled stars for earned stars and
   outlined or quiet stars for the remainder.
-- Stars contain all intended day-level information. Do not add a tooltip.
+- Stars contain all intended day-level information.
 
 ## Accessibility and interaction
 
 - Buttons and informative cells need useful names and visible keyboard focus.
 - Do not rely on color alone: Connections has order/mistakes, Mini and Bracket
   show exact values, and Tagline exposes an accessible star count.
-- Hover details must also be keyboard-reachable; touch retains useful labels.
 - Avoid animation that interferes with scanning a month.
 
 ## Boundaries

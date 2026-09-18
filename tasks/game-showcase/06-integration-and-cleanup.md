@@ -63,8 +63,6 @@ share text is discarded.
 
 - Controls have visible focus, descriptive names, correct pressed/disabled
   states, and usable touch targets.
-- Month hover information is keyboard-accessible; Tagline has no unnecessary
-  tooltip.
 - Exact Mini and Bracket values remain legible over their illustrations.
 - Charts expose useful accessible names and summaries without serializing every
   plotted coordinate.
