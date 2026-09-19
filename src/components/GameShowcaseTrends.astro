@@ -1,0 +1,272 @@
+---
+/**
+ * Provide the browser-enhanced production shell for the Trends view. The
+ * component serializes the already-validated repository records into inert
+ * page markup and renders accessible controls and card headings immediately.
+ * Its chart implementation lives in `gameShowcaseTrends.ts`; placing this
+ * component inside a template keeps Observable Plot out of the default Month
+ * view until the template is selected and connected.
+ */
+import type { GameData } from "../data/games/contracts";
+
+type TrendRange = "3m" | "6m" | "1y" | "all";
+
+interface Props {
+  id: string;
+  currentLocalDate: string;
+  results: GameData;
+  availableRanges: TrendRange[];
+  defaultRange: TrendRange;
+  firstResultDate?: string;
+}
+
+const {
+  id,
+  currentLocalDate,
+  results,
+  availableRanges,
+  defaultRange,
+  firstResultDate,
+} = Astro.props;
+
+const games = [
+  { id: "connections", title: "Connections", measure: "mistakes", direction: "lower is better" },
+  { id: "mini", title: "Mini", measure: "time", direction: "lower is better" },
+  { id: "bracket-city", title: "Bracket City", measure: "score", direction: "higher is better" },
+  { id: "tagline", title: "Tagline", measure: "stars", direction: "higher is better" },
+] as const;
+
+const ranges: Array<{ value: TrendRange; label: string }> = [
+  { value: "3m", label: "3M" },
+  { value: "6m", label: "6M" },
+  { value: "1y", label: "1Y" },
+  { value: "all", label: "All" },
+];
+const firstDateLabel = firstResultDate
+  ? new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(`${firstResultDate}T00:00:00Z`))
+  : undefined;
+---
+
+<game-showcase-trends
+  data-trend-id={id}
+  data-current-date={currentLocalDate}
+  data-default-range={defaultRange}
+  data-selected-range={defaultRange}
+  data-available-ranges={availableRanges.join(",")}
+  data-first-date={firstResultDate}
+>
+  <div class="trend-toolbar">
+    <div class="trend-range-control" aria-label="Trend range">
+      {
+        ranges.map((range) => (
+          <button
+            type="button"
+            data-trend-range={range.value}
+            aria-pressed={range.value === defaultRange ? "true" : "false"}
+            disabled={!availableRanges.includes(range.value)}
+          >
+            {range.label}
+          </button>
+        ))
+      }
+    </div>
+    {
+      defaultRange === "all" && firstDateLabel && (
+        <p class="trend-start-date" data-trend-start-date>
+          Since {firstDateLabel}
+        </p>
+      )
+    }
+    <div class="performance-key" aria-label="Performance colors">
+      <span><i class="key-good"></i> good</span>
+      <span><i class="key-average"></i> average</span>
+      <span><i class="key-poor"></i> poor</span>
+    </div>
+  </div>
+
+  {
+    games.map((game) => (
+      <article class="game-card trend-card" data-trend-game={game.id}>
+        <header>
+          <div>
+            <h3>{game.title}</h3>
+            <p>{game.measure} · {game.direction}</p>
+          </div>
+          <p class="trend-summary" data-trend-summary aria-live="polite" />
+        </header>
+        <div class="trend-chart" data-trend-chart />
+      </article>
+    ))
+  }
+
+  <script
+    is:inline
+    type="application/json"
+    data-trend-data
+    set:html={JSON.stringify(results)}
+  />
+</game-showcase-trends>
+
+<style>
+  game-showcase-trends {
+    display: contents;
+  }
+
+  .trend-toolbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .trend-range-control {
+    display: flex;
+    overflow: hidden;
+    border: 1px solid var(--ink);
+    border-radius: 0.35rem;
+  }
+
+  .trend-range-control button {
+    min-width: 2.7rem;
+    padding: 0.48rem 0.6rem;
+    border: 0;
+    border-right: 1px solid var(--ink);
+    color: var(--ink);
+    background: var(--paper-high);
+    font: 700 0.62rem "Space Mono", monospace;
+    cursor: pointer;
+  }
+
+  .trend-range-control button:last-child {
+    border-right: 0;
+  }
+
+  .trend-range-control button[aria-pressed="true"] {
+    color: var(--paper-high);
+    background: var(--ink);
+  }
+
+  .trend-range-control button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .trend-range-control button:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 3px solid var(--purple);
+    outline-offset: -3px;
+  }
+
+  .performance-key,
+  .performance-key span {
+    display: flex;
+    align-items: center;
+  }
+
+  .performance-key {
+    gap: 0.75rem;
+    margin-left: auto;
+    color: var(--muted);
+    font: 0.58rem "Space Mono", monospace;
+  }
+
+  .performance-key span {
+    gap: 0.28rem;
+  }
+
+  .performance-key i {
+    width: 0.55rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+
+  .key-good { background: #2f9d63; }
+  .key-average { background: #d7a713; }
+  .key-poor { background: #d6553b; }
+
+  .trend-start-date {
+    margin: 0;
+    color: var(--muted);
+    font: 0.62rem "Space Mono", monospace;
+  }
+
+  .trend-card > header {
+    align-items: flex-start;
+  }
+
+  .trend-card header p {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+    font: 0.58rem "Space Mono", monospace;
+    text-transform: uppercase;
+  }
+
+  .trend-card .trend-summary {
+    flex: none;
+    margin-left: auto;
+    color: var(--ink);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: right;
+    text-transform: none;
+  }
+
+  .trend-summary :global(strong) {
+    color: var(--trend-summary-color, var(--ink));
+    font-size: 1.05rem;
+  }
+
+  .trend-summary :global(span) {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .trend-chart {
+    min-height: 13.5rem;
+    margin-top: 0.55rem;
+  }
+
+  .trend-chart:empty {
+    display: grid;
+    place-items: center;
+  }
+
+  .trend-chart :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    color: var(--muted);
+    font-family: "Space Mono", monospace;
+  }
+
+  .trend-chart :global(.trend-empty) {
+    margin: 0;
+    color: var(--muted);
+    font: 0.72rem/1.5 "Space Mono", monospace;
+    text-align: center;
+  }
+
+  @media (max-width: 560px) {
+    .trend-toolbar {
+      flex-wrap: wrap;
+    }
+
+    .performance-key {
+      width: 100%;
+      justify-content: center;
+      margin-left: 0;
+    }
+
+    .trend-start-date {
+      margin-left: auto;
+    }
+  }
+</style>

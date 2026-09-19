@@ -87,8 +87,13 @@ to ownership, entry points, or the rules described here.
   [GameShowcaseMonth.astro](src/components/GameShowcaseMonth.astro) is the
   presentation-only composition interface for normalized game results;
   [GameShowcaseMonthCard.astro](src/components/GameShowcaseMonthCard.astro) owns
-  the repeated calendar structure and explicit game illustrations. They perform
-  no data loading and own no navigation or URL state.
+  the repeated calendar structure and explicit game illustrations.
+  [GameShowcaseTrends.astro](src/components/GameShowcaseTrends.astro) owns the
+  range controls and accessible Trends card shell, while
+  [gameShowcaseTrends.ts](src/components/gameShowcaseTrends.ts) is its lazy
+  browser boundary for Observable Plot charts, range filtering, summaries, and
+  semantic SVG gradients. These presentation modules perform no data loading
+  and own no homepage navigation or URL state.
 - [blog/index.astro](src/pages/blog/index.astro) requires the generated blog index,
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.
   Hiding an entry from the feed does not unpublish its individual page.

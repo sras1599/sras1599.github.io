@@ -2,12 +2,38 @@
 /**
  * Render the game-showcase design fixtures on a dedicated development-only page.
  * The development integration injects this route, so neither the page nor its
- * synthetic histories enter the production route graph. This page retains only
- * the disposable design reference; the production presentation is mounted on
- * the public homepage with repository-owned results.
+ * synthetic histories enter the production route graph. It places the real
+ * repository-backed Trends presentation before the disposable prototype so
+ * their chart semantics and responsive behavior can be compared directly.
  */
+import { tz } from "@date-fns/tz";
+import { format, subMonths } from "date-fns";
+
+import GameShowcaseFrame from "../components/GameShowcaseFrame.astro";
 import GameShowcasePrototype from "../components/GameShowcasePrototype.astro";
+import GameShowcaseTrends from "../components/GameShowcaseTrends.astro";
+import { loadGameData } from "../data/games/load";
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+type TrendRange = "3m" | "6m" | "1y" | "all";
+
+const now = new Date();
+const inKolkata = { in: tz("Asia/Kolkata") };
+const currentLocalDate = format(now, "yyyy-MM-dd", inKolkata);
+const results = loadGameData();
+const firstResultDate = Object.values(results).flat().map(({ date }) => date).sort()[0];
+const starts = {
+  "3m": format(subMonths(now, 3), "yyyy-MM-dd", inKolkata),
+  "6m": format(subMonths(now, 6), "yyyy-MM-dd", inKolkata),
+  "1y": format(subMonths(now, 12), "yyyy-MM-dd", inKolkata),
+};
+const availableRanges: TrendRange[] = [
+  ...(firstResultDate && firstResultDate <= starts["3m"] ? ["3m" as const] : []),
+  ...(firstResultDate && firstResultDate <= starts["6m"] ? ["6m" as const] : []),
+  ...(firstResultDate && firstResultDate <= starts["1y"] ? ["1y" as const] : []),
+  "all",
+];
+const defaultRange: TrendRange = availableRanges.includes("6m") ? "6m" : "all";
 ---
 
 <BaseLayout
@@ -18,14 +44,43 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <p class="development-tools-link">
       <a href="/admin">← Development tools</a>
     </p>
+    <div class="comparison-label">Production — repository data</div>
+    <GameShowcaseFrame
+      id="production-game-trends"
+      eyebrow="Word games"
+      title="Trends in word games"
+      description="Recorded performance over time, using only the games played in the selected range."
+    >
+      <GameShowcaseTrends
+        id="comparison-game-trends"
+        currentLocalDate={currentLocalDate}
+        results={results}
+        availableRanges={availableRanges}
+        defaultRange={defaultRange}
+        firstResultDate={firstResultDate}
+      />
+    </GameShowcaseFrame>
+    <div class="comparison-label">Prototype — synthetic reference</div>
     <GameShowcasePrototype />
   </main>
 </BaseLayout>
+
+<script>
+  import "../components/gameShowcaseTrends";
+</script>
 
 <style>
   .development-tools-link {
     width: min(1120px, calc(100% - 2rem));
     margin: 1.5rem auto 0;
     font: 700 0.75rem "Space Mono", monospace;
+  }
+
+  .comparison-label {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 2rem auto -3rem;
+    color: var(--muted);
+    font: 700 0.7rem "Space Mono", monospace;
+    text-transform: uppercase;
   }
 </style>

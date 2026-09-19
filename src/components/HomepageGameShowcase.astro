@@ -2,17 +2,20 @@
 /**
  * Integrate the complete word-game showcase on the public homepage. This module
  * loads validated repository results, defines the current Kolkata calendar
- * date, renders every selectable Month presentation, and enhances the static
- * markup with shared navigation and canonical URL state. Its parameterless
- * interface deliberately keeps data preparation and browser coordination out
- * of the homepage while the lower-level presentation modules remain reusable.
+ * date, renders every selectable Month presentation, and embeds the inert
+ * Trends presentation. Its browser controller preserves each view's state,
+ * owns canonical URL state, and imports trend chart code only when Trends is
+ * first selected. Lower-level presentation modules remain reusable.
  */
 import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
+import { format, subMonths } from "date-fns";
 
 import { loadGameData } from "../data/games/load";
 import GameShowcaseFrame from "./GameShowcaseFrame.astro";
 import GameShowcaseMonth from "./GameShowcaseMonth.astro";
+import GameShowcaseTrends from "./GameShowcaseTrends.astro";
+
+type TrendRange = "3m" | "6m" | "1y" | "all";
 
 const now = new Date();
 const inKolkata = { in: tz("Asia/Kolkata") };
@@ -26,10 +29,12 @@ const gameResults = loadGameData();
  * continuous range lets an honestly empty historical month remain selectable
  * instead of implying that a gap in records never existed.
  */
-const resultMonths = Object.values(gameResults)
+const resultDates = Object.values(gameResults)
   .flat()
-  .map((result) => result.date.slice(0, 7));
-const firstResultMonth = resultMonths.sort()[0] ?? selectedMonth;
+  .map((result) => result.date)
+  .sort();
+const firstResultDate = resultDates[0];
+const firstResultMonth = firstResultDate?.slice(0, 7) ?? selectedMonth;
 const availableMonths: string[] = [];
 const [firstYear, firstMonth] = firstResultMonth.split("-").map(Number);
 const [currentYear, currentMonth] = selectedMonth.split("-").map(Number);
@@ -45,6 +50,19 @@ for (
     month = 1;
   }
 }
+
+const rangeStarts = {
+  "3m": format(subMonths(now, 3), "yyyy-MM-dd", inKolkata),
+  "6m": format(subMonths(now, 6), "yyyy-MM-dd", inKolkata),
+  "1y": format(subMonths(now, 12), "yyyy-MM-dd", inKolkata),
+};
+const availableTrendRanges: TrendRange[] = [
+  ...(firstResultDate && firstResultDate <= rangeStarts["3m"] ? ["3m" as const] : []),
+  ...(firstResultDate && firstResultDate <= rangeStarts["6m"] ? ["6m" as const] : []),
+  ...(firstResultDate && firstResultDate <= rangeStarts["1y"] ? ["1y" as const] : []),
+  "all",
+];
+const defaultTrendRange: TrendRange = availableTrendRanges.includes("6m") ? "6m" : "all";
 ---
 
 <game-showcase-controller>
@@ -53,6 +71,11 @@ for (
     eyebrow="Word games"
     title="A month in word games"
     description="A daily snapshot of the word games I play, including the days I did not record a result."
+    activeView="month"
+    viewLinks={[
+      { view: "month", label: "Month", href: "#games" },
+      { view: "trends", label: "Trends", href: `?games=trends&range=${defaultTrendRange}#games` },
+    ]}
     periodNavigation={{
       value: selectedMonth,
       label: selectedMonthLabel,
@@ -84,14 +107,24 @@ for (
       </template>
     ))
   }
+  <template data-game-trends-template>
+    <GameShowcaseTrends
+      id="homepage-game-trends"
+      currentLocalDate={currentLocalDate}
+      results={gameResults}
+      availableRanges={availableTrendRanges}
+      defaultRange={defaultTrendRange}
+      firstResultDate={firstResultDate}
+    />
+  </template>
 </game-showcase-controller>
 
 <script>
   /**
    * Enhance one rendered showcase instance. The custom element owns its DOM
    * queries and event lifecycle, so adding other homepage scripts cannot create
-   * selector or state collisions. Calendar markup and game encodings continue
-   * to come exclusively from the server-rendered Month templates.
+   * selector or state collisions. It swaps server-rendered Month templates or
+   * the inert Trends template, importing charts only for the latter.
    */
   class GameShowcaseController extends HTMLElement {
     private events?: AbortController;
@@ -134,7 +167,26 @@ for (
         ),
       );
       const availableMonths = Array.from(templates.keys()).sort();
+      const trendsTemplate = requireElement<HTMLTemplateElement>(
+        "template[data-game-trends-template]",
+      );
+      const trendsSource = trendsTemplate.content.querySelector<HTMLElement>(
+        "game-showcase-trends",
+      );
+      if (!trendsSource) {
+        throw new Error(
+          "Cannot initialize the homepage game showcase: missing Trends presentation",
+        );
+      }
+      const availableRanges = trendsSource.dataset.availableRanges?.split(",") ?? [];
+      const defaultRange = trendsSource.dataset.defaultRange ?? "all";
       const cardGrid = requireElement<HTMLElement>(".game-card-grid");
+      const title = requireElement<HTMLElement>("#games-title");
+      const description = requireElement<HTMLElement>("#games .section-heading > p:last-child");
+      const viewLinks = this.querySelectorAll<HTMLAnchorElement>("[data-showcase-view]");
+      const periodNavigation = requireElement<HTMLElement>(
+        "[data-showcase-period-navigation]",
+      );
       const periodLabel = requireElement<HTMLElement>("[data-period-label]");
       const previousButton = requireElement<HTMLButtonElement>(
         '[data-period-direction="previous"]',
@@ -148,6 +200,8 @@ for (
         timeZone: "UTC",
       });
       let activeMonth = defaultMonth;
+      let activeRange = defaultRange;
+      let activeView: "month" | "trends" = "month";
 
       /** Format YYYY-MM without allowing the browser's local zone to shift it. */
       const monthLabel = (month: string) => {
@@ -178,9 +232,24 @@ for (
         );
       };
 
+      /** Keep view copy, selected control, and Month-only navigation aligned. */
+      const updateViewPresentation = (view: "month" | "trends") => {
+        activeView = view;
+        title.textContent = view === "month" ? "A month in word games" : "Trends in word games";
+        description.textContent = view === "month"
+          ? "A daily snapshot of the word games I play, including the days I did not record a result."
+          : "Recorded performance over time, using only the games I played in the selected range.";
+        periodNavigation.hidden = view === "trends";
+        viewLinks.forEach((link) => {
+          if (link.dataset.showcaseView === view) link.setAttribute("aria-current", "page");
+          else link.removeAttribute("aria-current");
+        });
+      };
+
       /** Encode only non-default Month state while preserving unrelated params. */
       const updateUrl = (month: string, replace: boolean) => {
         const url = new URL(window.location.href);
+        url.searchParams.delete("range");
         if (month === defaultMonth) {
           url.searchParams.delete("games");
           url.searchParams.delete("date");
@@ -189,6 +258,15 @@ for (
           url.searchParams.set("date", month);
         }
 
+        window.history[replace ? "replaceState" : "pushState"]({}, "", url);
+      };
+
+      /** Encode the complete Trends state and remove Month's incompatible date. */
+      const updateTrendsUrl = (range: string, replace: boolean) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("games", "trends");
+        url.searchParams.set("range", range);
+        url.searchParams.delete("date");
         window.history[replace ? "replaceState" : "pushState"]({}, "", url);
       };
 
@@ -202,11 +280,32 @@ for (
 
         cardGrid.replaceChildren(template.content.cloneNode(true));
         activeMonth = month;
+        updateViewPresentation("month");
         updateControls(month);
 
         if (historyMode !== "none") {
           updateUrl(month, historyMode === "replace");
         }
+      };
+
+      /** Connect the inert trend markup, then load Plot and upgrade its element. */
+      const selectTrends = async (
+        range: string,
+        historyMode: "push" | "replace" | "none",
+      ) => {
+        if (!availableRanges.includes(range)) range = defaultRange;
+        const content = trendsTemplate.content.cloneNode(true) as DocumentFragment;
+        const trends = content.querySelector<HTMLElement>("game-showcase-trends");
+        if (trends) trends.dataset.selectedRange = range;
+        cardGrid.replaceChildren(content);
+        activeRange = range;
+        updateViewPresentation("trends");
+
+        if (historyMode !== "none") {
+          updateTrendsUrl(range, historyMode === "replace");
+        }
+
+        await import("./gameShowcaseTrends");
       };
 
       /** Accept only the complete documented query shape and available months. */
@@ -220,14 +319,47 @@ for (
           : defaultMonth;
       };
 
-      const initialMonth = monthFromUrl();
-      const initialParams = new URL(window.location.href).searchParams;
-      const hasCanonicalState =
-        initialMonth === defaultMonth
-          ? !initialParams.has("games") && !initialParams.has("date")
-          : initialParams.get("games") === "month" &&
-            initialParams.get("date") === initialMonth;
-      selectMonth(initialMonth, hasCanonicalState ? "none" : "replace");
+      const stateFromUrl = () => {
+        const params = new URL(window.location.href).searchParams;
+        if (params.get("games") === "trends") {
+          const requestedRange = params.get("range");
+          return {
+            view: "trends" as const,
+            range: requestedRange && availableRanges.includes(requestedRange)
+              ? requestedRange
+              : defaultRange,
+            canonical: requestedRange !== null && availableRanges.includes(requestedRange) && !params.has("date"),
+          };
+        }
+
+        const month = monthFromUrl();
+        const canonical = month === defaultMonth
+          ? !params.has("games") && !params.has("date") && !params.has("range")
+          : params.get("games") === "month" && params.get("date") === month && !params.has("range");
+        return { view: "month" as const, month, canonical };
+      };
+
+      const restoreUrlState = () => {
+        const state = stateFromUrl();
+        if (state.view === "trends") {
+          void selectTrends(state.range, state.canonical ? "none" : "replace");
+        } else {
+          selectMonth(state.month, state.canonical ? "none" : "replace");
+        }
+      };
+
+      restoreUrlState();
+
+      viewLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (link.dataset.showcaseView === "trends") {
+            void selectTrends(activeRange, "push");
+          } else {
+            selectMonth(activeMonth, "push");
+          }
+        }, { signal });
+      });
 
       previousButton.addEventListener(
         "click",
@@ -247,9 +379,19 @@ for (
         },
         { signal },
       );
+      this.addEventListener(
+        "game-trend-range-change",
+        (event) => {
+          const range = (event as CustomEvent<{ range: string }>).detail.range;
+          if (activeView !== "trends" || !availableRanges.includes(range)) return;
+          activeRange = range;
+          updateTrendsUrl(range, false);
+        },
+        { signal },
+      );
       window.addEventListener(
         "popstate",
-        () => selectMonth(monthFromUrl(), "none"),
+        restoreUrlState,
         { signal },
       );
     }

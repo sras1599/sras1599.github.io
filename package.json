@@ -13,6 +13,7 @@
   "dependencies": {
     "@astrojs/check": "^0.9.10",
     "@date-fns/tz": "^1.5.0",
+    "@observablehq/plot": "^0.6.17",
     "astro": "^7.3.1",
     "chokidar": "^5.0.0",
     "date-fns": "^4.4.0",
