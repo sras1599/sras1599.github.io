@@ -331,7 +331,7 @@ const describeResult = (played: PlayedResult) => {
     translate: -50% 0;
     color: #a52415;
     font:
-      normal 800 clamp(0.38rem, 1vw, 0.58rem) "Space Mono",
+      normal 800 clamp(0.58rem, 1vw, 1.58rem) "Space Mono",
       monospace;
     letter-spacing: -0.08em;
     white-space: nowrap;
@@ -472,6 +472,15 @@ const describeResult = (played: PlayedResult) => {
       0 0 3px white,
       0 0 3px white,
       0 0 6px white;
+  }
+
+  @media (max-width: 820px) {
+    /* Keep Connections dates clear of the solve-order glyph in narrow cells. */
+    .connections-calendar .calendar-day small {
+      right: 0.06rem;
+      bottom: 0.02rem;
+      font-size: 0.38rem;
+    }
   }
 
   .city-day {
