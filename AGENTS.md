@@ -82,8 +82,10 @@ to ownership, entry points, or the rules described here.
 - [GameShowcaseFrame.astro](src/components/GameShowcaseFrame.astro) owns the game
   showcase's shared typography, controls, responsive card grid, and card chrome.
   [GameShowcaseMonth.astro](src/components/GameShowcaseMonth.astro) is the
-  presentation-only calendar renderer for normalized game results; it performs
-  no data loading and owns no navigation or URL state.
+  presentation-only composition interface for normalized game results;
+  [GameShowcaseMonthCard.astro](src/components/GameShowcaseMonthCard.astro) owns
+  the repeated calendar structure and explicit game illustrations. They perform
+  no data loading and own no navigation or URL state.
 - [blog/index.astro](src/pages/blog/index.astro) requires the generated blog index,
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.
   Hiding an entry from the feed does not unpublish its individual page.

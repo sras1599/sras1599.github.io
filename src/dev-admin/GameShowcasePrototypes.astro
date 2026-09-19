@@ -2,9 +2,9 @@
 /**
  * Render the game-showcase design fixtures on a dedicated development-only page.
  * The development integration injects this route, so neither the page nor its
- * synthetic histories enter the production route graph. The existing combined
- * fixture currently owns the Month/Trends switch; Phase 4 will add the extracted
- * production presentation beside it for direct visual comparison.
+ * synthetic histories enter the production route graph. This page retains only
+ * the disposable design reference; the production presentation is mounted on
+ * the public homepage with repository-owned results.
  */
 import GameShowcasePrototype from "../components/GameShowcasePrototype.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";

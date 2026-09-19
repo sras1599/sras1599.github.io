@@ -1,9 +1,26 @@
 ---
-// Renders the public homepage hero, work, and contact sections.
+/**
+ * Render the public homepage hero, current game showcase, work, and contact
+ * sections. The showcase reads validated repository-owned results at build time
+ * and presents the current calendar month between the hero and Work; its date
+ * uses the site owner's local time zone rather than the build machine's zone.
+ */
 import { Image } from "astro:assets";
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
 
+import GameShowcaseFrame from "../components/GameShowcaseFrame.astro";
+import GameShowcaseMonth from "../components/GameShowcaseMonth.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import profileImage from "../assets/profile.webp";
+import { loadGameData } from "../data/games/load";
+
+const now = new Date();
+const inKolkata = { in: tz("Asia/Kolkata") };
+const currentLocalDate = format(now, "yyyy-MM-dd", inKolkata);
+const selectedMonth = format(now, "yyyy-MM", inKolkata);
+const selectedMonthLabel = format(now, "MMMM yyyy", inKolkata);
+const gameResults = loadGameData();
 
 const projects = [
   {
@@ -61,6 +78,20 @@ const links = [
         />
       </div>
     </section>
+
+    <GameShowcaseFrame
+      id="games"
+      eyebrow="Word games"
+      title="A month in word games"
+      description="A daily snapshot of the word games I play, including the days I did not record a result."
+      periodNavigation={{ label: selectedMonthLabel }}
+    >
+      <GameShowcaseMonth
+        selectedMonth={selectedMonth}
+        currentLocalDate={currentLocalDate}
+        results={gameResults}
+      />
+    </GameShowcaseFrame>
 
     <section
       class="section work-section"
