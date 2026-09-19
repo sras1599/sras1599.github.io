@@ -1,0 +1,569 @@
+---
+/**
+ * Render one game as a complete Month card. A discriminated interface keeps a
+ * game ID paired with its normalized result type, while the implementation owns
+ * the shared article shell, calendar alignment, day-state classification,
+ * accessible naming, and the four explicit visual encodings. It performs no
+ * data loading and does not expose formatting or renderer configuration.
+ */
+import type {
+  BracketCityResult,
+  ConnectionsResult,
+  MiniResult,
+  TaglineResult,
+} from "../data/games/contracts";
+
+type GameResults =
+  | { game: "connections"; results: ConnectionsResult[] }
+  | { game: "mini"; results: MiniResult[] }
+  | { game: "bracket-city"; results: BracketCityResult[] }
+  | { game: "tagline"; results: TaglineResult[] };
+
+type Props = GameResults & {
+  selectedMonth: string;
+  currentLocalDate: string;
+};
+
+type PlayedResult =
+  | { game: "connections"; result: ConnectionsResult }
+  | { game: "mini"; result: MiniResult }
+  | { game: "bracket-city"; result: BracketCityResult }
+  | { game: "tagline"; result: TaglineResult };
+
+type CardPresentation = {
+  title: string;
+  subtitle: string;
+  cardClass: string;
+  calendarClass: string;
+  key?: string;
+};
+
+const props = Astro.props;
+const { game, selectedMonth, currentLocalDate } = props;
+
+const monthMatch = /^(\d{4})-(\d{2})$/.exec(selectedMonth);
+if (!monthMatch) {
+  throw new Error(
+    `Cannot render game showcase month ${JSON.stringify(selectedMonth)}: expected YYYY-MM`,
+  );
+}
+
+const year = Number(monthMatch[1]);
+const month = Number(monthMatch[2]);
+if (month < 1 || month > 12) {
+  throw new Error(
+    `Cannot render game showcase month ${JSON.stringify(selectedMonth)}: month must be 01 through 12`,
+  );
+}
+if (!/^\d{4}-\d{2}-\d{2}$/.test(currentLocalDate)) {
+  throw new Error(
+    `Cannot render game showcase with current local date ${JSON.stringify(currentLocalDate)}: expected YYYY-MM-DD`,
+  );
+}
+
+const monthIndex = month - 1;
+const dayCount = new Date(year, month, 0).getDate();
+const leadingBlankCount = new Date(year, monthIndex, 1).getDay();
+const calendarCells: Array<number | null> = [
+  ...Array.from({ length: leadingBlankCount }, () => null),
+  ...Array.from({ length: dayCount }, (_, index) => index + 1),
+];
+const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
+const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(
+  new Date(year, monthIndex, 1),
+);
+
+/**
+ * Pair each result with its game before entering the shared calendar path. The
+ * discriminator preserves exact result types in the visual branches without
+ * allowing callers to supply mismatched presentation rules.
+ */
+const playedResults: PlayedResult[] = (() => {
+  switch (props.game) {
+    case "connections":
+      return props.results.map((result): PlayedResult => ({
+        game: "connections",
+        result,
+      }));
+    case "mini":
+      return props.results.map((result): PlayedResult => ({
+        game: "mini",
+        result,
+      }));
+    case "bracket-city":
+      return props.results.map((result): PlayedResult => ({
+        game: "bracket-city",
+        result,
+      }));
+    case "tagline":
+      return props.results.map((result): PlayedResult => ({
+        game: "tagline",
+        result,
+      }));
+  }
+
+  throw new Error(`Cannot render unsupported game ${JSON.stringify(props)}`);
+})();
+
+const resultsByDate = new Map(
+  playedResults
+    .filter(({ result }) => result.date.startsWith(`${selectedMonth}-`))
+    .map((played) => [played.result.date, played]),
+);
+
+const cardPresentation: CardPresentation = (() => {
+  switch (game) {
+    case "connections":
+      return {
+        title: "Connections",
+        subtitle: "mistakes + solve order",
+        cardClass: "connections-card",
+        calendarClass: "connections-calendar",
+      };
+    case "mini":
+      return {
+        title: "Mini",
+        subtitle: "one grain per second",
+        cardClass: "mini-card",
+        calendarClass: "value-calendar",
+        key: "under 40 green · 40–79 yellow · 80+ red · one grain = 1 second",
+      };
+    case "bracket-city":
+      return {
+        title: "Bracket City",
+        subtitle: "poster blocks",
+        cardClass: "bracket-card",
+        calendarClass: "value-calendar",
+        key: "ten points = one illuminated building",
+      };
+    case "tagline":
+      return {
+        title: "Tagline",
+        subtitle: "stars / 3",
+        cardClass: "tagline-card",
+        calendarClass: "tagline-calendar",
+      };
+  }
+
+  throw new Error(`Cannot present unsupported game ${JSON.stringify(game)}`);
+})();
+
+const formatTime = (seconds: number) =>
+  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+const particlesFor = (seconds: number) =>
+  Array.from({ length: Math.min(120, seconds) });
+const dateForDay = (day: number) =>
+  `${selectedMonth}-${String(day).padStart(2, "0")}`;
+const dateLabel = (day: number) => `${monthName} ${day}, ${year}`;
+
+/** Describe every played result without relying on its color or illustration. */
+const describeResult = (played: PlayedResult) => {
+  switch (played.game) {
+    case "connections": {
+      const { mistakes, solveOrder } = played.result;
+      const outcome = mistakes === 4 ? "unsolved" : "solved";
+      const mistakeLabel = mistakes === 1 ? "mistake" : "mistakes";
+      return `${outcome}; ${mistakes} ${mistakeLabel}; completed categories in order: ${solveOrder.join(", ") || "none"}`;
+    }
+    case "mini":
+      return formatTime(played.result.durationSeconds);
+    case "bracket-city":
+      return `${played.result.score} points`;
+    case "tagline":
+      return `${played.result.stars} of 3 stars`;
+  }
+};
+---
+
+<article class:list={["game-card", cardPresentation.cardClass]}>
+  <header>
+    <h3>{cardPresentation.title}</h3>
+    <span>{cardPresentation.subtitle}</span>
+  </header>
+  <div class="weekday-row" aria-hidden="true">
+    {weekdays.map((day) => <b>{day}</b>)}
+  </div>
+  <div class:list={["month-grid", cardPresentation.calendarClass]}>
+    {
+      calendarCells.map((day) => {
+        if (day === null)
+          return <i class="calendar-blank" aria-hidden="true" />;
+
+        const date = dateForDay(day);
+        const played = resultsByDate.get(date);
+        const future = !played && date > currentLocalDate;
+        const failed =
+          played?.game === "connections" && played.result.mistakes === 4;
+        const description = played
+          ? describeResult(played)
+          : future
+            ? "future date"
+            : "no recorded result";
+        const scoreClass =
+          played?.game === "bracket-city"
+            ? played.result.score >= 85
+              ? "score-high"
+              : played.result.score >= 60
+                ? "score-mid"
+                : "score-low"
+            : undefined;
+
+        return (
+          <div
+            class:list={[
+              "calendar-day",
+              {
+                "city-day": game === "bracket-city",
+                missing: !played && !future,
+                future,
+                failed,
+              },
+            ]}
+            role="img"
+            aria-label={`${dateLabel(day)}: ${description}`}
+            title={`${dateLabel(day)}: ${description}`}
+          >
+            {played?.game === "connections" ? (
+              <span class="connection-glyph" aria-hidden="true">
+                {played.result.solveOrder.map((color) => (
+                  <i class={`category-${color}`} />
+                ))}
+              </span>
+            ) : played?.game === "mini" ? (
+              <span class="particle-result" aria-hidden="true">
+                <span class="particles">
+                  {particlesFor(played.result.durationSeconds).map(
+                    (_, index) => (
+                      <i
+                        class={
+                          index < 39
+                            ? "particle-good"
+                            : index < 79
+                              ? "particle-average"
+                              : "particle-slow"
+                        }
+                        style={`--particle-row: ${10 - Math.floor(index / 12)}; --particle-column: ${(index % 12) + 1}`}
+                      />
+                    ),
+                  )}
+                </span>
+                <strong>{formatTime(played.result.durationSeconds)}</strong>
+              </span>
+            ) : played?.game === "bracket-city" ? (
+              <span
+                class:list={["score-signal", scoreClass]}
+                aria-hidden="true"
+              >
+                {Array.from({ length: 10 }, (_, segment) => (
+                  <i
+                    class:list={{
+                      active: played.result.score >= (segment + 1) * 10,
+                    }}
+                  />
+                ))}
+                <strong>{played.result.score}</strong>
+              </span>
+            ) : played?.game === "tagline" ? (
+              <span aria-hidden="true">
+                {"★".repeat(played.result.stars)}
+                <i>{"☆".repeat(3 - played.result.stars)}</i>
+              </span>
+            ) : (
+              <i class="no-result" aria-hidden="true" />
+            )}
+            <small aria-hidden="true">{day}</small>
+            {played?.game === "connections" && played.result.mistakes > 0 && (
+              <em aria-hidden="true">{"×".repeat(played.result.mistakes)}</em>
+            )}
+          </div>
+        );
+      })
+    }
+  </div>
+  {cardPresentation.key && <p class="chart-key">{cardPresentation.key}</p>}
+</article>
+
+<style>
+  .weekday-row,
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.28rem;
+  }
+
+  .weekday-row {
+    margin: 0.9rem 0 0.45rem;
+  }
+
+  .weekday-row b {
+    text-align: center;
+    font:
+      700 0.58rem "Space Mono",
+      monospace;
+  }
+
+  .calendar-blank,
+  .calendar-day {
+    aspect-ratio: 1;
+  }
+
+  .calendar-day {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    padding: 0.15rem;
+    place-items: center;
+    border: 1px solid var(--outline);
+    background: var(--paper-high);
+    cursor: help;
+  }
+
+  .calendar-day small {
+    position: absolute;
+    right: 0.18rem;
+    bottom: 0.08rem;
+    color: var(--muted);
+    font:
+      0.48rem "Space Mono",
+      monospace;
+  }
+
+  .calendar-day > em {
+    position: absolute;
+    top: 0.02rem;
+    left: 50%;
+    translate: -50% 0;
+    color: #a52415;
+    font:
+      normal 800 clamp(0.38rem, 1vw, 0.58rem) "Space Mono",
+      monospace;
+    letter-spacing: -0.08em;
+    white-space: nowrap;
+  }
+
+  .connection-glyph {
+    display: grid;
+    width: 72%;
+    height: 57%;
+    margin-top: 0.3rem;
+    overflow: hidden;
+    border: 1px solid var(--ink);
+  }
+
+  .connection-glyph i {
+    min-height: 0.18rem;
+    border-bottom: 1px solid rgba(26, 28, 26, 0.55);
+  }
+
+  .connection-glyph i:last-child {
+    border-bottom: 0;
+  }
+
+  .category-yellow {
+    background: #f9df6d;
+  }
+  .category-green {
+    background: #a0c35a;
+  }
+  .category-blue {
+    background: #b0c4ef;
+  }
+  .category-purple {
+    background: #ba81c5;
+  }
+
+  .calendar-day.failed {
+    background: var(--orange-soft);
+  }
+
+  .no-result {
+    width: 0.38rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #d3d3d3;
+  }
+
+  .value-calendar .calendar-day strong {
+    font:
+      700 clamp(0.55rem, 1.25vw, 1rem) "Space Mono",
+      monospace;
+  }
+
+  .value-calendar .great {
+    background: var(--green-soft);
+  }
+
+  .value-calendar .good {
+    background: var(--yellow);
+  }
+
+  .value-calendar .slow {
+    background: var(--orange-soft);
+  }
+
+  .value-calendar .rank-icon {
+    color: #7229a7;
+    font: 1.25rem serif;
+  }
+
+  .calendar-day.future {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .calendar-day.future .no-result {
+    width: 0.3rem;
+    background: #dedede;
+  }
+
+  .calendar-day.missing:not(.future) {
+    border-style: dashed;
+  }
+
+  .particle-result {
+    position: absolute;
+    inset: 0.75rem 0.15rem;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+
+  .particles {
+    position: absolute;
+    inset: 0.02rem;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+    gap: 2%;
+    overflow: hidden;
+    opacity: 0.4;
+  }
+
+  .particles i {
+    grid-row: var(--particle-row);
+    grid-column: var(--particle-column);
+    width: 78%;
+    aspect-ratio: 1;
+    place-self: center;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.35px rgba(26, 28, 26, 0.2);
+  }
+
+  .particle-good {
+    background: var(--green);
+  }
+  .particle-average {
+    background: #e0a800;
+  }
+  .particle-slow {
+    background: #df4c36;
+  }
+
+  .particle-result strong {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    padding: 0;
+    place-items: center;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    font:
+      700 clamp(1rem, 2.5vw, 1.4rem) "Space Mono",
+      monospace;
+    text-shadow:
+      0 0 3px white,
+      0 0 3px white,
+      0 0 6px white;
+  }
+
+  .city-day {
+    overflow: hidden;
+  }
+
+  .score-signal {
+    position: relative;
+    display: flex;
+    width: 88%;
+    height: 75%;
+    margin-bottom: 0.55rem;
+    align-self: end;
+    align-items: end;
+    justify-content: center;
+    gap: 0;
+    color: var(--orange);
+  }
+
+  .score-signal.score-high {
+    color: var(--green);
+  }
+  .score-signal.score-mid {
+    color: #e4ad16;
+  }
+  .score-signal.score-low {
+    color: var(--orange);
+  }
+
+  .score-signal > i {
+    position: relative;
+    width: 10%;
+    border: 1px solid rgba(26, 28, 26, 0.28);
+    border-bottom: 0;
+    background: rgba(26, 28, 26, 0.07);
+  }
+
+  .score-signal > i::before {
+    content: "";
+    position: absolute;
+    inset: 18% 18% auto;
+    height: 8%;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow:
+      0 0.35rem 0 rgba(255, 255, 255, 0.72),
+      0 0.7rem 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .score-signal > i:nth-child(odd) {
+    height: 68%;
+  }
+  .score-signal > i:nth-child(even) {
+    height: 88%;
+  }
+
+  .score-signal > i.active {
+    border-color: var(--ink);
+    background: currentColor;
+    opacity: 0.48;
+  }
+
+  .score-signal > strong {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    padding-top: 0.25rem;
+    place-items: center;
+    color: var(--ink);
+    font:
+      800 clamp(1.25rem, 3vw, 1.65rem) "Space Mono",
+      monospace;
+    text-shadow:
+      0 0 2px white,
+      0 0 4px white,
+      0 0 7px white,
+      0 0 10px white;
+  }
+
+  .tagline-calendar .calendar-day > span {
+    color: #c58e00;
+    font-size: clamp(0.48rem, 1.4vw, 0.8rem);
+    letter-spacing: -0.08em;
+    white-space: nowrap;
+  }
+
+  .tagline-calendar .calendar-day > span i {
+    color: #b8b8b8;
+    font-style: normal;
+  }
+</style>

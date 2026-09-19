@@ -1,0 +1,215 @@
+---
+/**
+ * Provide the production presentation shell shared by the game showcase's
+ * Month and Trends views. The frame owns section typography, optional shared
+ * view and period controls, the responsive card grid, and card chrome. Callers
+ * supply links because URL-state decisions belong to the page integrating the
+ * showcase; the default slot supplies view-specific cards.
+ */
+type ShowcaseView = "month" | "trends";
+
+type ViewLink = {
+  view: ShowcaseView;
+  label: string;
+  href: string;
+};
+
+type PeriodNavigation = {
+  label: string;
+  previous?: { href?: string; label: string };
+  next?: { href?: string; label: string };
+};
+
+interface Props {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description?: string;
+  activeView?: ShowcaseView;
+  viewLinks?: ViewLink[];
+  periodNavigation?: PeriodNavigation;
+}
+
+const {
+  id,
+  eyebrow,
+  title,
+  description,
+  activeView = "month",
+  viewLinks = [],
+  periodNavigation,
+} = Astro.props;
+
+const titleId = `${id}-title`;
+---
+
+<section class="game-showcase section" id={id} aria-labelledby={titleId}>
+  <div class="section-heading">
+    <p class="eyebrow">{eyebrow}</p>
+    <h2 id={titleId}>{title}</h2>
+    {description && <p>{description}</p>}
+  </div>
+
+  {
+    viewLinks.length > 1 && (
+      <nav class="showcase-view-switcher" aria-label="Showcase view">
+        {viewLinks.map((link) => (
+          <a
+            href={link.href}
+            aria-current={link.view === activeView ? "page" : undefined}
+            data-showcase-view={link.view}
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    )
+  }
+
+  {
+    periodNavigation && (
+      <nav class="showcase-period-navigation" aria-label="Month selection">
+        {periodNavigation.previous?.href ? (
+          <a
+            href={periodNavigation.previous.href}
+            aria-label={periodNavigation.previous.label}
+          >
+            <span aria-hidden="true">‹</span>
+          </a>
+        ) : periodNavigation.previous ? (
+          <button type="button" disabled aria-label={periodNavigation.previous.label}>
+            <span aria-hidden="true">‹</span>
+          </button>
+        ) : null}
+        <strong>{periodNavigation.label}</strong>
+        {periodNavigation.next?.href ? (
+          <a
+            href={periodNavigation.next.href}
+            aria-label={periodNavigation.next.label}
+          >
+            <span aria-hidden="true">›</span>
+          </a>
+        ) : periodNavigation.next ? (
+          <button type="button" disabled aria-label={periodNavigation.next.label}>
+            <span aria-hidden="true">›</span>
+          </button>
+        ) : null}
+      </nav>
+    )
+  }
+
+  <div class="game-card-grid">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .game-showcase {
+    position: relative;
+  }
+
+  .section-heading p:last-child {
+    color: var(--muted);
+  }
+
+  .showcase-view-switcher {
+    display: flex;
+    width: fit-content;
+    margin: -1rem auto 1.25rem;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .showcase-view-switcher a {
+    display: grid;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.9rem;
+    place-items: center;
+    background: var(--paper-high);
+    font: 700 0.68rem "Space Mono", monospace;
+  }
+
+  .showcase-view-switcher a[aria-current="page"] {
+    color: var(--paper-high);
+    background: var(--ink);
+  }
+
+  .showcase-period-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin: -1rem 0 1.75rem;
+  }
+
+  .showcase-period-navigation a,
+  .showcase-period-navigation button {
+    display: grid;
+    width: 2.75rem;
+    aspect-ratio: 1;
+    padding: 0;
+    place-items: center;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    color: var(--ink);
+    background: var(--paper-high);
+    font: inherit;
+    font-size: 1.4rem;
+  }
+
+  .showcase-period-navigation button:disabled {
+    opacity: 0.25;
+  }
+
+  .showcase-period-navigation strong {
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--ink);
+    border-radius: 0.4rem;
+    font: 700 0.78rem "Space Mono", monospace;
+  }
+
+  :is(.showcase-view-switcher a, .showcase-period-navigation a):focus-visible {
+    outline: 3px solid var(--purple);
+    outline-offset: 3px;
+  }
+
+  .game-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .game-card-grid :global(.game-card) {
+    min-width: 0;
+    padding: 1rem;
+    background: var(--paper-high);
+    border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .game-card-grid :global(.game-card > header) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--outline);
+  }
+
+  .game-card-grid :global(.game-card h3) {
+    font-size: 1.2rem;
+  }
+
+  .game-card-grid :global(.game-card > header span),
+  .game-card-grid :global(.chart-key) {
+    color: var(--muted);
+    font: 0.64rem "Space Mono", monospace;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 820px) {
+    .game-card-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

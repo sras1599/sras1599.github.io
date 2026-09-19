@@ -1,0 +1,43 @@
+---
+/**
+ * Compose the four production Month cards from normalized game results. This is
+ * the Month presentation's small public interface: callers select a calendar
+ * month, provide the current local date, and supply validated data. Individual
+ * card structure and game-specific rendering stay behind the private card seam.
+ */
+import type { GameData } from "../data/games/contracts";
+import GameShowcaseMonthCard from "./GameShowcaseMonthCard.astro";
+
+interface Props {
+  selectedMonth: string;
+  currentLocalDate: string;
+  results: GameData;
+}
+
+const { selectedMonth, currentLocalDate, results } = Astro.props;
+---
+
+<GameShowcaseMonthCard
+  game="connections"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  results={results.connections}
+/>
+<GameShowcaseMonthCard
+  game="mini"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  results={results.mini}
+/>
+<GameShowcaseMonthCard
+  game="bracket-city"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  results={results["bracket-city"]}
+/>
+<GameShowcaseMonthCard
+  game="tagline"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  results={results.tagline}
+/>
