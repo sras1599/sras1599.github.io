@@ -160,18 +160,14 @@ export function detectSharedGame(input: string): GameId {
 
 /**
  * Parse Connections rows. For example, `🟨🟨🟨🟨` completes yellow while
- * `🟨🟦🟨🟨` counts as one mistake. An `Archive` date prefix is optional.
+ * `🟨🟦🟨🟨` counts as one mistake. Dated archive shares retain their explicit
+ * day; current puzzle shares without a date use the laptop's local day.
  */
 function parseConnections(text: string): NormalizedGameCandidate {
   const lines = text.split(/\r?\n/).map((line) => line.trim());
   const dateLine = lines.find((line) =>
     /^(?:Archive )?[A-Z][a-z]+ \d{1,2}, \d{4}$/.test(line),
   );
-  if (!dateLine) {
-    throw new Error(
-      "Connections result is missing its date line (for example, \"Archive September 13, 2026\").",
-    );
-  }
 
   const rowLines = lines
     .map((line) => line.replaceAll("\uFE0F", ""))
@@ -207,10 +203,9 @@ function parseConnections(text: string): NormalizedGameCandidate {
     }
   });
 
-  const date = parseEnglishDate(
-    dateLine.replace(/^Archive /, ""),
-    "Connections result",
-  );
+  const date = dateLine
+    ? parseEnglishDate(dateLine.replace(/^Archive /, ""), "Connections result")
+    : localCalendarDate();
   return validateGameCandidate("connections", { date, mistakes, solveOrder });
 }
 
@@ -301,9 +296,10 @@ function parseTagline(text: string): NormalizedGameCandidate {
 }
 
 /**
- * Auto-detect and parse one native share without side effects. Mini's optional
- * date override supports historical entry; otherwise the laptop's local date
- * is used and can be edited in the caller's preview.
+ * Auto-detect and parse one native share without side effects. Current
+ * Connections shares and Mini results use the laptop's local date when the
+ * share does not provide one; Mini also accepts an override for historical
+ * entry. The caller can edit either default in its preview.
  */
 export function parseSharedResult(
   input: string,
