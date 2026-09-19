@@ -24,11 +24,6 @@ export default function developmentAdmin() {
           prerender: false,
         });
         injectRoute({
-          pattern: "/admin/game-showcase-prototypes",
-          entrypoint: new URL("./GameShowcasePrototypes.astro", import.meta.url),
-          prerender: false,
-        });
-        injectRoute({
           pattern: "/admin/api/game-result",
           entrypoint: new URL("./game-result.ts", import.meta.url),
           prerender: false,

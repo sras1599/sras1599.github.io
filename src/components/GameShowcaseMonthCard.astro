@@ -101,8 +101,6 @@ const playedResults: PlayedResult[] = (() => {
         result,
       }));
   }
-
-  throw new Error(`Cannot render unsupported game ${JSON.stringify(props)}`);
 })();
 
 const resultsByDate = new Map(
@@ -144,8 +142,6 @@ const cardPresentation: CardPresentation = (() => {
         calendarClass: "tagline-calendar",
       };
   }
-
-  throw new Error(`Cannot present unsupported game ${JSON.stringify(game)}`);
 })();
 
 const formatTime = (seconds: number) =>
