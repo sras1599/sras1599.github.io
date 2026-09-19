@@ -1,5 +1,785 @@
 [
   {
+    "date": "2026-01-01",
+    "durationSeconds": 110
+  },
+  {
+    "date": "2026-01-02",
+    "durationSeconds": 67
+  },
+  {
+    "date": "2026-01-03",
+    "durationSeconds": 90
+  },
+  {
+    "date": "2026-01-04",
+    "durationSeconds": 82
+  },
+  {
+    "date": "2026-01-05",
+    "durationSeconds": 76
+  },
+  {
+    "date": "2026-01-06",
+    "durationSeconds": 67
+  },
+  {
+    "date": "2026-01-07",
+    "durationSeconds": 146
+  },
+  {
+    "date": "2026-01-08",
+    "durationSeconds": 80
+  },
+  {
+    "date": "2026-01-09",
+    "durationSeconds": 45
+  },
+  {
+    "date": "2026-01-10",
+    "durationSeconds": 142
+  },
+  {
+    "date": "2026-01-11",
+    "durationSeconds": 57
+  },
+  {
+    "date": "2026-01-12",
+    "durationSeconds": 17
+  },
+  {
+    "date": "2026-01-13",
+    "durationSeconds": 101
+  },
+  {
+    "date": "2026-01-14",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-01-15",
+    "durationSeconds": 26
+  },
+  {
+    "date": "2026-01-16",
+    "durationSeconds": 139
+  },
+  {
+    "date": "2026-01-17",
+    "durationSeconds": 100
+  },
+  {
+    "date": "2026-01-18",
+    "durationSeconds": 110
+  },
+  {
+    "date": "2026-01-19",
+    "durationSeconds": 133
+  },
+  {
+    "date": "2026-01-20",
+    "durationSeconds": 151
+  },
+  {
+    "date": "2026-01-21",
+    "durationSeconds": 43
+  },
+  {
+    "date": "2026-01-22",
+    "durationSeconds": 61
+  },
+  {
+    "date": "2026-01-23",
+    "durationSeconds": 59
+  },
+  {
+    "date": "2026-01-24",
+    "durationSeconds": 232
+  },
+  {
+    "date": "2026-01-25",
+    "durationSeconds": 96
+  },
+  {
+    "date": "2026-01-26",
+    "durationSeconds": 79
+  },
+  {
+    "date": "2026-01-27",
+    "durationSeconds": 47
+  },
+  {
+    "date": "2026-01-28",
+    "durationSeconds": 39
+  },
+  {
+    "date": "2026-01-29",
+    "durationSeconds": 34
+  },
+  {
+    "date": "2026-01-30",
+    "durationSeconds": 73
+  },
+  {
+    "date": "2026-01-31",
+    "durationSeconds": 171
+  },
+  {
+    "date": "2026-02-01",
+    "durationSeconds": 74
+  },
+  {
+    "date": "2026-02-02",
+    "durationSeconds": 49
+  },
+  {
+    "date": "2026-02-03",
+    "durationSeconds": 33
+  },
+  {
+    "date": "2026-02-04",
+    "durationSeconds": 124
+  },
+  {
+    "date": "2026-02-05",
+    "durationSeconds": 150
+  },
+  {
+    "date": "2026-02-06",
+    "durationSeconds": 125
+  },
+  {
+    "date": "2026-02-07",
+    "durationSeconds": 59
+  },
+  {
+    "date": "2026-02-08",
+    "durationSeconds": 37
+  },
+  {
+    "date": "2026-02-09",
+    "durationSeconds": 75
+  },
+  {
+    "date": "2026-02-10",
+    "durationSeconds": 68
+  },
+  {
+    "date": "2026-02-11",
+    "durationSeconds": 52
+  },
+  {
+    "date": "2026-02-12",
+    "durationSeconds": 42
+  },
+  {
+    "date": "2026-02-13",
+    "durationSeconds": 49
+  },
+  {
+    "date": "2026-02-14",
+    "durationSeconds": 123
+  },
+  {
+    "date": "2026-02-15",
+    "durationSeconds": 143
+  },
+  {
+    "date": "2026-02-16",
+    "durationSeconds": 48
+  },
+  {
+    "date": "2026-02-17",
+    "durationSeconds": 73
+  },
+  {
+    "date": "2026-02-18",
+    "durationSeconds": 88
+  },
+  {
+    "date": "2026-02-19",
+    "durationSeconds": 14
+  },
+  {
+    "date": "2026-02-20",
+    "durationSeconds": 88
+  },
+  {
+    "date": "2026-02-21",
+    "durationSeconds": 104
+  },
+  {
+    "date": "2026-02-22",
+    "durationSeconds": 62
+  },
+  {
+    "date": "2026-02-23",
+    "durationSeconds": 45
+  },
+  {
+    "date": "2026-02-24",
+    "durationSeconds": 52
+  },
+  {
+    "date": "2026-02-25",
+    "durationSeconds": 35
+  },
+  {
+    "date": "2026-02-26",
+    "durationSeconds": 21
+  },
+  {
+    "date": "2026-02-27",
+    "durationSeconds": 151
+  },
+  {
+    "date": "2026-02-28",
+    "durationSeconds": 74
+  },
+  {
+    "date": "2026-03-01",
+    "durationSeconds": 136
+  },
+  {
+    "date": "2026-03-02",
+    "durationSeconds": 47
+  },
+  {
+    "date": "2026-03-03",
+    "durationSeconds": 44
+  },
+  {
+    "date": "2026-03-04",
+    "durationSeconds": 56
+  },
+  {
+    "date": "2026-03-05",
+    "durationSeconds": 83
+  },
+  {
+    "date": "2026-03-06",
+    "durationSeconds": 51
+  },
+  {
+    "date": "2026-03-07",
+    "durationSeconds": 151
+  },
+  {
+    "date": "2026-03-08",
+    "durationSeconds": 124
+  },
+  {
+    "date": "2026-03-09",
+    "durationSeconds": 84
+  },
+  {
+    "date": "2026-03-10",
+    "durationSeconds": 78
+  },
+  {
+    "date": "2026-03-11",
+    "durationSeconds": 45
+  },
+  {
+    "date": "2026-03-12",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-03-14",
+    "durationSeconds": 138
+  },
+  {
+    "date": "2026-03-15",
+    "durationSeconds": 49
+  },
+  {
+    "date": "2026-03-16",
+    "durationSeconds": 64
+  },
+  {
+    "date": "2026-03-17",
+    "durationSeconds": 115
+  },
+  {
+    "date": "2026-03-18",
+    "durationSeconds": 51
+  },
+  {
+    "date": "2026-03-19",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-03-20",
+    "durationSeconds": 109
+  },
+  {
+    "date": "2026-03-21",
+    "durationSeconds": 131
+  },
+  {
+    "date": "2026-03-22",
+    "durationSeconds": 48
+  },
+  {
+    "date": "2026-03-23",
+    "durationSeconds": 57
+  },
+  {
+    "date": "2026-03-24",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-03-26",
+    "durationSeconds": 212
+  },
+  {
+    "date": "2026-03-27",
+    "durationSeconds": 44
+  },
+  {
+    "date": "2026-03-28",
+    "durationSeconds": 86
+  },
+  {
+    "date": "2026-03-29",
+    "durationSeconds": 79
+  },
+  {
+    "date": "2026-03-30",
+    "durationSeconds": 54
+  },
+  {
+    "date": "2026-03-31",
+    "durationSeconds": 33
+  },
+  {
+    "date": "2026-04-01",
+    "durationSeconds": 38
+  },
+  {
+    "date": "2026-04-02",
+    "durationSeconds": 197
+  },
+  {
+    "date": "2026-04-03",
+    "durationSeconds": 121
+  },
+  {
+    "date": "2026-04-04",
+    "durationSeconds": 207
+  },
+  {
+    "date": "2026-04-05",
+    "durationSeconds": 53
+  },
+  {
+    "date": "2026-04-06",
+    "durationSeconds": 40
+  },
+  {
+    "date": "2026-04-07",
+    "durationSeconds": 43
+  },
+  {
+    "date": "2026-04-08",
+    "durationSeconds": 37
+  },
+  {
+    "date": "2026-04-09",
+    "durationSeconds": 54
+  },
+  {
+    "date": "2026-04-10",
+    "durationSeconds": 53
+  },
+  {
+    "date": "2026-04-11",
+    "durationSeconds": 183
+  },
+  {
+    "date": "2026-04-12",
+    "durationSeconds": 70
+  },
+  {
+    "date": "2026-04-13",
+    "durationSeconds": 38
+  },
+  {
+    "date": "2026-04-14",
+    "durationSeconds": 118
+  },
+  {
+    "date": "2026-04-15",
+    "durationSeconds": 55
+  },
+  {
+    "date": "2026-04-16",
+    "durationSeconds": 86
+  },
+  {
+    "date": "2026-04-17",
+    "durationSeconds": 22
+  },
+  {
+    "date": "2026-04-19",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-04-21",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-04-23",
+    "durationSeconds": 61
+  },
+  {
+    "date": "2026-04-24",
+    "durationSeconds": 104
+  },
+  {
+    "date": "2026-04-25",
+    "durationSeconds": 147
+  },
+  {
+    "date": "2026-04-26",
+    "durationSeconds": 48
+  },
+  {
+    "date": "2026-04-27",
+    "durationSeconds": 45
+  },
+  {
+    "date": "2026-04-28",
+    "durationSeconds": 25
+  },
+  {
+    "date": "2026-04-29",
+    "durationSeconds": 31
+  },
+  {
+    "date": "2026-04-30",
+    "durationSeconds": 25
+  },
+  {
+    "date": "2026-05-01",
+    "durationSeconds": 42
+  },
+  {
+    "date": "2026-05-02",
+    "durationSeconds": 81
+  },
+  {
+    "date": "2026-05-03",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-05-04",
+    "durationSeconds": 113
+  },
+  {
+    "date": "2026-05-05",
+    "durationSeconds": 43
+  },
+  {
+    "date": "2026-05-06",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-05-07",
+    "durationSeconds": 153
+  },
+  {
+    "date": "2026-05-08",
+    "durationSeconds": 146
+  },
+  {
+    "date": "2026-05-09",
+    "durationSeconds": 170
+  },
+  {
+    "date": "2026-05-10",
+    "durationSeconds": 54
+  },
+  {
+    "date": "2026-05-11",
+    "durationSeconds": 48
+  },
+  {
+    "date": "2026-05-12",
+    "durationSeconds": 86
+  },
+  {
+    "date": "2026-05-13",
+    "durationSeconds": 24
+  },
+  {
+    "date": "2026-05-14",
+    "durationSeconds": 119
+  },
+  {
+    "date": "2026-05-15",
+    "durationSeconds": 29
+  },
+  {
+    "date": "2026-05-16",
+    "durationSeconds": 143
+  },
+  {
+    "date": "2026-05-17",
+    "durationSeconds": 93
+  },
+  {
+    "date": "2026-05-18",
+    "durationSeconds": 57
+  },
+  {
+    "date": "2026-05-19",
+    "durationSeconds": 64
+  },
+  {
+    "date": "2026-05-20",
+    "durationSeconds": 43
+  },
+  {
+    "date": "2026-05-21",
+    "durationSeconds": 105
+  },
+  {
+    "date": "2026-05-22",
+    "durationSeconds": 163
+  },
+  {
+    "date": "2026-05-23",
+    "durationSeconds": 98
+  },
+  {
+    "date": "2026-05-24",
+    "durationSeconds": 38
+  },
+  {
+    "date": "2026-05-25",
+    "durationSeconds": 36
+  },
+  {
+    "date": "2026-05-26",
+    "durationSeconds": 106
+  },
+  {
+    "date": "2026-05-27",
+    "durationSeconds": 154
+  },
+  {
+    "date": "2026-05-28",
+    "durationSeconds": 116
+  },
+  {
+    "date": "2026-05-29",
+    "durationSeconds": 22
+  },
+  {
+    "date": "2026-05-30",
+    "durationSeconds": 89
+  },
+  {
+    "date": "2026-05-31",
+    "durationSeconds": 58
+  },
+  {
+    "date": "2026-06-01",
+    "durationSeconds": 40
+  },
+  {
+    "date": "2026-06-02",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-06-03",
+    "durationSeconds": 150
+  },
+  {
+    "date": "2026-06-04",
+    "durationSeconds": 43
+  },
+  {
+    "date": "2026-06-05",
+    "durationSeconds": 155
+  },
+  {
+    "date": "2026-06-06",
+    "durationSeconds": 155
+  },
+  {
+    "date": "2026-06-07",
+    "durationSeconds": 129
+  },
+  {
+    "date": "2026-06-08",
+    "durationSeconds": 203
+  },
+  {
+    "date": "2026-06-09",
+    "durationSeconds": 24
+  },
+  {
+    "date": "2026-06-10",
+    "durationSeconds": 54
+  },
+  {
+    "date": "2026-06-11",
+    "durationSeconds": 65
+  },
+  {
+    "date": "2026-06-12",
+    "durationSeconds": 140
+  },
+  {
+    "date": "2026-06-13",
+    "durationSeconds": 203
+  },
+  {
+    "date": "2026-06-21",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-06-22",
+    "durationSeconds": 69
+  },
+  {
+    "date": "2026-06-23",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-06-24",
+    "durationSeconds": 37
+  },
+  {
+    "date": "2026-06-25",
+    "durationSeconds": 41
+  },
+  {
+    "date": "2026-06-26",
+    "durationSeconds": 43
+  },
+  {
+    "date": "2026-06-29",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-06-30",
+    "durationSeconds": 66
+  },
+  {
+    "date": "2026-07-01",
+    "durationSeconds": 36
+  },
+  {
+    "date": "2026-07-02",
+    "durationSeconds": 73
+  },
+  {
+    "date": "2026-07-03",
+    "durationSeconds": 34
+  },
+  {
+    "date": "2026-07-04",
+    "durationSeconds": 235
+  },
+  {
+    "date": "2026-07-05",
+    "durationSeconds": 224
+  },
+  {
+    "date": "2026-07-07",
+    "durationSeconds": 82
+  },
+  {
+    "date": "2026-07-08",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-07-09",
+    "durationSeconds": 39
+  },
+  {
+    "date": "2026-07-10",
+    "durationSeconds": 67
+  },
+  {
+    "date": "2026-07-11",
+    "durationSeconds": 141
+  },
+  {
+    "date": "2026-07-12",
+    "durationSeconds": 50
+  },
+  {
+    "date": "2026-07-13",
+    "durationSeconds": 101
+  },
+  {
+    "date": "2026-07-14",
+    "durationSeconds": 21
+  },
+  {
+    "date": "2026-07-15",
+    "durationSeconds": 78
+  },
+  {
+    "date": "2026-07-16",
+    "durationSeconds": 72
+  },
+  {
+    "date": "2026-07-17",
+    "durationSeconds": 65
+  },
+  {
+    "date": "2026-07-19",
+    "durationSeconds": 32
+  },
+  {
+    "date": "2026-07-20",
+    "durationSeconds": 151
+  },
+  {
+    "date": "2026-07-21",
+    "durationSeconds": 38
+  },
+  {
+    "date": "2026-07-22",
+    "durationSeconds": 84
+  },
+  {
+    "date": "2026-07-23",
+    "durationSeconds": 132
+  },
+  {
+    "date": "2026-07-24",
+    "durationSeconds": 70
+  },
+  {
+    "date": "2026-07-26",
+    "durationSeconds": 60
+  },
+  {
+    "date": "2026-07-27",
+    "durationSeconds": 28
+  },
+  {
+    "date": "2026-07-28",
+    "durationSeconds": 35
+  },
+  {
+    "date": "2026-07-29",
+    "durationSeconds": 37
+  },
+  {
+    "date": "2026-07-30",
+    "durationSeconds": 52
+  },
+  {
+    "date": "2026-07-31",
+    "durationSeconds": 103
+  },
+  {
     "date": "2026-08-01",
     "durationSeconds": 143
   },
