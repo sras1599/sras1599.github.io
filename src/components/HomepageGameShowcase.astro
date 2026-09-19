@@ -1,0 +1,273 @@
+---
+/**
+ * Integrate the complete word-game showcase on the public homepage. This module
+ * loads validated repository results, defines the current Kolkata calendar
+ * date, renders every selectable Month presentation, and enhances the static
+ * markup with shared navigation and canonical URL state. Its parameterless
+ * interface deliberately keeps data preparation and browser coordination out
+ * of the homepage while the lower-level presentation modules remain reusable.
+ */
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
+
+import { loadGameData } from "../data/games/load";
+import GameShowcaseFrame from "./GameShowcaseFrame.astro";
+import GameShowcaseMonth from "./GameShowcaseMonth.astro";
+
+const now = new Date();
+const inKolkata = { in: tz("Asia/Kolkata") };
+const currentLocalDate = format(now, "yyyy-MM-dd", inKolkata);
+const selectedMonth = format(now, "yyyy-MM", inKolkata);
+const selectedMonthLabel = format(now, "MMMM yyyy", inKolkata);
+const gameResults = loadGameData();
+
+/**
+ * List every calendar month from the first persisted result through today. A
+ * continuous range lets an honestly empty historical month remain selectable
+ * instead of implying that a gap in records never existed.
+ */
+const resultMonths = Object.values(gameResults)
+  .flat()
+  .map((result) => result.date.slice(0, 7));
+const firstResultMonth = resultMonths.sort()[0] ?? selectedMonth;
+const availableMonths: string[] = [];
+const [firstYear, firstMonth] = firstResultMonth.split("-").map(Number);
+const [currentYear, currentMonth] = selectedMonth.split("-").map(Number);
+
+for (
+  let year = firstYear, month = firstMonth;
+  year < currentYear || (year === currentYear && month <= currentMonth);
+) {
+  availableMonths.push(`${year}-${String(month).padStart(2, "0")}`);
+  month += 1;
+  if (month === 13) {
+    year += 1;
+    month = 1;
+  }
+}
+---
+
+<game-showcase-controller>
+  <GameShowcaseFrame
+    id="games"
+    eyebrow="Word games"
+    title="A month in word games"
+    description="A daily snapshot of the word games I play, including the days I did not record a result."
+    periodNavigation={{
+      value: selectedMonth,
+      label: selectedMonthLabel,
+      previous: {
+        label: `Previous month, ${format(
+          new Date(currentYear, currentMonth - 2, 1),
+          "MMMM yyyy",
+        )}`,
+        disabled: availableMonths.length === 1,
+      },
+      next: { label: "Next month unavailable", disabled: true },
+    }}
+  >
+    <GameShowcaseMonth
+      selectedMonth={selectedMonth}
+      currentLocalDate={currentLocalDate}
+      results={gameResults}
+    />
+  </GameShowcaseFrame>
+
+  {
+    availableMonths.map((month) => (
+      <template data-game-month-template={month}>
+        <GameShowcaseMonth
+          selectedMonth={month}
+          currentLocalDate={currentLocalDate}
+          results={gameResults}
+        />
+      </template>
+    ))
+  }
+</game-showcase-controller>
+
+<script>
+  /**
+   * Enhance one rendered showcase instance. The custom element owns its DOM
+   * queries and event lifecycle, so adding other homepage scripts cannot create
+   * selector or state collisions. Calendar markup and game encodings continue
+   * to come exclusively from the server-rendered Month templates.
+   */
+  class GameShowcaseController extends HTMLElement {
+    private events?: AbortController;
+
+    connectedCallback() {
+      if (this.events) return;
+
+      this.events = new AbortController();
+      const { signal } = this.events;
+
+      /** Fail with the broken internal markup contract instead of a null error. */
+      const requireElement = <ElementType extends Element>(selector: string) => {
+        const element = this.querySelector<ElementType>(selector);
+        if (!element) {
+          throw new Error(
+            `Cannot initialize the homepage game showcase: missing ${selector}`,
+          );
+        }
+        return element;
+      };
+
+      const showcase = requireElement<HTMLElement>("#games");
+      const defaultMonth = showcase.dataset.showcasePeriod;
+      if (!defaultMonth) {
+        throw new Error(
+          "Cannot initialize the homepage game showcase: missing default month",
+        );
+      }
+
+      const templates = new Map(
+        Array.from(
+          this.querySelectorAll<HTMLTemplateElement>(
+            "template[data-game-month-template]",
+          ),
+        ).map(
+          (template): [string, HTMLTemplateElement] => [
+            template.dataset.gameMonthTemplate!,
+            template,
+          ],
+        ),
+      );
+      const availableMonths = Array.from(templates.keys()).sort();
+      const cardGrid = requireElement<HTMLElement>(".game-card-grid");
+      const periodLabel = requireElement<HTMLElement>("[data-period-label]");
+      const previousButton = requireElement<HTMLButtonElement>(
+        '[data-period-direction="previous"]',
+      );
+      const nextButton = requireElement<HTMLButtonElement>(
+        '[data-period-direction="next"]',
+      );
+      const monthFormatter = new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+      let activeMonth = defaultMonth;
+
+      /** Format YYYY-MM without allowing the browser's local zone to shift it. */
+      const monthLabel = (month: string) => {
+        const [year, monthNumber] = month.split("-").map(Number);
+        return monthFormatter.format(new Date(Date.UTC(year, monthNumber - 1)));
+      };
+
+      /** Keep the shared label and both boundary states aligned with the cards. */
+      const updateControls = (month: string) => {
+        const index = availableMonths.indexOf(month);
+        const previousMonth = availableMonths[index - 1];
+        const nextMonth = availableMonths[index + 1];
+
+        periodLabel.textContent = monthLabel(month);
+        previousButton.disabled = previousMonth === undefined;
+        previousButton.setAttribute(
+          "aria-label",
+          previousMonth
+            ? `Previous month, ${monthLabel(previousMonth)}`
+            : "Previous month unavailable",
+        );
+        nextButton.disabled = nextMonth === undefined;
+        nextButton.setAttribute(
+          "aria-label",
+          nextMonth
+            ? `Next month, ${monthLabel(nextMonth)}`
+            : "Next month unavailable",
+        );
+      };
+
+      /** Encode only non-default Month state while preserving unrelated params. */
+      const updateUrl = (month: string, replace: boolean) => {
+        const url = new URL(window.location.href);
+        if (month === defaultMonth) {
+          url.searchParams.delete("games");
+          url.searchParams.delete("date");
+        } else {
+          url.searchParams.set("games", "month");
+          url.searchParams.set("date", month);
+        }
+
+        window.history[replace ? "replaceState" : "pushState"]({}, "", url);
+      };
+
+      /** Replace all four cards from one production-rendered month template. */
+      const selectMonth = (
+        month: string,
+        historyMode: "push" | "replace" | "none",
+      ) => {
+        const template = templates.get(month);
+        if (!template) return;
+
+        cardGrid.replaceChildren(template.content.cloneNode(true));
+        activeMonth = month;
+        updateControls(month);
+
+        if (historyMode !== "none") {
+          updateUrl(month, historyMode === "replace");
+        }
+      };
+
+      /** Accept only the complete documented query shape and available months. */
+      const monthFromUrl = () => {
+        const params = new URL(window.location.href).searchParams;
+        const requestedMonth = params.get("date");
+        return params.get("games") === "month" &&
+          requestedMonth !== null &&
+          templates.has(requestedMonth)
+          ? requestedMonth
+          : defaultMonth;
+      };
+
+      const initialMonth = monthFromUrl();
+      const initialParams = new URL(window.location.href).searchParams;
+      const hasCanonicalState =
+        initialMonth === defaultMonth
+          ? !initialParams.has("games") && !initialParams.has("date")
+          : initialParams.get("games") === "month" &&
+            initialParams.get("date") === initialMonth;
+      selectMonth(initialMonth, hasCanonicalState ? "none" : "replace");
+
+      previousButton.addEventListener(
+        "click",
+        () => {
+          const index = availableMonths.indexOf(activeMonth);
+          const previousMonth = availableMonths[index - 1];
+          if (previousMonth) selectMonth(previousMonth, "push");
+        },
+        { signal },
+      );
+      nextButton.addEventListener(
+        "click",
+        () => {
+          const index = availableMonths.indexOf(activeMonth);
+          const nextMonth = availableMonths[index + 1];
+          if (nextMonth) selectMonth(nextMonth, "push");
+        },
+        { signal },
+      );
+      window.addEventListener(
+        "popstate",
+        () => selectMonth(monthFromUrl(), "none"),
+        { signal },
+      );
+    }
+
+    /** Release page-level listeners if this showcase instance is removed. */
+    disconnectedCallback() {
+      this.events?.abort();
+      this.events = undefined;
+    }
+  }
+
+  if (!customElements.get("game-showcase-controller")) {
+    customElements.define("game-showcase-controller", GameShowcaseController);
+  }
+</script>
+
+<style>
+  game-showcase-controller {
+    display: block;
+  }
+</style>

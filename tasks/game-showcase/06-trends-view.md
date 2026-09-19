@@ -50,7 +50,7 @@ for semantic gradients when the library does not own that styling cleanly.
   `lower is better`. Higher values are better for Bracket and Tagline.
 - Use one shared legend: green `good`, yellow `average`, red `poor`.
 - Use narrow smooth transitions around:
-  - Connections: green `0`, yellow `1–2`, red `3–4`/failure.
+  - Connections: green `0-1`, yellow `2-3`, red `4`/failure.
   - Mini: green below `40s`, yellow `40–79s`, red `80s+`.
   - Bracket City: green `85–100`, yellow `60–84`, red below `60`.
   - Tagline: green `3★`, yellow `2★`, red `1★`.
@@ -69,13 +69,6 @@ The range is already visible in its control and is not repeated in the phrase.
 With no records, show `No games recorded in this range`. With exactly one record,
 show one performance-colored dot at its real date and the standard summary. Draw
 the spline and area only with at least two records.
-
-## Prototype comparison page
-
-Extend the development-only `/admin/game-showcase-prototypes` page so the
-production Trends presentation and the accepted synthetic trend prototype can
-be inspected beside each other at the same viewport. Keep comparison fixtures
-and synthetic histories out of public modules and the homepage data path.
 
 ## Performance and accessibility
 

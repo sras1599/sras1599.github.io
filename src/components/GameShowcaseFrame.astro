@@ -3,8 +3,8 @@
  * Provide the production presentation shell shared by the game showcase's
  * Month and Trends views. The frame owns section typography, optional shared
  * view and period controls, the responsive card grid, and card chrome. Callers
- * supply links because URL-state decisions belong to the page integrating the
- * showcase; the default slot supplies view-specific cards.
+ * supply links and period state because URL decisions belong to the caller
+ * integrating the showcase; the default slot supplies view-specific cards.
  */
 type ShowcaseView = "month" | "trends";
 
@@ -15,9 +15,10 @@ type ViewLink = {
 };
 
 type PeriodNavigation = {
+  value: string;
   label: string;
-  previous?: { href?: string; label: string };
-  next?: { href?: string; label: string };
+  previous?: { href?: string; label: string; disabled?: boolean };
+  next?: { href?: string; label: string; disabled?: boolean };
 };
 
 interface Props {
@@ -43,7 +44,12 @@ const {
 const titleId = `${id}-title`;
 ---
 
-<section class="game-showcase section" id={id} aria-labelledby={titleId}>
+<section
+  class="game-showcase section"
+  id={id}
+  aria-labelledby={titleId}
+  data-showcase-period={periodNavigation?.value}
+>
   <div class="section-heading">
     <p class="eyebrow">{eyebrow}</p>
     <h2 id={titleId}>{title}</h2>
@@ -77,11 +83,18 @@ const titleId = `${id}-title`;
             <span aria-hidden="true">‹</span>
           </a>
         ) : periodNavigation.previous ? (
-          <button type="button" disabled aria-label={periodNavigation.previous.label}>
+          <button
+            type="button"
+            disabled={periodNavigation.previous.disabled}
+            aria-label={periodNavigation.previous.label}
+            data-period-direction="previous"
+          >
             <span aria-hidden="true">‹</span>
           </button>
         ) : null}
-        <strong>{periodNavigation.label}</strong>
+        <strong data-period-label aria-live="polite" aria-atomic="true">
+          {periodNavigation.label}
+        </strong>
         {periodNavigation.next?.href ? (
           <a
             href={periodNavigation.next.href}
@@ -90,7 +103,12 @@ const titleId = `${id}-title`;
             <span aria-hidden="true">›</span>
           </a>
         ) : periodNavigation.next ? (
-          <button type="button" disabled aria-label={periodNavigation.next.label}>
+          <button
+            type="button"
+            disabled={periodNavigation.next.disabled}
+            aria-label={periodNavigation.next.label}
+            data-period-direction="next"
+          >
             <span aria-hidden="true">›</span>
           </button>
         ) : null}
@@ -127,7 +145,9 @@ const titleId = `${id}-title`;
     padding: 0.5rem 0.9rem;
     place-items: center;
     background: var(--paper-high);
-    font: 700 0.68rem "Space Mono", monospace;
+    font:
+      700 0.68rem "Space Mono",
+      monospace;
   }
 
   .showcase-view-switcher a[aria-current="page"] {
@@ -162,14 +182,28 @@ const titleId = `${id}-title`;
     opacity: 0.25;
   }
 
-  .showcase-period-navigation strong {
-    padding: 0.55rem 1rem;
-    border: 1px solid var(--ink);
-    border-radius: 0.4rem;
-    font: 700 0.78rem "Space Mono", monospace;
+  .showcase-period-navigation button:not(:disabled) {
+    cursor: pointer;
   }
 
-  :is(.showcase-view-switcher a, .showcase-period-navigation a):focus-visible {
+  .showcase-period-navigation strong {
+    display: grid;
+    width: 9.75rem;
+    padding: 0.55rem 1rem;
+    place-items: center;
+    border: 1px solid var(--ink);
+    border-radius: 0.4rem;
+    box-sizing: border-box;
+    font:
+      700 0.78rem "Space Mono",
+      monospace;
+  }
+
+  :is(
+    .showcase-view-switcher a,
+    .showcase-period-navigation a,
+    .showcase-period-navigation button
+  ):focus-visible {
     outline: 3px solid var(--purple);
     outline-offset: 3px;
   }
@@ -203,7 +237,9 @@ const titleId = `${id}-title`;
   .game-card-grid :global(.game-card > header span),
   .game-card-grid :global(.chart-key) {
     color: var(--muted);
-    font: 0.64rem "Space Mono", monospace;
+    font:
+      0.64rem "Space Mono",
+      monospace;
     text-transform: uppercase;
   }
 

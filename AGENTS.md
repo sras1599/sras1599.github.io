@@ -76,6 +76,9 @@ to ownership, entry points, or the rules described here.
 ### 4. Pages, navigation, and visual presentation
 
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
+  [HomepageGameShowcase.astro](src/components/HomepageGameShowcase.astro) owns
+  the homepage showcase's repository-data integration, Kolkata calendar range,
+  pre-rendered Month choices, browser navigation lifecycle, and public URL state.
   [BaseLayout.astro](src/layouts/BaseLayout.astro) owns the document shell, SEO
   metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
