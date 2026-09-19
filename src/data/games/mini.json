@@ -1,5 +1,45 @@
 [
   {
+    "date": "2025-12-22",
+    "durationSeconds": 151
+  },
+  {
+    "date": "2025-12-23",
+    "durationSeconds": 59
+  },
+  {
+    "date": "2025-12-24",
+    "durationSeconds": 121
+  },
+  {
+    "date": "2025-12-25",
+    "durationSeconds": 82
+  },
+  {
+    "date": "2025-12-26",
+    "durationSeconds": 37
+  },
+  {
+    "date": "2025-12-27",
+    "durationSeconds": 128
+  },
+  {
+    "date": "2025-12-28",
+    "durationSeconds": 128
+  },
+  {
+    "date": "2025-12-29",
+    "durationSeconds": 26
+  },
+  {
+    "date": "2025-12-30",
+    "durationSeconds": 30
+  },
+  {
+    "date": "2025-12-31",
+    "durationSeconds": 107
+  },
+  {
     "date": "2026-01-01",
     "durationSeconds": 110
   },

@@ -1,5 +1,113 @@
 [
   {
+    "date": "2025-12-21",
+    "mistakes": 2,
+    "solveOrder": [
+      "yellow",
+      "purple",
+      "green",
+      "blue"
+    ]
+  },
+  {
+    "date": "2025-12-22",
+    "mistakes": 3,
+    "solveOrder": [
+      "green",
+      "blue",
+      "purple",
+      "yellow"
+    ]
+  },
+  {
+    "date": "2025-12-23",
+    "mistakes": 2,
+    "solveOrder": [
+      "yellow",
+      "green",
+      "blue",
+      "purple"
+    ]
+  },
+  {
+    "date": "2025-12-24",
+    "mistakes": 3,
+    "solveOrder": [
+      "yellow",
+      "green",
+      "purple",
+      "blue"
+    ]
+  },
+  {
+    "date": "2025-12-25",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "green",
+      "blue",
+      "purple"
+    ]
+  },
+  {
+    "date": "2025-12-26",
+    "mistakes": 4,
+    "solveOrder": [
+      "purple",
+      "yellow"
+    ]
+  },
+  {
+    "date": "2025-12-27",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "blue",
+      "green",
+      "purple"
+    ]
+  },
+  {
+    "date": "2025-12-28",
+    "mistakes": 1,
+    "solveOrder": [
+      "green",
+      "purple",
+      "blue",
+      "yellow"
+    ]
+  },
+  {
+    "date": "2025-12-29",
+    "mistakes": 0,
+    "solveOrder": [
+      "green",
+      "blue",
+      "yellow",
+      "purple"
+    ]
+  },
+  {
+    "date": "2025-12-30",
+    "mistakes": 3,
+    "solveOrder": [
+      "blue",
+      "yellow",
+      "green",
+      "purple"
+    ]
+  },
+  {
+    "date": "2025-12-31",
+    "mistakes": 3,
+    "solveOrder": [
+      "green",
+      "purple",
+      "yellow",
+      "blue"
+    ]
+  },
+  {
     "date": "2026-01-01",
     "mistakes": 4,
     "solveOrder": [
