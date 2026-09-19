@@ -2,9 +2,10 @@
 /**
  * Provide the production presentation shell shared by the game showcase's
  * Month and Trends views. The frame owns section typography, optional shared
- * view and period controls, the responsive card grid, and card chrome. Callers
- * supply links and period state because URL decisions belong to the caller
- * integrating the showcase; the default slot supplies view-specific cards.
+ * view and period controls, the responsive card grid, card chrome, and the
+ * showcase's fixed heading content. Callers supply links and period state
+ * because URL decisions belong to the integrating module; the default slot
+ * supplies view-specific cards.
  */
 type ShowcaseView = "month" | "trends";
 
@@ -22,38 +23,38 @@ type PeriodNavigation = {
 };
 
 interface Props {
-  id: string;
-  eyebrow: string;
-  title: string;
-  description?: string;
   activeView?: ShowcaseView;
   viewLinks?: ViewLink[];
   periodNavigation?: PeriodNavigation;
 }
 
-const {
-  id,
-  eyebrow,
-  title,
-  description,
-  activeView = "month",
-  viewLinks = [],
-  periodNavigation,
-} = Astro.props;
-
-const titleId = `${id}-title`;
+const { activeView = "month", viewLinks = [], periodNavigation } = Astro.props;
 ---
 
 <section
   class="game-showcase section"
-  id={id}
-  aria-labelledby={titleId}
+  id="games"
+  aria-labelledby="games-title"
   data-showcase-period={periodNavigation?.value}
 >
   <div class="section-heading">
-    <p class="eyebrow">{eyebrow}</p>
-    <h2 id={titleId}>{title}</h2>
-    {description && <p>{description}</p>}
+    <p class="eyebrow">Fun</p>
+    <h2 id="games-title">The (puzzle) show must go on!</h2>
+    <p>
+      A snapshot of the online games I play daily (as I sip my <i
+        >perfectly brewed</i
+      > americano ☕)
+      <br /><br />
+      <small>
+        <i>
+          psst... join my group on <a
+            class="puzzle-party-link"
+            href="https://puzzleparty.app/i/ZZFVF4XW"
+            >puzzleparty
+          </a> if you'd like to compete!
+        </i>
+      </small>
+    </p>
   </div>
 
   {
@@ -128,6 +129,15 @@ const titleId = `${id}-title`;
 
   .section-heading p:last-child {
     color: var(--muted);
+  }
+
+  .puzzle-party-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15em;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 
   .showcase-view-switcher {
