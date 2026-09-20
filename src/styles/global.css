@@ -1,7 +1,8 @@
 /*
  * Define the site's shared visual system, navigation, and responsive layouts.
  * Collection renderers reuse these selectors for entry cards and authored
- * Markdown; local content images remain fluid within their bordered sections.
+ * Markdown; local content images remain fluid within their bordered sections,
+ * and abbreviations expose their expansions as paper-and-ink tooltips.
  * Desktop navigation uses a single row, while mobile centers the brand above a
  * tightly grouped row of destination links.
  */
@@ -558,13 +559,48 @@ h3 {
   text-decoration: none;
 }
 
-.article-body abbr[title] {
+.article-body abbr[data-tooltip] {
+  position: relative;
+  display: inline-block;
   text-decoration-line: underline;
   text-decoration-style: dotted;
   text-decoration-color: var(--orange);
   text-decoration-thickness: 2px;
-  text-underline-offset: 0.25em;
+  text-underline-offset: 0.30em;
   cursor: help;
+}
+
+.article-body abbr[data-tooltip]::after {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 0.45rem);
+  left: 0;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 3rem));
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ink);
+  background: var(--paper-high);
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--ink);
+  content: attr(data-tooltip);
+  font-family: "Be Vietnam Pro", system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  visibility: hidden;
+}
+
+.article-body abbr[data-tooltip]:hover::after,
+.article-body abbr[data-tooltip]:focus::after {
+  visibility: visible;
+}
+
+.article-body abbr[data-tooltip]:focus-visible {
+  border-radius: 0.1rem;
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .article-body img.content-image-center {

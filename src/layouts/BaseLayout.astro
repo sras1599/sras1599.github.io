@@ -3,6 +3,8 @@
  * Provide the shared HTML document shell, metadata, fonts, and primary
  * navigation for website pages. Callers supply optional page title and
  * description text; website-owned collection definitions supply fixed links.
+ * Authored abbreviations are enhanced into focusable, styled tooltips while
+ * retaining an accessible label containing both the term and its expansion.
  * Desktop presents the brand and navigation in one row, while mobile centers
  * the brand above a compact row containing all four navigation destinations.
  */
@@ -65,5 +67,27 @@ const notesRoute = notesCollectionDefinition.route;
       </header>
       <slot />
     </div>
+    <script>
+      /**
+       * Replace unstyleable browser title popups on authored abbreviations with
+       * data-backed tooltips. The accessible label preserves the relationship
+       * between each abbreviated term and its expansion after `title` is removed.
+       */
+      document
+        .querySelectorAll<HTMLElement>(".article-body abbr[title]")
+        .forEach((abbreviation) => {
+          const expansion = abbreviation.getAttribute("title");
+          if (!expansion) return;
+
+          const term = abbreviation.textContent?.trim();
+          abbreviation.dataset.tooltip = expansion;
+          abbreviation.setAttribute(
+            "aria-label",
+            term ? `${term}: ${expansion}` : expansion,
+          );
+          abbreviation.tabIndex = 0;
+          abbreviation.removeAttribute("title");
+        });
+    </script>
   </body>
 </html>
