@@ -118,7 +118,16 @@ Local image references use standard Markdown or Obsidian syntax:
 ![[photo.png|Description]]
 ![[photo.png|400]]
 ![[photo.png|400x300]]
+![[photo.png|center|400]]
+![[photo.png|Description|center|400x300]]
 ```
+
+Wiki image options are pipe-delimited and may combine a description, the `center`
+layout option, and one width or width-by-height value. The importer keeps the
+description as alt text, emits centered images with a website-owned CSS class, and
+sets numeric dimensions as HTML attributes. For example, `center|400` centers the
+image at a preferred width of 400 pixels while still allowing it to shrink on
+narrow screens.
 
 Resolve references relative to the source note, then from the vault root, then by
 unique filename. Ambiguous and missing references fail the import. Local images

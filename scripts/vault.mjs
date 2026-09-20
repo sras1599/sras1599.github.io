@@ -837,12 +837,16 @@ async function transformWikiText(value, file, vault, assets) {
 /**
  * Interpret one wiki match as a note link or raster-image embed. For a link,
  * [[folder/note|Label]] uses Label, otherwise the filename supplies the label.
- * For an embed, ![[photo.png|320x200]] supplies dimensions; a nonnumeric alias
- * becomes alt text instead. Embedding another note's content is unsupported.
+ * For an embed, pipe-delimited options may provide a description, `center`, and
+ * dimensions such as 320 or 320x200. Layout options become HTML attributes while
+ * any remaining text becomes the image's alt text. Embedding another note's
+ * content is unsupported.
  */
 async function transformWikiMatch(match, file, vault, assets) {
   const [, embedMarker, destination] = match;
-  const [target, ...aliases] = destination.split("|");
+  const [rawTarget, ...rawAliases] = destination.split("|");
+  const target = rawTarget.trim();
+  const aliases = rawAliases.map((alias) => alias.trim());
   const alias = aliases.join("|");
 
   if (embedMarker) {
@@ -851,9 +855,24 @@ async function transformWikiMatch(match, file, vault, assets) {
       throw new Error(`${file}: note transclusions are unsupported; use a link`);
     }
 
-    const dimensions = /^\d+(?:x\d+)?$/.test(alias) ? alias : undefined;
-    const alt = dimensions ? "" : alias;
-    const image = await prepareImage(target, alt, file, vault, assets, dimensions);
+    const dimensionOptions = aliases.filter((option) =>
+      /^\d+(?:x\d+)?$/.test(option),
+    );
+    if (dimensionOptions.length > 1) {
+      throw new Error(
+        `${file}: image embed has multiple dimensions: ${destination}`,
+      );
+    }
+
+    const dimensions = dimensionOptions[0];
+    const centered = aliases.includes("center");
+    const alt = aliases
+      .filter((option) => option !== dimensions && option !== "center")
+      .join("|");
+    const image = await prepareImage(target, alt, file, vault, assets, {
+      dimensions,
+      centered,
+    });
     return [image];
   }
 
@@ -925,10 +944,19 @@ function resolveReference(target, from, vault, { image = false } = {}) {
  * schemes are rejected. Local output names combine a hash of the bytes with the
  * normalized extension, so matching contents and extensions share an asset and
  * changed contents receive a new URL. This function does not write output files.
- * For local images, dimensions such as "320" or "320x200" produce an HTML img
- * node because ordinary Markdown image syntax cannot carry those dimensions.
+ * For local images, dimensions such as "320" or "320x200" and centered layout
+ * produce an HTML img node because ordinary Markdown image syntax cannot carry
+ * those presentation attributes. Centering is represented by a stable CSS class,
+ * leaving alt text available for an authored image description.
  */
-async function prepareImage(url, alt, from, vault, assets, dimensions) {
+async function prepareImage(
+  url,
+  alt,
+  from,
+  vault,
+  assets,
+  { dimensions, centered } = {},
+) {
   if (url.startsWith("https://")) {
     return { type: "image", url, alt: alt ?? "" };
   }
@@ -949,13 +977,15 @@ async function prepareImage(url, alt, from, vault, assets, dimensions) {
   assets.set(name, bytes);
 
   const src = `/_vault/${name}`;
-  if (dimensions) {
-    const [width, height] = dimensions.split("x");
+  if (dimensions || centered) {
+    const [width, height] = dimensions?.split("x") ?? [];
+    const classAttribute = centered ? ' class="content-image-center"' : "";
+    const widthAttribute = width ? ` width="${width}"` : "";
     const heightAttribute = height ? ` height="${height}"` : "";
 
     return {
       type: "html",
-      value: `<img src="${src}" alt="${escapeHtml(alt ?? "")}" width="${width}"${heightAttribute}>`,
+      value: `<img src="${src}" alt="${escapeHtml(alt ?? "")}"${classAttribute}${widthAttribute}${heightAttribute}>`,
     };
   }
 

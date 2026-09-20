@@ -567,6 +567,11 @@ h3 {
   cursor: help;
 }
 
+.article-body img.content-image-center {
+  display: block;
+  margin-inline: auto;
+}
+
 @media (max-width: 820px) {
   .site-nav {
     flex-wrap: wrap;
