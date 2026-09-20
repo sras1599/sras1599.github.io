@@ -3,9 +3,10 @@
  * Integrate the complete word-game showcase on the public homepage. This module
  * loads validated repository results, defines the current Kolkata calendar
  * date, renders every selectable Month presentation, and enhances the static
- * markup with shared navigation and canonical URL state. Its parameterless
- * interface deliberately keeps data preparation and browser coordination out
- * of the homepage while the lower-level presentation modules remain reusable.
+ * markup with shared month navigation, a mobile game carousel, and canonical
+ * URL state. Its parameterless interface deliberately keeps data preparation
+ * and browser coordination out of the homepage while the lower-level
+ * presentation modules remain reusable.
  */
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
@@ -83,6 +84,8 @@ for (
 </game-showcase-controller>
 
 <script>
+  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+
   /**
    * Enhance one rendered showcase instance. The custom element owns its DOM
    * queries and event lifecycle, so adding other homepage scripts cannot create
@@ -91,6 +94,7 @@ for (
    */
   class GameShowcaseController extends HTMLElement {
     private events?: AbortController;
+    private gameCarousel?: EmblaCarouselType;
 
     connectedCallback() {
       if (this.events) return;
@@ -130,7 +134,19 @@ for (
         ),
       );
       const availableMonths = Array.from(templates.keys()).sort();
+      const carouselViewport = requireElement<HTMLElement>(
+        "[data-game-carousel-viewport]",
+      );
       const cardGrid = requireElement<HTMLElement>(".game-card-grid");
+      const carouselAnnouncement = requireElement<HTMLElement>(
+        "[data-game-carousel-announcement]",
+      );
+      const previousGameButton = requireElement<HTMLButtonElement>(
+        '[data-game-direction="previous"]',
+      );
+      const nextGameButton = requireElement<HTMLButtonElement>(
+        '[data-game-direction="next"]',
+      );
       const periodLabel = requireElement<HTMLElement>("[data-period-label]");
       const previousButton = requireElement<HTMLButtonElement>(
         '[data-period-direction="previous"]',
@@ -144,6 +160,25 @@ for (
         timeZone: "UTC",
       });
       let activeMonth = defaultMonth;
+
+      /** Read stable identities and labels from the currently rendered cards. */
+      const gameCardDetails = () =>
+        Array.from(cardGrid.querySelectorAll<HTMLElement>("[data-game-card]"))
+          .map((card) => ({
+            id: card.dataset.gameCard,
+            label: card.dataset.gameLabel,
+          }))
+          .filter(
+            (game): game is { id: string; label: string } =>
+              game.id !== undefined && game.label !== undefined,
+          );
+      const initialGame = gameCardDetails()[0];
+      if (!initialGame) {
+        throw new Error(
+          "Cannot initialize the homepage game showcase: missing game cards",
+        );
+      }
+      let activeGame = initialGame.id;
 
       /** Format YYYY-MM without allowing the browser's local zone to shift it. */
       const monthLabel = (month: string) => {
@@ -188,7 +223,11 @@ for (
         window.history[replace ? "replaceState" : "pushState"]({}, "", url);
       };
 
-      /** Replace all four cards from one production-rendered month template. */
+      /**
+       * Replace all four cards from one production-rendered month template.
+       * Reinitialize the carousel against the new nodes at the matching game,
+       * so changing the time period retains the user's game context.
+       */
       const selectMonth = (
         month: string,
         historyMode: "push" | "replace" | "none",
@@ -197,6 +236,12 @@ for (
         if (!template) return;
 
         cardGrid.replaceChildren(template.content.cloneNode(true));
+        const activeGameIndex = gameCardDetails().findIndex(
+          (game) => game.id === activeGame,
+        );
+        this.gameCarousel?.reInit({
+          startIndex: activeGameIndex < 0 ? 0 : activeGameIndex,
+        });
         activeMonth = month;
         updateControls(month);
 
@@ -224,6 +269,36 @@ for (
           : initialParams.get("games") === "month" &&
             initialParams.get("date") === initialMonth;
       selectMonth(initialMonth, hasCanonicalState ? "none" : "replace");
+
+      /** Announce the selected game without exposing an arbitrary position. */
+      const updateActiveGame = (carousel: EmblaCarouselType) => {
+        const selectedGame = gameCardDetails()[carousel.selectedScrollSnap()];
+        if (!selectedGame || selectedGame.id === activeGame) return;
+
+        activeGame = selectedGame.id;
+        carouselAnnouncement.textContent = selectedGame.label;
+      };
+
+      this.gameCarousel = EmblaCarousel(carouselViewport, {
+        align: "center",
+        loop: true,
+        watchSlides: false,
+        breakpoints: {
+          "(min-width: 821px)": { active: false },
+        },
+      });
+      this.gameCarousel.on("select", updateActiveGame);
+
+      previousGameButton.addEventListener(
+        "click",
+        () => this.gameCarousel?.scrollPrev(),
+        { signal },
+      );
+      nextGameButton.addEventListener(
+        "click",
+        () => this.gameCarousel?.scrollNext(),
+        { signal },
+      );
 
       previousButton.addEventListener(
         "click",
@@ -254,6 +329,8 @@ for (
     disconnectedCallback() {
       this.events?.abort();
       this.events = undefined;
+      this.gameCarousel?.destroy();
+      this.gameCarousel = undefined;
     }
   }
 

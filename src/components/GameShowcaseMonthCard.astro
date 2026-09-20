@@ -196,7 +196,11 @@ const describeResult = (played: PlayedResult) => {
 };
 ---
 
-<article class:list={["game-card", cardPresentation.cardClass]}>
+<article
+  class:list={["game-card", cardPresentation.cardClass]}
+  data-game-card={game}
+  data-game-label={cardPresentation.title}
+>
   <header>
     <div class="game-card-title">
       <Image src={cardPresentation.icon} alt="" />
