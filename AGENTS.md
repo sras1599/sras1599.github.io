@@ -144,29 +144,49 @@ and local workflows; [Design.md](docs/Design.md) records visual design context.
 ## Core principle
 
 Implement the simplest complete solution to the user's stated requirement.
+Minimize implementation surface and independent change points. Prefer reuse when
+it makes the codebase easier to understand and change as a whole. Treat line count
+as supporting evidence, not a target: do not compress code at the expense of
+clarity, correctness, or useful structure.
 Optimize for clarity and ease of change, not for hypothetical future needs.
 
 ## Scope
 
 - Treat the user's current request as the source of truth.
 - Make the smallest coherent change that satisfies it.
+- Before adding code, inspect the relevant implementation for existing components,
+  utilities, styles, dependencies, and platform features that can satisfy the
+  requirement.
+- Judge scope by the resulting implementation, not only by the size of the diff.
+  Consolidate duplication when it is directly exercised by the requested change;
+  propose broader cleanup separately.
 - Do not add adjacent features, generalized frameworks, or speculative extension points.
 - Do not refactor unrelated code while completing a focused task.
 - If a broader design would materially increase scope or complexity, ask before pursuing it.
 
 ## Design
 
-- Prefer direct code and existing platform features over new abstractions.
-- Prefer established, library-owned solutions for standard problems such as schema
-  validation, parsing, and serialization, especially when the library is already
-  available in the project. Write a custom solution only when the library's cost
-  or constraints clearly outweigh its reliability and maintenance benefits.
+- Prefer, in order, an existing project implementation, a platform feature, an
+  established library, and finally custom code.
+- Before writing a substantial custom implementation, check whether an existing
+  dependency or a focused, well-maintained library already solves the problem.
+  Prefer the library when it removes meaningful custom code and its security,
+  runtime, bundle-size, and maintenance costs are reasonable. Do not add a
+  dependency for behavior that is clearer and comparably small using the language
+  or platform directly.
 - Add a focused dependency when it provides a clearer, more reliable, or more
   maintainable solution than implementing the same capability locally; consider
   its security, runtime, and bundle-size costs before adding it.
 - Avoid interfaces, adapters, factories, registries, and configuration layers with only one real use case.
-- Keep logic close to its consumer until there is demonstrated reuse or the extraction clearly improves readability.
+- Treat two implementations of the same user-facing concept or workflow as a
+  prompt to evaluate reuse. Share them when they represent the same concept, are
+  expected to change together, and their differences can be expressed without
+  obscuring behavior. Do not use proximity to each consumer as a reason to retain
+  meaningful duplication.
 - Prefer a small function or a few explicit statements over a generic subsystem.
+- Prefer deleting, consolidating, or reusing code over adding a parallel
+  implementation. Avoid abstractions that introduce as much code or indirection as
+  they remove, including universal components controlled by many mode flags.
 - Do not implement requirements that exist only in anticipated future work.
 
 ## Working with existing code
@@ -191,7 +211,9 @@ Optimize for clarity and ease of change, not for hypothetical future needs.
 ## Code readability
 
 Optimize for a reader understanding the behavior in one continuous read,
-with minimal jumping between definitions.
+with minimal jumping between definitions. This does not justify duplicating a
+shared concept across consumers. Prefer a well-named shared component or function
+when it creates one authoritative place to understand and change behavior.
 
 ### Flow and expressions
 
@@ -207,8 +229,13 @@ with minimal jumping between definitions.
 
 ### Functions and boundaries
 
-- Keep related logic together. Extract a helper when it names a meaningful
-  operation, hides substantial detail, or removes meaningful duplication.
+- Keep related logic together. Extract a shared component or helper when it removes
+  meaningful duplication, establishes one authoritative implementation of a
+  concept, names a meaningful operation, or hides substantial detail.
+- When several files repeat the same structure with small data differences,
+  consider one shared implementation with explicit inputs. Keep separate
+  implementations when they have different reasons to change or sharing would
+  require numerous mode flags or obscure important differences.
 - Do not split cohesive functions merely to make them shorter. Avoid helpers
   that force navigation without making the caller easier to understand.
 - Make each file responsible for a coherent part of the behavior. Do not use
@@ -238,28 +265,26 @@ with minimal jumping between definitions.
 
 ### Comments and documentation
 
-- Default to descriptive comments when generating or changing code. Favor enough
-  explanation for the user's first read; the user can shorten comments later.
-  Concise communication does not mean sparse code comments.
-- Every code module must begin with a descriptive module-level comment. Explain
-  why the module exists, its main inputs and outputs, the main stages of its
-  workflow, and important boundaries or side effects. Define domain terms that
-  a reader needs to understand the file. Update this comment when changing the
-  module's responsibilities or behavior.
-- Introduce nontrivial functions with comments explaining their role, meaningful
-  inputs and return values, and relevant mutations, assumptions, or failure
-  behavior. A reader should not have to trace callers to discover the contract.
-- Within complex functions, explain the purpose of each meaningful phase and
-  the rules behind non-obvious branches. Describe ordering dependencies,
-  precedence, fallback behavior, and exceptional cases where they matter.
-- Use small examples when they clarify a transformation, path convention,
-  data shape, or domain rule more effectively than an abstract description.
-- Comments may explain what an algorithm does as well as why it exists. Avoid
-  mechanical narration of obvious syntax, but do not omit useful explanation
-  just because a reader could eventually infer it from the implementation.
-- Keep comments accurate and specific to the implemented behavior, including
-  its limitations. Do not use comments to compensate for misleading names or
-  unnecessarily complicated code, or remove useful detail solely for brevity.
+- Prefer clear names and straightforward structure over explanatory comments.
+- Add comments when they preserve information that is not apparent from the code,
+  such as a domain rule, architectural boundary, ordering dependency,
+  compatibility constraint, non-obvious fallback, or intentional limitation.
+- Require a module-level comment only when a module's purpose, workflow, side
+  effects, or boundaries are not evident from its name and public structure.
+  Always document important filesystem mutations, publishing rules, generated
+  output ownership, public contracts, and unusual lifecycle behavior. Small route
+  templates, components, configuration files, and simple utilities do not need
+  boilerplate module comments.
+- Introduce a function with a comment only when its contract, mutation,
+  assumptions, or failure behavior cannot be communicated clearly by its name and
+  signature.
+- Within complex functions, explain rules behind non-obvious phases and branches,
+  including ordering, precedence, fallback behavior, and exceptional cases.
+- Use a small example when it explains a transformation, path convention, or data
+  shape more clearly than an abstract description.
+- Do not narrate syntax, restate types, or document facts immediately visible in
+  the implementation. Keep necessary comments accurate and concise. If ordinary
+  behavior requires extensive comments, first look for a simpler implementation.
 
 ## Communication
 
