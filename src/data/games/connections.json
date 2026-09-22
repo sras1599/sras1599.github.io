@@ -2301,5 +2301,15 @@
       "yellow",
       "blue"
     ]
+  },
+  {
+    "date": "2026-09-22",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "blue",
+      "green",
+      "purple"
+    ]
   }
 ]
