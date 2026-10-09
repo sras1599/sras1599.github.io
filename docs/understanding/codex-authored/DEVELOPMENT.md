@@ -158,3 +158,65 @@ output is shared. Use `npm run build` before reviewing the final production outp
 
 No posts are shipped in the website repository. The initial blog is intentionally
 empty; real writing can be opted in later.
+
+
+## Game calendar absence explanations
+
+Game results remain in their four existing JSON files. Shared explanations for
+missing days belong only in `src/data/games/absences.json`; each range applies to
+Connections, Mini, Bracket City, and Tagline. The production entry list starts
+empty. Add only dates you intend to publish, for example:
+
+```json
+{
+  "reasons": {
+    "vacation": {
+      "illustration": "/images/game-absence-vacation.svg",
+      "message": "Away on vacation."
+    }
+  },
+  "entries": [
+    {
+      "reason": "vacation",
+      "startDate": "2026-09-20",
+      "endDate": "2026-09-30",
+      "message": "Away exploring Kerala."
+    }
+  ]
+}
+```
+
+This is an authoring example, not a shipped absence. Dates must be real
+`YYYY-MM-DD` dates. Both endpoints are inclusive; equal endpoints explain one
+day. Ranges may cross weeks, months, or years. Omit an entry's `message` to use
+its reason's default; messages must be nonempty plain text. Entries may override
+messages but never illustrations, and must name an existing reason.
+
+Ranges must not overlap, even at endpoints or in future portions. Loading errors
+identify the entry positions, reasons, dates, and affected field; overlap errors
+also identify the conflicting range and inclusive overlap dates. Adjacent ranges
+(such as one ending September 30 and another starting October 1) are valid.
+
+An upcoming range can be authored in full. Only dates through the showcase's
+current Asia/Kolkata date show explanations. A begun range can extend the first
+selectable month backward; future-only ranges do not affect month choices. Months
+remain continuous through the current month. An unexpected actual result takes
+precedence over an explanation; days without either keep their normal appearance.
+Because this is a static site, "today" is calculated when the homepage is rendered;
+rebuild to advance the published calendar date.
+
+The illustration repeats in every affected cell with its proportions preserved
+and its day number visible. Detailed artwork will look small in these cells.
+All day cells show their description on hover or keyboard focus using the same
+CSS tooltip styling as article abbreviations. Absence cells show the full absence
+message and do not act as buttons. These CSS tooltips can be clipped by the mobile
+carousel viewport, and long messages are not scrollable.
+
+The vacation reason uses the existing supplied public SVG at
+`public/images/game-absence-vacation.svg`. To swap the artwork everywhere, replace
+that file, or place another asset under `public/images/` and change only the
+reason's `illustration` path. Use an absolute public path beginning with `/`,
+without traversal segments, whitespace, query strings, or fragments. These are
+reused external image URLs, not inline SVGs or content-hashed assets; changing the
+filename/path also changes the cache URL. No component changes or per-game copies
+are needed.

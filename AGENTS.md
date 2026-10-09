@@ -79,15 +79,24 @@ to ownership, entry points, or the rules described here.
   [HomepageGameShowcase.astro](src/components/HomepageGameShowcase.astro) owns
   the homepage showcase's repository-data integration, Kolkata calendar range,
   pre-rendered Month choices, browser navigation lifecycle, and public URL state.
+  [absences.json](src/data/games/absences.json) owns shared reason artwork/default
+  messages and inclusive dated ranges independently of actual game results.
+  [absences.ts](src/data/games/absences.ts) validates dates, reasons, messages,
+  paths, and nonoverlap (including future endpoints), then prepares compact ranges
+  visible through the showcase's Kolkata date. Begun absences can extend the first
+  selectable month; future-only ranges cannot. Actual results take precedence.
   [BaseLayout.astro](src/layouts/BaseLayout.astro) owns the document shell, SEO
   metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
 - [GameShowcaseFrame.astro](src/components/GameShowcaseFrame.astro) owns the game
   showcase's shared typography, controls, responsive card grid, and card chrome.
   [GameShowcaseMonth.astro](src/components/GameShowcaseMonth.astro) is the
-  presentation-only composition interface for normalized game results;
+  presentation-only composition interface for normalized game results and shared
+  absence ranges;
   [GameShowcaseMonthCard.astro](src/components/GameShowcaseMonthCard.astro) owns
-  the repeated calendar structure and explicit game illustrations. They perform
+  the repeated calendar structure, explicit game illustrations, and focusable
+  day cells using the shared abbreviation tooltip styling in `global.css`.
+  Absence cells reference cacheable public artwork. They perform
   no data loading and own no navigation or URL state.
 - [blog/index.astro](src/pages/blog/index.astro) requires the generated blog index,
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.

@@ -570,7 +570,7 @@ h3 {
   cursor: help;
 }
 
-.article-body abbr[data-tooltip]::after {
+:is(.article-body abbr[data-tooltip], .calendar-day[data-tooltip])::after {
   position: absolute;
   z-index: 2;
   bottom: calc(100% + 0.45rem);
@@ -592,12 +592,12 @@ h3 {
   visibility: hidden;
 }
 
-.article-body abbr[data-tooltip]:hover::after,
-.article-body abbr[data-tooltip]:focus::after {
+:is(.article-body abbr[data-tooltip], .calendar-day[data-tooltip]):hover::after,
+:is(.article-body abbr[data-tooltip], .calendar-day[data-tooltip]):focus::after {
   visibility: visible;
 }
 
-.article-body abbr[data-tooltip]:focus-visible {
+:is(.article-body abbr[data-tooltip], .calendar-day[data-tooltip]):focus-visible {
   border-radius: 0.1rem;
   outline: 2px solid var(--ink);
   outline-offset: 3px;

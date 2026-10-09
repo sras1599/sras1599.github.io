@@ -11,6 +11,7 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 
+import { loadGameAbsences } from "../data/games/absences";
 import { loadGameData } from "../data/games/load";
 import GameShowcaseFrame from "./GameShowcaseFrame.astro";
 import GameShowcaseMonth from "./GameShowcaseMonth.astro";
@@ -21,18 +22,20 @@ const currentLocalDate = format(now, "yyyy-MM-dd", inKolkata);
 const selectedMonth = format(now, "yyyy-MM", inKolkata);
 const selectedMonthLabel = format(now, "MMMM yyyy", inKolkata);
 const gameResults = loadGameData();
+const absences = loadGameAbsences(currentLocalDate);
 
 /**
- * List every calendar month from the first persisted result through today. A
+ * List every calendar month from the first result or begun absence through today. A
  * continuous range lets an honestly empty historical month remain selectable
  * instead of implying that a gap in records never existed.
  */
 const resultMonths = Object.values(gameResults)
   .flat()
   .map((result) => result.date.slice(0, 7));
-const firstResultMonth = resultMonths.sort()[0] ?? selectedMonth;
+const absenceMonths = absences.map((absence) => absence.startDate.slice(0, 7));
+const firstMonthWithData = [selectedMonth, ...resultMonths, ...absenceMonths].sort()[0];
 const availableMonths: string[] = [];
-const [firstYear, firstMonth] = firstResultMonth.split("-").map(Number);
+const [firstYear, firstMonth] = firstMonthWithData.split("-").map(Number);
 const [currentYear, currentMonth] = selectedMonth.split("-").map(Number);
 
 for (
@@ -67,6 +70,7 @@ for (
       selectedMonth={selectedMonth}
       currentLocalDate={currentLocalDate}
       results={gameResults}
+      absences={absences}
     />
   </GameShowcaseFrame>
 
@@ -77,6 +81,7 @@ for (
           selectedMonth={month}
           currentLocalDate={currentLocalDate}
           results={gameResults}
+          absences={absences}
         />
       </template>
     ))

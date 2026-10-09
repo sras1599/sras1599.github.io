@@ -1,0 +1,15 @@
+{
+  "reasons": {
+    "vacation": {
+      "illustration": "/images/game-absence-vacation.svg",
+      "message": "Away on vacation."
+    }
+  },
+  "entries": [
+    {
+      "reason": "vacation",
+      "startDate": "2026-09-26",
+      "endDate": "2026-10-08"
+    }
+  ]
+}

@@ -7,6 +7,7 @@
  * It performs no data loading and does not expose formatting or renderer
  * configuration.
  */
+import type { AbsenceRange } from "../data/games/absences";
 import type { ImageMetadata } from "astro";
 import { Image } from "astro:assets";
 
@@ -30,6 +31,7 @@ type GameResults =
 type Props = GameResults & {
   selectedMonth: string;
   currentLocalDate: string;
+  absences: AbsenceRange[];
 };
 
 type PlayedResult =
@@ -50,7 +52,7 @@ type CardPresentation = {
 };
 
 const props = Astro.props;
-const { game, selectedMonth, currentLocalDate } = props;
+const { game, selectedMonth, currentLocalDate, absences } = props;
 
 const monthMatch = /^(\d{4})-(\d{2})$/.exec(selectedMonth);
 if (!monthMatch) {
@@ -194,6 +196,17 @@ const describeResult = (played: PlayedResult) => {
       return `${played.result.stars} of 3 stars`;
   }
 };
+
+const describeDay = (
+  played: PlayedResult | undefined,
+  absence: AbsenceRange | undefined,
+  future: boolean,
+) => {
+  if (played) return describeResult(played);
+  if (absence) return absence.message;
+  if (future) return "future date";
+  return "no recorded result";
+};
 ---
 
 <article
@@ -233,13 +246,16 @@ const describeResult = (played: PlayedResult) => {
         const date = dateForDay(day);
         const played = resultsByDate.get(date);
         const future = !played && date > currentLocalDate;
+        const absence =
+          !played && !future
+            ? absences.find(
+                (range) => range.startDate <= date && date <= range.endDate,
+              )
+            : undefined;
+
         const failed =
           played?.game === "connections" && played.result.mistakes === 4;
-        const description = played
-          ? describeResult(played)
-          : future
-            ? "future date"
-            : "no recorded result";
+        const description = describeDay(played, absence, future);
         const scoreClass =
           played?.game === "bracket-city"
             ? played.result.score >= 85
@@ -254,17 +270,28 @@ const describeResult = (played: PlayedResult) => {
             class:list={[
               "calendar-day",
               {
-                "city-day": game === "bracket-city",
-                missing: !played && !future,
+                missing: !played && !future && !absence,
                 future,
                 failed,
               },
             ]}
             role="img"
+            tabindex={future ? undefined : "0"}
+            style={`--calendar-column: ${(leadingBlankCount + day - 1) % 7}`}
             aria-label={`${dateLabel(day)}: ${description}`}
-            title={`${dateLabel(day)}: ${description}`}
+            data-tooltip={future ? undefined : `${dateLabel(day)}: ${description}`}
           >
-            {played?.game === "connections" ? (
+            {absence ? (
+              <img
+                class="result-visual absence-illustration"
+                src={absence.illustration}
+                width="100"
+                height="100"
+                alt=""
+                loading="lazy"
+                draggable="false"
+              />
+            ) : played?.game === "connections" ? (
               <span class="result-visual connection-glyph" aria-hidden="true">
                 {played.result.solveOrder.map((color) => (
                   <i class={`category-${color}`} />
@@ -330,9 +357,11 @@ const describeResult = (played: PlayedResult) => {
 <style>
   .weekday-row,
   .month-grid {
+    --calendar-gap: 0.28rem;
+
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.28rem;
+    gap: var(--calendar-gap);
   }
 
   .weekday-row {
@@ -357,6 +386,9 @@ const describeResult = (played: PlayedResult) => {
     --calendar-date-row: 15%;
 
     container-type: inline-size;
+    position: relative;
+    /* Keep result layers inside their cell, below a hovered or focused cell. */
+    z-index: 0;
     display: grid;
     grid-template-rows:
       var(--calendar-annotation-row) var(--calendar-result-row)
@@ -367,6 +399,40 @@ const describeResult = (played: PlayedResult) => {
     border: 1px solid var(--outline);
     background: var(--paper-high);
     cursor: help;
+  }
+
+  .calendar-day[data-tooltip]:is(:hover, :focus) {
+    z-index: 1;
+  }
+
+  @media (max-width: 820px) {
+    /*
+     * Keep tooltips inside the calendar so the carousel cannot clip them.
+     * Absolute percentages use the cell's padding box; include both 1px
+     * borders when reconstructing the seven-column width and column offset.
+     */
+    .calendar-day[data-tooltip]::after {
+      left: calc(
+        -1 * var(--calendar-column) * (100% + 2px + var(--calendar-gap)) - 1px
+      );
+      width: calc(700% + 14px + 6 * var(--calendar-gap));
+      max-width: none;
+      box-sizing: border-box;
+      overflow-wrap: anywhere;
+      pointer-events: none;
+    }
+
+    .calendar-day[data-tooltip]:nth-child(-n + 7)::after {
+      top: calc(100% + 0.45rem);
+      bottom: auto;
+    }
+  }
+
+  .absence-illustration {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
   }
 
   /*
@@ -469,6 +535,7 @@ const describeResult = (played: PlayedResult) => {
   .calendar-day.future {
     border-color: transparent;
     background: transparent;
+    cursor: default;
   }
 
   .calendar-day.future .no-result {
@@ -537,10 +604,6 @@ const describeResult = (played: PlayedResult) => {
       0 0 3px white,
       0 0 3px white,
       0 0 6px white;
-  }
-
-  .city-day {
-    overflow: hidden;
   }
 
   .score-signal {
