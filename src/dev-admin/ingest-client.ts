@@ -119,7 +119,7 @@ function renderGameFields(game: GameId, record: Record<string, unknown>) {
   const definitions = {
     mini: { name: "durationSeconds", label: "Duration (seconds)", min: 1, max: undefined },
     "bracket-city": { name: "score", label: "Score", min: 0, max: 100 },
-    tagline: { name: "stars", label: "Stars", min: 1, max: 3 },
+    tagline: { name: "stars", label: "Stars", min: 0, max: 3 },
   } as const;
   const field = definitions[game];
   gameFields.innerHTML = `

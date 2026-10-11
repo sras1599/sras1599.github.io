@@ -129,6 +129,16 @@ sets numeric dimensions as HTML attributes. For example, `center|400` centers th
 image at a preferred width of 400 pixels while still allowing it to shrink on
 narrow screens.
 
+Standalone images with nonblank alt text display that text as a caption beneath
+the image, including linked images and wiki images with dimensions or centering.
+Captions use plain text, not Markdown formatting, and retain the image's alt text
+for accessibility. Image-only paragraphs containing several images, optionally
+separated by line breaks, display a caption for each image with nonblank alt text.
+Images within sentences and images inside authored figures do not receive
+automatic captions. The same
+caption rendering applies to entry pages, note previews, and authored collection
+indexes.
+
 Resolve references relative to the source note, then from the vault root, then by
 unique filename. Ambiguous and missing references fail the import. Local images
 support PNG, JPEG, GIF, WebP, AVIF, and BMP. HTTPS image URLs remain remote. Only

@@ -51,6 +51,10 @@ a {
   text-decoration: none;
 }
 
+hr {
+  margin: 2rem 0;
+}
+
 .site-shell {
   width: min(100%, var(--container));
   margin: 0 auto;
@@ -538,6 +542,27 @@ h3 {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+:is(.article-body, .blog-index-body, .notes-index-body) .content-image-figure {
+  /* width: fit-content; */
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+:is(.article-body, .blog-index-body, .notes-index-body) .content-image-figure.content-image-center {
+  margin-inline: auto;
+}
+
+:is(.article-body, .blog-index-body, .notes-index-body) .content-image-figure>figcaption {
+  /* Let the image determine figure width, then wrap the caption to that width. */
+  contain: inline-size;
+  margin-top: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .article-body p,

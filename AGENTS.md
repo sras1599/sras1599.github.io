@@ -70,8 +70,14 @@ to ownership, entry points, or the rules described here.
   stale content-store entries. Its watcher serializes generated-file refreshes.
 - [astro.config.mjs](astro.config.mjs) owns static output, canonical origin,
   trailing-slash policy, and the Satteri Markdown processor configuration, including
-  removal of footnote backlinks. Vault syntax rewriting belongs to the importer;
-  final Markdown-to-HTML rendering belongs to Astro.
+  removal of footnote backlinks and standalone image captions from nonblank alt
+  text. Raw HTML is parsed so dimensioned/centered importer images share the
+  caption transform. Image-only paragraphs, including multiple images separated
+  by line breaks, become captioned blocks; inline images and authored figures
+  are left unchanged.
+  Caption presentation lives in `global.css` for entry bodies and authored indexes.
+  Vault syntax rewriting belongs to the importer; final Markdown-to-HTML rendering
+  belongs to Astro.
 
 ### 4. Pages, navigation, and visual presentation
 
