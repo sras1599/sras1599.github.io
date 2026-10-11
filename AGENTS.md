@@ -94,6 +94,12 @@ to ownership, entry points, or the rules described here.
   [BaseLayout.astro](src/layouts/BaseLayout.astro) owns the document shell, SEO
   metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
+- [ImageZoom.astro](src/components/ImageZoom.astro), included by `BaseLayout`,
+  enhances images in entry bodies and authored blog/notes indexes in the browser.
+  Clicking or keyboard-activating an image, including a linked image, opens a
+  viewport-constrained native modal lightbox with its existing caption. It owns
+  dismissal, scroll locking, and focus restoration. Note-preview images are
+  excluded; generated Markdown and fetched preview HTML remain unchanged.
 - [GameShowcaseFrame.astro](src/components/GameShowcaseFrame.astro) owns the game
   showcase's shared typography, controls, responsive card grid, and card chrome.
   [GameShowcaseMonth.astro](src/components/GameShowcaseMonth.astro) is the

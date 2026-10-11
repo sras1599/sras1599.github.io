@@ -9,6 +9,7 @@
  * the brand above a compact row containing all four navigation destinations.
  */
 import "../styles/global.css";
+import ImageZoom from "../components/ImageZoom.astro";
 import { blogCollectionDefinition } from "../collections/blog/definition.mjs";
 import { notesCollectionDefinition } from "../collections/notes/definition.mjs";
 
@@ -67,6 +68,7 @@ const notesRoute = notesCollectionDefinition.route;
       </header>
       <slot />
     </div>
+    <ImageZoom />
     <script>
       /**
        * Replace unstyleable browser title popups on authored abbreviations with
