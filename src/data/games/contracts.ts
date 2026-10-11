@@ -100,7 +100,8 @@ export const bracketCityResultSchema = z.strictObject({
 
 export const taglineResultSchema = z.strictObject({
   date: gameDateSchema,
-  stars: z.int().min(1).max(3),
+  // Zero stars records a failed game rather than an absent result.
+  stars: z.int().min(0).max(3),
 });
 
 export type ConnectionsResult = z.infer<typeof connectionsResultSchema>;

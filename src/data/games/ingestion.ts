@@ -263,8 +263,8 @@ function parseBracketCity(text: string): NormalizedGameCandidate {
 }
 
 /**
- * Parse Tagline's explicit dated result and count only a standalone star row;
- * hints and all other metadata are intentionally ignored.
+ * Parse Tagline's explicit dated result using a standalone star row or its
+ * failure message for zero stars. Hints and other metadata are ignored.
  */
 function parseTagline(text: string): NormalizedGameCandidate {
   const lines = text.split(/\r?\n/).map((line) => line.trim());
@@ -283,15 +283,22 @@ function parseTagline(text: string): NormalizedGameCandidate {
   }
 
   const starLine = lines.find((line) => /^(?:⭐\uFE0F?\s*)+$/u.test(line));
-  if (!starLine) {
-    throw new Error("Tagline result is missing an explicit star result row.");
+  const failed = lines.some((line) => /^I couldn't solve it! Can you\?$/i.test(line));
+  if (starLine && failed) {
+    throw new Error("Tagline result contains both a star row and a failure message.");
+  }
+  if (!starLine && !failed) {
+    throw new Error("Tagline result is missing a star result row or failure message.");
   }
 
   const dateText = dateLine.replace(/^TAGLINE:\s*/i, "");
   const date = parseEnglishDate(dateText, "Tagline result");
-  const stars = Array.from(
-    starLine.replaceAll("\uFE0F", "").replaceAll(/\s/g, ""),
-  ).length;
+  let stars = 0;
+  if (starLine) {
+    stars = Array.from(
+      starLine.replaceAll("\uFE0F", "").replaceAll(/\s/g, ""),
+    ).length;
+  }
   return validateGameCandidate("tagline", { date, stars });
 }
 
