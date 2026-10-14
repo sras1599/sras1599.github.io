@@ -10,6 +10,11 @@
       "reason": "vacation",
       "startDate": "2026-09-26",
       "endDate": "2026-10-08"
+    },
+    {
+      "reason": "vacation",
+      "startDate": "2026-10-13",
+      "endDate": "2026-10-13"
     }
   ]
 }
