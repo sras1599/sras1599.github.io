@@ -8,6 +8,7 @@
  * introduction directly without carrying return-navigation state.
  */
 import { getCollection, render, type CollectionEntry } from "astro:content";
+import { formatPublicationDate } from "../../utils/publication";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import NotePreview from "../../components/NotePreview.astro";
 import { blogCollectionDefinition } from "../../collections/blog/definition.mjs";
@@ -29,6 +30,7 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
+const date = formatPublicationDate(post.data.publishDate);
 const route = blogCollectionDefinition.route;
 const { Content } = await render(post);
 const readingTime = getReadingTime(post.body ?? "");
@@ -49,14 +51,8 @@ const series = post.data.series
       <header class="article-header">
         <div class="article-meta-row">
           <div class="article-meta">
-            <time datetime={post.data.publishDate.toISOString()}>
-              {
-                post.data.publishDate.toLocaleDateString("en", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })
-              }
+            <time datetime={date}>
+              {date}
             </time>
             <span aria-hidden="true">·</span>
             <span>{readingTime}</span>

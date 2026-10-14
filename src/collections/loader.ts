@@ -21,7 +21,9 @@ export function collectionIndexLoader(): Loader {
 
 /**
  * Create a loader for one importer-owned directory relative to .generated.
- * Missing files remove stale store entries; watcher updates stay serialized.
+ * Missing files remove stale store entries; watcher bursts are debounced and
+ * updates stay serialized. Preparation failures leave the previous store intact.
+ * Digests are reused only after this load session has rendered every document.
  */
 function generatedMarkdownLoader(
   name: string,
@@ -34,10 +36,12 @@ function generatedMarkdownLoader(
         new URL(`.generated/${generatedDirectory}/`, context.config.root),
       );
 
+      let initialized = false;
+
       async function sync() {
         const files = await listMarkdownFiles(directory);
 
-        const entries = await Promise.all(
+        const prepared = await Promise.allSettled(
           files.map(async (file) => {
             const absolutePath = path.join(directory, file);
             const filePath = path.relative(
@@ -46,14 +50,19 @@ function generatedMarkdownLoader(
             );
 
             const source = await readFile(absolutePath, "utf8");
+            const id = file.slice(0, -3).split(path.sep).join("/");
+            const digest = context.generateDigest(source);
+            const stored = context.store.get(id);
+            if (initialized && stored?.digest === digest) {
+              return { id, entry: undefined };
+            }
+
             const document = parseMarkdownDocument(source, { file: filePath });
 
             if (!document.hasFrontmatter)
               throw new Error(`Invalid generated Markdown: ${file}`);
 
-            const id = file.slice(0, -3).split(path.sep).join("/");
             const body = document.body;
-            const digest = context.generateDigest(source);
 
             const data = await context.parseData({
               id,
@@ -64,15 +73,27 @@ function generatedMarkdownLoader(
               fileURL: pathToFileURL(absolutePath),
             });
 
-            return { id, data, body, digest, rendered, filePath };
+            return { id, entry: { id, data, body, digest, rendered, filePath } };
           }),
         );
 
-        const ids = new Set(entries.map((entry) => entry.id));
+        // Await all preparation, including failures, before touching the store.
+        const entries = prepared.map((result) => {
+          if (result.status === "rejected") throw result.reason;
+          return result.value;
+        });
+        const ids = new Set(entries.map(({ id }) => id));
+        // Astro's store ignores writes with an existing matching digest. Clear
+        // only after successful initial preparation so new renderer/schema
+        // results replace cached entries even when their source is unchanged.
+        if (!initialized) context.store.clear();
+        for (const { entry } of entries)
+          if (entry) context.store.set(entry);
+
         for (const id of context.store.keys())
           if (!ids.has(id)) context.store.delete(id);
 
-        for (const entry of entries) context.store.set(entry);
+        initialized = true;
       }
 
       await sync();
@@ -80,7 +101,25 @@ function generatedMarkdownLoader(
       if (context.watcher) {
         context.watcher.add(directory);
 
-        let queue = Promise.resolve();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let running = false;
+        let pending = false;
+
+        async function refresh() {
+          if (running) return;
+          pending = false;
+          running = true;
+          try {
+            await sync();
+          } catch (error) {
+            context.logger.error(String(error));
+          } finally {
+            running = false;
+            // If a burst's debounce elapsed during preparation, run its pass now.
+            // Otherwise its still-pending timer will start the next pass.
+            if (pending && timer === undefined) void refresh();
+          }
+        }
 
         context.watcher.on("all", (_event, file) => {
           const relative = path.relative(directory, path.resolve(file));
@@ -91,9 +130,12 @@ function generatedMarkdownLoader(
             !file.endsWith(".md")
           )
             return;
-          queue = queue
-            .then(sync)
-            .catch((error) => context.logger.error(String(error)));
+          pending = true;
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            timer = undefined;
+            void refresh();
+          }, 100);
         });
       }
     },

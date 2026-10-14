@@ -5,6 +5,7 @@
  * shared article markup keeps cross-collection browser previews compatible.
  */
 import { getCollection, render, type CollectionEntry } from "astro:content";
+import { formatPublicationDate } from "../../utils/publication";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import NotePreview from "../../components/NotePreview.astro";
 import { notesCollectionDefinition } from "../../collections/notes/definition.mjs";
@@ -23,6 +24,7 @@ export async function getStaticPaths() {
 }
 
 const { note } = Astro.props;
+const date = formatPublicationDate(note.data.publishDate);
 const { Content } = await render(note);
 ---
 
@@ -36,21 +38,17 @@ const { Content } = await render(note);
         <span>Back to notes</span>
       </a>
       <header class="article-header">
-        <time datetime={note.data.publishDate.toISOString()}>
-          {
-            note.data.publishDate.toLocaleDateString("en", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          }
+        <time datetime={date}>
+          {date}
         </time>
         <h2>{note.data.title}</h2>
         {note.data.description && <p>{note.data.description}</p>}
         {
           note.data.tags.length > 0 && (
             <ul aria-label="Tags">
-              {note.data.tags.map((tag: string) => <li>{tag}</li>)}
+              {note.data.tags.map((tag: string) => (
+                <li>{tag}</li>
+              ))}
             </ul>
           )
         }

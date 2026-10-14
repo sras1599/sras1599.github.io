@@ -1,0 +1,30 @@
+---
+import { formatPublicationDate } from "../utils/publication";
+
+interface Props {
+  title: string;
+  href: string;
+  publishDate: Date;
+  description?: string;
+  tags: string[];
+}
+
+const { title, href, publishDate, description, tags } = Astro.props;
+---
+
+<article class="post-card">
+  <div>
+    <time datetime={publishDate.toISOString()}>
+      {formatPublicationDate(publishDate)}
+    </time>
+    <h2><a href={href}>{title}</a></h2>
+    {description && <p>{description}</p>}
+  </div>
+  {
+    tags.length > 0 && (
+      <ul aria-label="Tags">
+        {tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+    )
+  }
+</article>

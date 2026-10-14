@@ -22,9 +22,7 @@
   --yellow: #ffd966;
   --purple: #9b8cff;
   --purple-soft: #ddd8ff;
-  --teal: #4fb8a8;
   --teal-soft: #c2f1e8;
-  --pink: #ef9ac2;
   --pink-soft: #ffd6e8;
   --container: 1180px;
   --gutter: clamp(1.25rem, 3vw, 2.5rem);
@@ -71,7 +69,6 @@ hr {
 
 .brand-mark,
 .site-nav a,
-.button,
 .contact-links a {
   border: 2px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink);
@@ -107,7 +104,6 @@ hr {
 
 .site-nav a:hover,
 .brand-mark:hover,
-.button:hover,
 .contact-links a:hover {
   box-shadow: 1px 1px 0 var(--ink);
   transform: translate(3px, 3px) rotate(0deg);
@@ -218,32 +214,6 @@ h3 {
   font-size: clamp(1.05rem, 2vw, 1.25rem);
 }
 
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3.25rem;
-  padding: 0.75rem 1.2rem;
-  font-family: "Space Mono", monospace;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.button-primary {
-  background: var(--blue);
-}
-
-.button-secondary {
-  background: var(--paper);
-}
-
 .hero-art {
   position: relative;
   min-height: 28rem;
@@ -293,16 +263,6 @@ h3 {
   flex: 0 1 22rem;
   width: 100%;
   max-width: 22rem;
-}
-
-.project-card:nth-child(2) {
-  margin-top: 2rem;
-  box-shadow: 8px 8px 0 var(--blue);
-  transform: rotate(1deg);
-}
-
-.project-card:nth-child(3) {
-  box-shadow: 8px 8px 0 var(--green);
 }
 
 .project-media {
@@ -529,10 +489,6 @@ h3 {
   padding-bottom: 2rem;
 }
 
-.article-header h1 {
-  max-width: 14ch;
-}
-
 .article-body {
   color: var(--ink);
   font-size: 1.08rem;
@@ -545,7 +501,6 @@ h3 {
 }
 
 :is(.article-body, .blog-index-body, .notes-index-body) .content-image-figure {
-  /* width: fit-content; */
   max-width: 100%;
   margin: 1.5rem 0;
 }
@@ -660,13 +615,8 @@ h3 {
     height: clamp(14rem, 42vw, 20rem);
   }
 
-  .project-grid,
   .post-card {
     grid-template-columns: 1fr;
-  }
-
-  .project-card:nth-child(2) {
-    margin-top: 0;
   }
 
   .contact-section * {
@@ -722,20 +672,7 @@ h3 {
     line-height: 1.55;
   }
 
-  .hero-actions {
-    flex-flow: row nowrap;
-    gap: 0.55rem;
-    margin-top: 1rem;
-  }
 
-  .hero-actions .button {
-    width: auto;
-    min-height: 2rem;
-    padding: 0.35rem 0.5rem;
-    font-size: clamp(0.48rem, 2vw, 0.6rem);
-    box-shadow: 3px 3px 0 var(--ink);
-    white-space: nowrap;
-  }
 
   .hero-art {
     min-height: clamp(10rem, 48vw, 14rem);

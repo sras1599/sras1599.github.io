@@ -1,42 +1,28 @@
 ---
 /**
- * Provide the production presentation shell shared by the game showcase's
- * Month and Trends views. The frame owns section typography, optional shared
- * view and period controls, the desktop card grid, the mobile carousel shell,
- * card chrome, and the showcase's fixed heading content. Callers supply links
- * and period state because URL decisions belong to the integrating module;
- * the default slot supplies view-specific cards and browser code enhances the
- * carousel shell only at mobile widths.
+ * Provide the homepage game showcase's typography, month buttons, responsive
+ * card grid, carousel shell, and card chrome. The caller owns period state and
+ * URL decisions; its cards fill the default slot.
  */
-type ShowcaseView = "month" | "trends";
-
-type ViewLink = {
-  view: ShowcaseView;
-  label: string;
-  href: string;
-};
-
 type PeriodNavigation = {
   value: string;
   label: string;
-  previous?: { href?: string; label: string; disabled?: boolean };
-  next?: { href?: string; label: string; disabled?: boolean };
+  previous: { label: string; disabled: boolean };
+  next: { label: string; disabled: boolean };
 };
 
 interface Props {
-  activeView?: ShowcaseView;
-  viewLinks?: ViewLink[];
-  periodNavigation?: PeriodNavigation;
+  periodNavigation: PeriodNavigation;
 }
 
-const { activeView = "month", viewLinks = [], periodNavigation } = Astro.props;
+const { periodNavigation } = Astro.props;
 ---
 
 <section
   class="game-showcase section"
   id="games"
   aria-labelledby="games-title"
-  data-showcase-period={periodNavigation?.value}
+  data-showcase-period={periodNavigation.value}
 >
   <div class="section-heading">
     <p class="eyebrow">Fun</p>
@@ -48,65 +34,27 @@ const { activeView = "month", viewLinks = [], periodNavigation } = Astro.props;
     </p>
   </div>
 
-  {
-    viewLinks.length > 1 && (
-      <nav class="showcase-view-switcher" aria-label="Showcase view">
-        {viewLinks.map((link) => (
-          <a
-            href={link.href}
-            aria-current={link.view === activeView ? "page" : undefined}
-            data-showcase-view={link.view}
-          >
-            {link.label}
-          </a>
-        ))}
-      </nav>
-    )
-  }
-
-  {
-    periodNavigation && (
-      <nav class="showcase-period-navigation" aria-label="Month selection">
-        {periodNavigation.previous?.href ? (
-          <a
-            href={periodNavigation.previous.href}
-            aria-label={periodNavigation.previous.label}
-          >
-            <span aria-hidden="true">‹</span>
-          </a>
-        ) : periodNavigation.previous ? (
-          <button
-            type="button"
-            disabled={periodNavigation.previous.disabled}
-            aria-label={periodNavigation.previous.label}
-            data-period-direction="previous"
-          >
-            <span aria-hidden="true">‹</span>
-          </button>
-        ) : null}
-        <strong data-period-label aria-live="polite" aria-atomic="true">
-          {periodNavigation.label}
-        </strong>
-        {periodNavigation.next?.href ? (
-          <a
-            href={periodNavigation.next.href}
-            aria-label={periodNavigation.next.label}
-          >
-            <span aria-hidden="true">›</span>
-          </a>
-        ) : periodNavigation.next ? (
-          <button
-            type="button"
-            disabled={periodNavigation.next.disabled}
-            aria-label={periodNavigation.next.label}
-            data-period-direction="next"
-          >
-            <span aria-hidden="true">›</span>
-          </button>
-        ) : null}
-      </nav>
-    )
-  }
+  <nav class="showcase-period-navigation" aria-label="Month selection">
+    <button
+      type="button"
+      disabled={periodNavigation.previous.disabled}
+      aria-label={periodNavigation.previous.label}
+      data-period-direction="previous"
+    >
+      <span aria-hidden="true">‹</span>
+    </button>
+    <strong data-period-label aria-live="polite" aria-atomic="true">
+      {periodNavigation.label}
+    </strong>
+    <button
+      type="button"
+      disabled={periodNavigation.next.disabled}
+      aria-label={periodNavigation.next.label}
+      data-period-direction="next"
+    >
+      <span aria-hidden="true">›</span>
+    </button>
+  </nav>
 
   <div
     class="game-carousel-viewport"
@@ -154,40 +102,6 @@ const { activeView = "month", viewLinks = [], periodNavigation } = Astro.props;
     color: var(--muted);
   }
 
-  .puzzle-party-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.15em;
-    color: var(--ink);
-    text-decoration: underline;
-    text-underline-offset: 0.15em;
-  }
-
-  .showcase-view-switcher {
-    display: flex;
-    width: fit-content;
-    margin: -1rem auto 1.25rem;
-    border: 1px solid var(--ink);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-
-  .showcase-view-switcher a {
-    display: grid;
-    min-height: 2.75rem;
-    padding: 0.5rem 0.9rem;
-    place-items: center;
-    background: var(--paper-high);
-    font:
-      700 0.68rem "Space Mono",
-      monospace;
-  }
-
-  .showcase-view-switcher a[aria-current="page"] {
-    color: var(--paper-high);
-    background: var(--ink);
-  }
-
   .showcase-period-navigation {
     display: flex;
     justify-content: center;
@@ -196,7 +110,6 @@ const { activeView = "month", viewLinks = [], periodNavigation } = Astro.props;
     margin: -1rem 0 1.75rem;
   }
 
-  .showcase-period-navigation a,
   .showcase-period-navigation button {
     display: grid;
     width: 2.75rem;
@@ -233,9 +146,7 @@ const { activeView = "month", viewLinks = [], periodNavigation } = Astro.props;
   }
 
   :is(
-    .showcase-view-switcher a,
-    .showcase-period-navigation a,
-    .showcase-period-navigation button,
+      .showcase-period-navigation button,
     .game-carousel-navigation button
   ):focus-visible {
     outline: 3px solid var(--purple);

@@ -6,25 +6,20 @@
  * retained by the server.
  */
 import type { GameId } from "../data/games/contracts";
+import { parseSharedResult } from "../data/games/ingestion";
 import {
   CandidateValidationError,
-  parseSharedResult,
   validateGameCandidate,
   type NormalizedGameCandidate,
-} from "../data/games/ingestion";
+} from "../data/games/validation.ts";
+import type { GameSavePreview } from "../data/games/persistence.ts";
 
 type RecordValue = NormalizedGameCandidate["record"];
-type Preview = {
-  game: GameId;
-  record: RecordValue;
-  targetFile: string;
-  existingRecord?: RecordValue;
-};
 type ApiResult = {
   ok?: boolean;
   error?: string;
   issues?: Array<{ field: string; message: string }>;
-  preview?: Preview;
+  preview?: GameSavePreview;
 };
 
 const gameLabels: Record<GameId, string> = {
@@ -54,9 +49,25 @@ let activeGame: GameId | undefined;
 let previewedRecord: RecordValue | undefined;
 let previewRequest = 0;
 let previewTimer: number | undefined;
+let saving = false;
+
+function cancelPendingPreview() {
+  window.clearTimeout(previewTimer);
+  previewTimer = undefined;
+  previewRequest += 1;
+}
+
+function invalidatePreview() {
+  cancelPendingPreview();
+  previewedRecord = undefined;
+  saveButton.disabled = true;
+  replaceButton.hidden = true;
+  duplicate.hidden = true;
+}
 
 /** Switch the segmented control without discarding either panel's draft input. */
 function setMode(mode: "paste" | "manual") {
+  if (saving) return;
   modeButtons.forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.modeButton === mode));
   });
@@ -134,6 +145,8 @@ function renderGameFields(game: GameId, record: Record<string, unknown>) {
 
 /** Populate the common editor used by both entry modes, then validate it. */
 function showCandidate(game: GameId, record: RecordValue | Record<string, unknown>) {
+  if (saving) return;
+  invalidatePreview();
   activeGame = game;
   gameInput.value = gameLabels[game];
   dateInput.value = String(record.date ?? "");
@@ -172,11 +185,16 @@ function showIssues(issues: Array<{ field: string; message: string }>) {
 }
 
 /** Call the development endpoint and preserve its structured error response. */
-async function requestPreview(action: "preview" | "save", replaceExisting = false): Promise<ApiResult> {
+async function requestPreview(
+  action: "preview" | "save",
+  game: GameId,
+  record: RecordValue,
+  replaceExisting = false,
+): Promise<ApiResult> {
   const response = await fetch("/admin/api/game-result", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, game: activeGame, record: previewedRecord, replaceExisting }),
+    body: JSON.stringify({ action, game, record, replaceExisting }),
   });
   const result = await response.json() as ApiResult;
   if (!response.ok && !result.error) result.error = `Request failed with status ${response.status}.`;
@@ -188,17 +206,17 @@ async function requestPreview(action: "preview" | "save", replaceExisting = fals
  * A sequence number prevents a slower prior response from enabling stale data.
  */
 async function refreshPreview() {
-  const requestNumber = ++previewRequest;
-  saveButton.disabled = true;
-  replaceButton.hidden = true;
-  duplicate.hidden = true;
+  if (saving) return;
+  invalidatePreview();
+  const requestNumber = previewRequest;
   previewError.hidden = true;
-  previewedRecord = undefined;
   showIssues([]);
   if (!activeGame) return;
 
+  const game = activeGame;
+  let record: RecordValue;
   try {
-    previewedRecord = validateGameCandidate(activeGame, readRecord()).record;
+    record = validateGameCandidate(game, readRecord()).record;
   } catch (error) {
     if (error instanceof CandidateValidationError) showIssues(error.issues);
     else {
@@ -209,7 +227,7 @@ async function refreshPreview() {
   }
 
   try {
-    const result = await requestPreview("preview");
+    const result = await requestPreview("preview", game, record);
     if (requestNumber !== previewRequest) return;
     if (!result.ok || !result.preview) {
       showIssues(result.issues ?? []);
@@ -236,13 +254,22 @@ async function refreshPreview() {
 
 /** Save the last server-previewed value, handling a race that creates a duplicate. */
 async function save(replaceExisting: boolean) {
-  if (!activeGame || !previewedRecord) return;
+  if (saving || !activeGame || !previewedRecord) return;
+  const game = activeGame;
+  const record = previewedRecord;
+  cancelPendingPreview();
+  saving = true;
+  const controls = Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>(
+    "input, select, textarea, button",
+  )).filter((control) => control !== saveButton && control !== replaceButton);
+  const disabledStates = controls.map((control) => control.disabled);
+  controls.forEach((control) => { control.disabled = true; });
   saveButton.disabled = true;
   replaceButton.disabled = true;
   previewError.hidden = true;
 
   try {
-    const result = await requestPreview("save", replaceExisting);
+    const result = await requestPreview("save", game, record, replaceExisting);
     if (!result.ok || !result.preview) {
       if (result.preview?.existingRecord) {
         duplicate.querySelector<HTMLElement>("[data-existing-record]")!.textContent = JSON.stringify(result.preview.existingRecord, null, 2);
@@ -261,14 +288,17 @@ async function save(replaceExisting: boolean) {
     success.hidden = false;
     editor.hidden = true;
     activeGame = undefined;
-    previewedRecord = undefined;
+    invalidatePreview();
     pasteInput.value = "";
     manualGame.value = "";
+    saving = false;
     setMode("paste");
   } catch (error) {
     previewError.textContent = error instanceof Error ? error.message : "Could not reach the local server.";
     previewError.hidden = false;
   } finally {
+    saving = false;
+    controls.forEach((control, index) => { control.disabled = disabledStates[index]; });
     replaceButton.disabled = false;
     if (success.hidden && duplicate.hidden && previewedRecord) {
       saveButton.disabled = false;
@@ -279,6 +309,7 @@ async function save(replaceExisting: boolean) {
 modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.modeButton as "paste" | "manual")));
 document.querySelector("[data-switch-manual]")!.addEventListener("click", () => setMode("manual"));
 document.querySelector("[data-parse]")!.addEventListener("click", () => {
+  if (saving) return;
   parseError.hidden = true;
   try {
     const candidate = parseSharedResult(pasteInput.value);
@@ -290,8 +321,9 @@ document.querySelector("[data-parse]")!.addEventListener("click", () => {
   }
 });
 manualGame.addEventListener("change", () => {
+  if (saving) return;
   if (!manualGame.value) {
-    previewRequest += 1;
+    invalidatePreview();
     editor.hidden = true;
     activeGame = undefined;
     previewedRecord = undefined;
@@ -300,7 +332,8 @@ manualGame.addEventListener("change", () => {
   showCandidate(manualGame.value as GameId, blankRecord(manualGame.value as GameId));
 });
 recordForm.addEventListener("input", () => {
-  window.clearTimeout(previewTimer);
+  if (saving) return;
+  invalidatePreview();
   previewTimer = window.setTimeout(() => void refreshPreview(), 200);
 });
 saveButton.addEventListener("click", () => void save(false));

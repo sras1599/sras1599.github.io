@@ -1,7 +1,8 @@
 /**
  * Register the people collection's website-owned route and vault schemas. Each
  * person note owns its title and slug; its marker may provide publish and preview
- * defaults. Astro page modules own presentation and alphabetical list ordering.
+ * defaults. Astro owns individual page presentation; there is no people index
+ * page template even though an imported index document is required.
  */
 import { defineCollectionDefinition } from "../definition.mjs";
 import { baseIndexSchema } from "../schema.mjs";

@@ -159,7 +159,11 @@ module creates its public routes.
 
 The importer validates and prepares content before updating those directories.
 During development, invalid edits report an error in the terminal and retain the
-last successful import until corrected. Production errors stop the build. Missing
+last successful import until corrected. Astro's generated-content loader also
+prepares changed documents before updating its store, preserving the previous
+store if preparation fails. It debounces generated Markdown events for 100 ms,
+reuses unchanged documents within a development session, and renders every
+entry again when development restarts. Production errors stop the build. Missing
 or inaccessible `VAULT_PATH` is an error, not an empty blog.
 
 The watcher handles saves, renames, additions, removals, and image changes. Keep
@@ -230,3 +234,20 @@ without traversal segments, whitespace, query strings, or fragments. These are
 reused external image URLs, not inline SVGs or content-hashed assets; changing the
 filename/path also changes the cache URL. No component changes or per-game copies
 are needed.
+
+
+## Game result ingestion
+
+With `npm run dev`, open `/admin/ingest-game-data` to paste a native share or
+enter one result manually. Both modes use the same editable normalized preview.
+Editing immediately disables Save and hides replacement controls until the current
+draft has a successful server preview. Saving disables editing and mode/game
+switching until the request completes; failures leave the editor usable. Existing
+same-date records require the explicit replacement action.
+
+Static loading and admin ingestion share normalized
+validation in `src/data/games/validation.ts`. Persisted arrays must contain valid
+records with unique dates already in strictly ascending order. Fixed file paths,
+persisted reads, and atomic JSON replacement belong to the Node-only
+`src/data/games/persistence.ts`.
+

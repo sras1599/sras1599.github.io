@@ -7,7 +7,7 @@
  */
 import type { APIRoute } from "astro";
 import { gameIdSchema } from "../data/games/contracts";
-import { CandidateValidationError } from "../data/games/ingestion";
+import { CandidateValidationError } from "../data/games/validation.ts";
 import {
   DuplicateGameResultError,
   previewGameResult,

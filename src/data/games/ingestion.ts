@@ -1,53 +1,16 @@
 /**
  * Parse one native game share into the normalized records owned by the website.
  * This module is browser-safe: it detects formats, extracts only persisted
- * fields, and validates manual or parsed candidates with the authoritative Zod
- * schemas. Raw share text is accepted only as a function input and is never
+ * fields, and passes parsed candidates to shared normalized validation. Raw share text is accepted only as a function input and is never
  * retained. Filesystem reads and writes belong to `persistence.ts`.
  */
 import { format, isMatch, parse } from "date-fns";
 import { enUS } from "date-fns/locale";
-import type { z } from "zod";
+import { gameDateSchema, type GameId } from "./contracts.ts";
 import {
-  bracketCityResultSchema,
-  connectionsResultSchema,
-  formatGameResultField,
-  gameDateSchema,
-  miniResultSchema,
-  taglineResultSchema,
-  type BracketCityResult,
-  type ConnectionsResult,
-  type GameId,
-  type MiniResult,
-  type TaglineResult,
-} from "./contracts";
-
-export type NormalizedGameCandidate =
-  | { game: "connections"; record: ConnectionsResult }
-  | { game: "mini"; record: MiniResult }
-  | { game: "bracket-city"; record: BracketCityResult }
-  | { game: "tagline"; record: TaglineResult };
-
-export type CandidateValidationIssue = {
-  field: string;
-  message: string;
-};
-
-/** Preserve field-level schema failures so the admin UI can render them inline. */
-export class CandidateValidationError extends Error {
-  readonly game: GameId;
-  readonly issues: CandidateValidationIssue[];
-
-  constructor(game: GameId, issues: CandidateValidationIssue[]) {
-    const details = issues
-      .map(({ field, message }) => `${field}: ${message}`)
-      .join("; ");
-    super(`Invalid ${game} result: ${details}`);
-    this.name = "CandidateValidationError";
-    this.game = game;
-    this.issues = issues;
-  }
-}
+  validateGameCandidate,
+  type NormalizedGameCandidate,
+} from "./validation.ts";
 
 const connectionsColors = {
   "🟨": "yellow",
@@ -86,50 +49,6 @@ function parseEnglishDate(value: string, context: string): string {
 
   const date = parse(value, shareDateFormat, new Date(), { locale: enUS });
   return format(date, "yyyy-MM-dd");
-}
-
-/** Validate a candidate with one authoritative game schema and retain fields. */
-function parseCandidate<Result>(
-  game: GameId,
-  input: unknown,
-  schema: z.ZodType<Result>,
-): Result {
-  const parsed = schema.safeParse(input);
-  if (parsed.success) return parsed.data;
-
-  throw new CandidateValidationError(
-    game,
-    parsed.error.issues.map((issue) => ({
-      field: formatGameResultField(issue.path),
-      message: issue.message,
-    })),
-  );
-}
-
-/**
- * Validate manually entered or edited normalized fields. The discriminated
- * result gives callers the exact game/record pair accepted by persistence.
- */
-export function validateGameCandidate(
-  game: GameId,
-  input: unknown,
-): NormalizedGameCandidate {
-  switch (game) {
-    case "connections":
-      return {
-        game,
-        record: parseCandidate(game, input, connectionsResultSchema),
-      };
-    case "mini":
-      return { game, record: parseCandidate(game, input, miniResultSchema) };
-    case "bracket-city":
-      return {
-        game,
-        record: parseCandidate(game, input, bracketCityResultSchema),
-      };
-    case "tagline":
-      return { game, record: parseCandidate(game, input, taglineResultSchema) };
-  }
 }
 
 /**

@@ -85,29 +85,17 @@ export async function importVault({
   await validateUrlOwnership(notes, activeCollections, projectRoot);
   validateUniqueIdentities(notes);
 
-  // Resolution needs every discovered file to distinguish an unavailable target
-  // from a missing one. Entries and active indexes have separate canonical target
-  // identities even when the link transformer only needs their public URL.
+  // All discovered files distinguish unavailable notes from missing references;
+  // only selected entries and active index markers have public destinations.
   const publicTargetsByFile = new Map(
     notes.map((note) => [
       note.file,
-      {
-        identity: {
-          kind: "entry",
-          collection: note.identity.collectionId,
-          slug: note.identity.slug,
-        },
-        url: collectionEntryUrl(note.route, note.identity.slug),
-      },
+      collectionEntryUrl(note.route, note.identity.slug),
     ]),
   );
   for (const collection of activeCollections.values()) {
     if (!collection.index) continue;
-
-    publicTargetsByFile.set(collection.index.file, {
-      identity: collection.index.identity,
-      url: collection.route,
-    });
+    publicTargetsByFile.set(collection.index.file, collection.route);
   }
 
   const vault = {
@@ -302,7 +290,7 @@ function resolveCollectionBoundary(document, markerPath, definition) {
 
 /**
  * Return a map from collection ID to its definition, website-owned route, and
- * source boundaries without mutating those boundaries. Several folders may
+ * resolved index without mutating source boundaries. Several folders may
  * declare the same collection. A collection is active even if its boundaries
  * contain no selected notes.
  */
@@ -322,7 +310,6 @@ function resolveActiveCollections(collectionBoundaries) {
     activeCollections.set(collectionId, {
       definition,
       route: definition.route,
-      boundaries,
       index,
     });
   }
@@ -366,10 +353,6 @@ function resolveCollectionIndex(definition, boundaries) {
   return {
     file: candidate.file,
     body: candidate.body,
-    identity: {
-      kind: "collection-index",
-      collection: definition.id,
-    },
     metadata: {
       collection: definition.id,
       ...metadata,
@@ -1057,7 +1040,7 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
   const publicTarget = publicTargetsByFile.get(file);
   if (!publicTarget) return children;
 
-  let destination = publicTarget.url;
+  let destination = publicTarget;
   if (fragment) {
     const anchor = wiki ? heading(fragment) : fragment;
     destination += `#${anchor}`;

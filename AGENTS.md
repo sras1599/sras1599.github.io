@@ -67,7 +67,9 @@ to ownership, entry points, or the rules described here.
   and the separate `collectionIndexes` collection explicitly.
 - The loader reads generated Markdown recursively, derives entry IDs from relative
   filenames without `.md`, validates public metadata, renders Markdown, and removes
-  stale content-store entries. Its watcher serializes generated-file refreshes.
+  stale content-store entries. Each load session renders every entry initially,
+  then reuses unchanged source digests. Its watcher debounces bursts for 100 ms
+  and serializes refreshes; preparation failures preserve the previous store.
 - [astro.config.mjs](astro.config.mjs) owns static output, canonical origin,
   trailing-slash policy, and the Satteri Markdown processor configuration, including
   removal of footnote backlinks and standalone image captions from nonblank alt
@@ -113,6 +115,9 @@ to ownership, entry points, or the rules described here.
 - [blog/index.astro](src/pages/blog/index.astro) requires the generated blog index,
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.
   Hiding an entry from the feed does not unpublish its individual page.
+  [FeedCard.astro](src/components/FeedCard.astro) owns blog/notes card markup;
+  [publication.ts](src/utils/publication.ts) owns their newest-first ordering with
+  English ID tie-breaking and date labels, also used by dated entry headers.
 - `src/pages/blog/[...slug].astro`, `src/pages/notes/[...slug].astro`, and
   `src/pages/people/[...slug].astro` generate individual pages and preserve nested
   slugs. [notes/index.astro](src/pages/notes/index.astro) renders the dated notes
@@ -155,7 +160,12 @@ to ownership, entry points, or the rules described here.
   game ingestion page, and its same-origin preview/save endpoint only for Astro's
   development command. These sources stay outside `src/pages` so production builds
   emit no admin route. Browser parsing and schema feedback reuse `src/data/games/`;
-  filesystem preview and writes remain behind the Node-only persistence boundary.
+  [validation.ts](src/data/games/validation.ts) owns normalized candidate and
+  persisted-array validation for static loading and admin ingestion.
+  [persistence.ts](src/data/games/persistence.ts) is the Node-only owner of fixed
+  game paths, persisted reads, and atomic replacement for admin ingestion.
+  The admin browser invalidates previews immediately on edits and disables draft
+  controls during saves; saving requires a successful preview of the current draft.
 
 ### Supporting documentation
 

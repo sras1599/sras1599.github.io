@@ -8,11 +8,12 @@
 import { randomUUID } from "node:crypto";
 import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import type { GameId } from "./contracts";
+import type { GameId } from "./contracts.ts";
 import {
   validateGameCandidate,
+  validatePersistedResults,
   type NormalizedGameCandidate,
-} from "./ingestion";
+} from "./validation.ts";
 
 type NormalizedRecord = NormalizedGameCandidate["record"];
 
@@ -76,41 +77,7 @@ async function readPersistedResults(
     );
   }
 
-  if (!Array.isArray(input)) {
-    throw new Error(`${repositoryPath} must contain a top-level array.`);
-  }
-
-  const records: NormalizedRecord[] = [];
-  let previousDate: string | undefined;
-
-  input.forEach((value, index) => {
-    let record: NormalizedRecord;
-    try {
-      record = validateGameCandidate(game, value).record;
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Invalid persisted ${game} result at array position ${index}: ${detail}`,
-        { cause: error },
-      );
-    }
-
-    if (previousDate === record.date) {
-      throw new Error(
-        `Invalid persisted ${game} result at array position ${index}: date ${record.date} is duplicated.`,
-      );
-    }
-    if (previousDate !== undefined && record.date < previousDate) {
-      throw new Error(
-        `Invalid persisted ${game} result at array position ${index}: date ${record.date} is earlier than ${previousDate}.`,
-      );
-    }
-
-    records.push(record);
-    previousDate = record.date;
-  });
-
-  return records;
+  return validatePersistedResults(game, input);
 }
 
 /**
@@ -136,7 +103,8 @@ export async function previewGameResult(
 }
 
 /** Write complete JSON through a unique adjacent file, then replace atomically. */
-async function replaceJsonFile(game: GameId, records: NormalizedRecord[]) {
+async function replacePersistedResults(game: GameId, input: unknown) {
+  const records = validatePersistedResults(game, input);
   const targetUrl = gameFiles[game].url;
   const targetPath = fileURLToPath(targetUrl);
   const temporaryUrl = new URL(
@@ -196,6 +164,6 @@ export async function saveGameResult(
   }
   records.sort((left, right) => left.date.localeCompare(right.date));
 
-  await replaceJsonFile(game, records);
+  await replacePersistedResults(game, records);
   return preview;
 }
