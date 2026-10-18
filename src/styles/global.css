@@ -494,6 +494,21 @@ h3 {
   font-size: 1.08rem;
 }
 
+:is(.article-body, .blog-index-body, .notes-index-body) blockquote {
+  margin: 1.5rem 0;
+  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+  border-inline-start: 4px solid var(--orange);
+  background: var(--paper-low);
+}
+
+:is(.article-body, .blog-index-body, .notes-index-body) blockquote > :first-child {
+  margin-top: 0;
+}
+
+:is(.article-body, .blog-index-body, .notes-index-body) blockquote > :last-child {
+  margin-bottom: 0;
+}
+
 .article-body img {
   display: block;
   max-width: 100%;
