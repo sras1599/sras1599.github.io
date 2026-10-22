@@ -89,11 +89,13 @@ for (
 </game-showcase-controller>
 
 <script>
+  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
+
   /**
    * Enhance one rendered showcase instance. The custom element owns its DOM
-   * queries and event lifecycle, so adding other homepage scripts cannot create
-   * selector or state collisions. Calendar markup and game encodings continue
-   * to come exclusively from the server-rendered Month templates.
+   * queries, Embla instance, and event lifecycle. Calendar markup and game
+   * encodings continue to come exclusively from the server-rendered Month
+   * templates; Embla owns mobile dragging, looping, and sliding.
    */
   class GameShowcaseController extends HTMLElement {
     private events?: AbortController;
@@ -137,6 +139,7 @@ for (
       );
       const availableMonths = Array.from(templates.keys()).sort();
       const cardGrid = requireElement<HTMLElement>(".game-card-grid");
+      const cardViewport = requireElement<HTMLElement>(".game-card-viewport");
       const gameAnnouncement = requireElement<HTMLElement>(
         "[data-game-selection-announcement]",
       );
@@ -175,11 +178,20 @@ for (
         );
       }
       let activeGame = initialGame.id;
+      const mobileLayout = window.matchMedia("(max-width: 820px)");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let carousel: EmblaCarouselType | undefined;
 
-      /** CSS limits selection to mobile; desktop keeps every card visible. */
+      /** Inactive mobile slides stay rendered for Embla, but cannot receive focus. */
       const updateGameSelection = () => {
         for (const card of cardGrid.querySelectorAll<HTMLElement>("[data-game-card]")) {
-          card.dataset.gameActive = String(card.dataset.gameCard === activeGame);
+          const selected = card.dataset.gameCard === activeGame;
+          card.inert = carousel !== undefined && !selected;
+          if (card.inert) {
+            card.setAttribute("aria-hidden", "true");
+          } else {
+            card.removeAttribute("aria-hidden");
+          }
         }
         for (const button of gameButtons) {
           button.setAttribute(
@@ -188,6 +200,54 @@ for (
           );
         }
       };
+
+      const synchronizeGameSelection = (api: EmblaCarouselType) => {
+        const selectedGame = gameCardDetails()[api.selectedScrollSnap()];
+        if (!selectedGame) return;
+
+        if (activeGame !== selectedGame.id) {
+          activeGame = selectedGame.id;
+          gameAnnouncement.textContent = selectedGame.label;
+        }
+        updateGameSelection();
+      };
+
+      const snapForReducedMotion = (api: EmblaCarouselType) => {
+        if (reducedMotion.matches) api.scrollTo(api.selectedScrollSnap(), true);
+      };
+
+      const destroyCarousel = () => {
+        carousel?.destroy();
+        carousel = undefined;
+        updateGameSelection();
+      };
+
+      // Recreate after month replacement or breakpoint changes, retaining game identity.
+      const initializeCarousel = () => {
+        if (!mobileLayout.matches) {
+          updateGameSelection();
+          return;
+        }
+
+        carousel = EmblaCarousel(cardViewport, {
+          loop: true,
+          align: "start",
+          startIndex: gameCardDetails().findIndex((game) => game.id === activeGame),
+          watchSlides: false,
+        });
+        carousel.on("select", synchronizeGameSelection);
+        carousel.on("reInit", synchronizeGameSelection);
+        carousel.on("pointerUp", snapForReducedMotion);
+        updateGameSelection();
+      };
+      signal.addEventListener("abort", destroyCarousel, { once: true });
+      mobileLayout.addEventListener("change", () => {
+        destroyCarousel();
+        initializeCarousel();
+      }, { signal });
+      reducedMotion.addEventListener("change", () => {
+        if (carousel) snapForReducedMotion(carousel);
+      }, { signal });
 
       /** Format YYYY-MM without allowing the browser's local zone to shift it. */
       const monthLabel = (month: string) => {
@@ -243,8 +303,9 @@ for (
         const template = templates.get(month);
         if (!template) return;
 
+        destroyCarousel();
         cardGrid.replaceChildren(template.content.cloneNode(true));
-        updateGameSelection();
+        initializeCarousel();
         activeMonth = month;
         updateControls(month);
 
@@ -271,26 +332,21 @@ for (
           ? !initialParams.has("games") && !initialParams.has("date")
           : initialParams.get("games") === "month" &&
             initialParams.get("date") === initialMonth;
+      showcase.dataset.gameSelectionReady = "";
       selectMonth(initialMonth, hasCanonicalState ? "none" : "replace");
 
       for (const button of gameButtons) {
         button.addEventListener(
           "click",
           () => {
-            const selectedGame = gameCardDetails().find(
+            const index = gameCardDetails().findIndex(
               (game) => game.id === button.dataset.selectGame,
             );
-            if (!selectedGame || selectedGame.id === activeGame) return;
-
-            activeGame = selectedGame.id;
-            updateGameSelection();
-            gameAnnouncement.textContent = selectedGame.label;
+            if (index >= 0) carousel?.scrollTo(index, reducedMotion.matches);
           },
           { signal },
         );
       }
-      showcase.dataset.gameSelectionReady = "";
-
       previousButton.addEventListener(
         "click",
         () => {

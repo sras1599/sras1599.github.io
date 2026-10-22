@@ -1,8 +1,9 @@
 ---
 /**
  * Provide the homepage game showcase's typography, month buttons, responsive
- * card grid, mobile game selector, and card chrome. The caller owns period state and
- * URL decisions; its cards fill the default slot.
+ * card grid, mobile carousel viewport and track, game selector, and card chrome.
+ * The caller owns carousel behavior, period state, and URL decisions; its cards
+ * fill the default slot.
  */
 import { Image } from "astro:assets";
 import { gameIds } from "../data/games/contracts";
@@ -81,13 +82,15 @@ const { periodNavigation } = Astro.props;
       aria-atomic="true"></span>
   </nav>
 
-  <div
-    class="game-card-grid"
-    id="game-card-grid"
-    role="region"
-    aria-label="Daily game results"
-  >
-    <slot />
+  <div class="game-card-viewport">
+    <div
+      class="game-card-grid"
+      id="game-card-grid"
+      role="region"
+      aria-label="Daily game results"
+    >
+      <slot />
+    </div>
   </div>
 </section>
 
@@ -144,7 +147,7 @@ const { periodNavigation } = Astro.props;
   }
 
   :is(
-      .showcase-period-navigation button,
+    .showcase-period-navigation button,
     .game-selection button
   ):focus-visible {
     outline: 3px solid var(--purple);
@@ -229,10 +232,23 @@ const { periodNavigation } = Astro.props;
       grid-template-columns: minmax(0, 1fr);
     }
 
-    /* Without enhancement all four calendars remain readable. */
+    /* Reserve room inside the viewport for card shadows and focus outlines. */
+    .game-showcase[data-game-selection-ready] .game-card-viewport {
+      overflow: hidden;
+      padding: 7px;
+      margin: -7px;
+    }
+
+    .game-showcase[data-game-selection-ready] .game-card-grid {
+      display: flex;
+      gap: 12px;
+      touch-action: pan-y pinch-zoom;
+    }
+
     .game-showcase[data-game-selection-ready]
-      .game-card-grid :global(.game-card[data-game-active="false"]) {
-      display: none;
+      .game-card-grid
+      :global(.game-card) {
+      flex: 0 0 100%;
     }
 
     .game-showcase[data-game-selection-ready] .game-selection {
@@ -255,7 +271,8 @@ const { periodNavigation } = Astro.props;
     }
 
     .game-selection button[aria-pressed="true"] {
-      background: var(--ink);
+      background: white;
+      border-width: 2px;
     }
 
     .game-selection img {

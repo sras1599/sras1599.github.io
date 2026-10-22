@@ -86,8 +86,10 @@ to ownership, entry points, or the rules described here.
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
   [HomepageGameShowcase.astro](src/components/HomepageGameShowcase.astro) owns
   the homepage showcase's repository-data integration, Kolkata calendar range,
-  pre-rendered Month choices, mobile game selection, browser navigation lifecycle,
-  and public URL state.
+  pre-rendered Month choices, mobile game selection, reduced-motion handling,
+  browser navigation lifecycle, and public URL state. Embla owns mobile dragging,
+  looping, and sliding; the controller synchronizes icons and accessible slide
+  state, and recreates the carousel after month or responsive layout changes.
   [absences.json](src/data/games/absences.json) owns shared reason artwork/default
   messages and inclusive dated ranges independently of actual game results.
   [absences.ts](src/data/games/absences.ts) validates dates, reasons, messages,
@@ -104,8 +106,9 @@ to ownership, entry points, or the rules described here.
   dismissal, scroll locking, and focus restoration. Note-preview images are
   excluded; generated Markdown and fetched preview HTML remain unchanged.
 - [GameShowcaseFrame.astro](src/components/GameShowcaseFrame.astro) owns the game
-  showcase's shared typography, controls, mobile icon selector, responsive card
-  grid, and card chrome. [gamePresentation.ts](src/components/gamePresentation.ts)
+  showcase's shared typography, controls, mobile icon selector and carousel
+  viewport/track, responsive card grid, and card chrome.
+  [gamePresentation.ts](src/components/gamePresentation.ts)
   shares game labels, icons, and card presentation metadata with the selector.
   [GameShowcaseMonth.astro](src/components/GameShowcaseMonth.astro) is the
   presentation-only composition interface for normalized game results and shared
