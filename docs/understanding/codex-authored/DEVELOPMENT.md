@@ -223,8 +223,14 @@ The illustration repeats in every affected cell with its proportions preserved
 and its day number visible. Detailed artwork will look small in these cells.
 All day cells show their description on hover or keyboard focus using the same
 CSS tooltip styling as article abbreviations. Absence cells show the full absence
-message and do not act as buttons. These CSS tooltips can be clipped by the mobile
-carousel viewport, and long messages are not scrollable.
+message and do not act as buttons. Mobile tooltips stay within the calendar
+width; long messages are not scrollable.
+
+At widths of 820px and below, game icons between the month controls and calendar
+select one full-content-width card. Connections is selected initially; changing
+months preserves the selected game. Selection does not change the URL. Desktop
+shows all four cards in a two-column grid. Without JavaScript, mobile stacks all
+four cards and hides the game selector.
 
 The vacation reason uses the existing supplied public SVG at
 `public/images/game-absence-vacation.svg`. To swap the artwork everywhere, replace

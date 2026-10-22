@@ -8,13 +8,9 @@
  * configuration.
  */
 import type { AbsenceRange } from "../data/games/absences";
-import type { ImageMetadata } from "astro";
 import { Image } from "astro:assets";
 
-import bracketCityLogo from "../assets/bracket-city-logo.avif";
-import connectionsLogo from "../assets/connections-logo.png";
-import miniLogo from "../assets/mini-logo.png";
-import taglineIcon from "../assets/tagline-icon.webp";
+import { gamePresentation } from "./gamePresentation";
 import type {
   BracketCityResult,
   ConnectionsResult,
@@ -39,17 +35,6 @@ type PlayedResult =
   | { game: "mini"; result: MiniResult }
   | { game: "bracket-city"; result: BracketCityResult }
   | { game: "tagline"; result: TaglineResult };
-
-type CardPresentation = {
-  title: string;
-  icon: ImageMetadata;
-  playLink: {
-    label: string;
-    href: string;
-  };
-  cardClass: string;
-  calendarClass: string;
-};
 
 const props = Astro.props;
 const { game, selectedMonth, currentLocalDate, absences } = props;
@@ -122,54 +107,7 @@ const resultsByDate = new Map(
     .map((played) => [played.result.date, played]),
 );
 
-const cardPresentation: CardPresentation = (() => {
-  switch (game) {
-    case "connections":
-      return {
-        title: "Connections",
-        icon: connectionsLogo,
-        playLink: {
-          label: "Play on NYT Games",
-          href: "https://www.nytimes.com/games/connections",
-        },
-        cardClass: "connections-card",
-        calendarClass: "connections-calendar",
-      };
-    case "mini":
-      return {
-        title: "Mini",
-        icon: miniLogo,
-        playLink: {
-          label: "Play on NYT Games",
-          href: "https://www.nytimes.com/crosswords/game/mini",
-        },
-        cardClass: "mini-card",
-        calendarClass: "value-calendar",
-      };
-    case "bracket-city":
-      return {
-        title: "Bracket City",
-        icon: bracketCityLogo,
-        playLink: {
-          label: "Play on The Atlantic",
-          href: "https://www.theatlantic.com/games/bracket-city/",
-        },
-        cardClass: "bracket-card",
-        calendarClass: "value-calendar",
-      };
-    case "tagline":
-      return {
-        title: "Tagline",
-        icon: taglineIcon,
-        playLink: {
-          label: "Play on Merriam Webster",
-          href: "https://www.merriam-webster.com/games/tagline",
-        },
-        cardClass: "tagline-card",
-        calendarClass: "tagline-calendar",
-      };
-  }
-})();
+const cardPresentation = gamePresentation[game];
 
 const formatTime = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -407,7 +345,7 @@ const describeDay = (
 
   @media (max-width: 820px) {
     /*
-     * Keep tooltips inside the calendar so the carousel cannot clip them.
+     * Keep mobile tooltips within the calendar and the page content width.
      * Absolute percentages use the cell's padding box; include both 1px
      * borders when reconstructing the seven-column width and column offset.
      */

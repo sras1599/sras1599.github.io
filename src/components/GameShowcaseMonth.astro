@@ -2,10 +2,8 @@
 /**
  * Compose the four production Month cards from normalized game results and shared absence ranges. This is
  * the Month presentation's small public interface: callers select a calendar
- * month, provide the current local date, and supply validated data. Each card
- * receives a layout-only carousel slide wrapper so looping gaps can be carried
- * by every slide, while game-specific rendering stays behind the private card
- * seam.
+ * month, provide the current local date, and supply validated data. Game-specific
+ * rendering stays behind the private card seam.
  */
 import type { AbsenceRange } from "../data/games/absences";
 import type { GameData } from "../data/games/contracts";
@@ -21,39 +19,31 @@ interface Props {
 const { selectedMonth, currentLocalDate, results, absences } = Astro.props;
 ---
 
-<div class="game-carousel-slide">
-  <GameShowcaseMonthCard
-    game="connections"
-    selectedMonth={selectedMonth}
-    currentLocalDate={currentLocalDate}
-    absences={absences}
-    results={results.connections}
-  />
-</div>
-<div class="game-carousel-slide">
-  <GameShowcaseMonthCard
-    game="mini"
-    selectedMonth={selectedMonth}
-    currentLocalDate={currentLocalDate}
-    absences={absences}
-    results={results.mini}
-  />
-</div>
-<div class="game-carousel-slide">
-  <GameShowcaseMonthCard
-    game="bracket-city"
-    selectedMonth={selectedMonth}
-    currentLocalDate={currentLocalDate}
-    absences={absences}
-    results={results["bracket-city"]}
-  />
-</div>
-<div class="game-carousel-slide">
-  <GameShowcaseMonthCard
-    game="tagline"
-    selectedMonth={selectedMonth}
-    currentLocalDate={currentLocalDate}
-    absences={absences}
-    results={results.tagline}
-  />
-</div>
+<GameShowcaseMonthCard
+  game="connections"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  absences={absences}
+  results={results.connections}
+/>
+<GameShowcaseMonthCard
+  game="mini"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  absences={absences}
+  results={results.mini}
+/>
+<GameShowcaseMonthCard
+  game="bracket-city"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  absences={absences}
+  results={results["bracket-city"]}
+/>
+<GameShowcaseMonthCard
+  game="tagline"
+  selectedMonth={selectedMonth}
+  currentLocalDate={currentLocalDate}
+  absences={absences}
+  results={results.tagline}
+/>

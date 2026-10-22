@@ -3,7 +3,7 @@
  * Integrate the complete word-game showcase on the public homepage. This module
  * loads validated repository results, defines the current Kolkata calendar
  * date, renders every selectable Month presentation, and enhances the static
- * markup with shared month navigation, a mobile game carousel, and canonical
+ * markup with shared month navigation, mobile game selection, and canonical
  * URL state. Its parameterless interface deliberately keeps data preparation
  * and browser coordination out of the homepage while the lower-level
  * presentation modules remain reusable.
@@ -89,8 +89,6 @@ for (
 </game-showcase-controller>
 
 <script>
-  import EmblaCarousel, { type EmblaCarouselType } from "embla-carousel";
-
   /**
    * Enhance one rendered showcase instance. The custom element owns its DOM
    * queries and event lifecycle, so adding other homepage scripts cannot create
@@ -99,7 +97,6 @@ for (
    */
   class GameShowcaseController extends HTMLElement {
     private events?: AbortController;
-    private gameCarousel?: EmblaCarouselType;
 
     connectedCallback() {
       if (this.events) return;
@@ -139,18 +136,12 @@ for (
         ),
       );
       const availableMonths = Array.from(templates.keys()).sort();
-      const carouselViewport = requireElement<HTMLElement>(
-        "[data-game-carousel-viewport]",
-      );
       const cardGrid = requireElement<HTMLElement>(".game-card-grid");
-      const carouselAnnouncement = requireElement<HTMLElement>(
-        "[data-game-carousel-announcement]",
+      const gameAnnouncement = requireElement<HTMLElement>(
+        "[data-game-selection-announcement]",
       );
-      const previousGameButton = requireElement<HTMLButtonElement>(
-        '[data-game-direction="previous"]',
-      );
-      const nextGameButton = requireElement<HTMLButtonElement>(
-        '[data-game-direction="next"]',
+      const gameButtons = Array.from(
+        this.querySelectorAll<HTMLButtonElement>("[data-select-game]"),
       );
       const periodLabel = requireElement<HTMLElement>("[data-period-label]");
       const previousButton = requireElement<HTMLButtonElement>(
@@ -184,6 +175,19 @@ for (
         );
       }
       let activeGame = initialGame.id;
+
+      /** CSS limits selection to mobile; desktop keeps every card visible. */
+      const updateGameSelection = () => {
+        for (const card of cardGrid.querySelectorAll<HTMLElement>("[data-game-card]")) {
+          card.dataset.gameActive = String(card.dataset.gameCard === activeGame);
+        }
+        for (const button of gameButtons) {
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.selectGame === activeGame),
+          );
+        }
+      };
 
       /** Format YYYY-MM without allowing the browser's local zone to shift it. */
       const monthLabel = (month: string) => {
@@ -230,8 +234,7 @@ for (
 
       /**
        * Replace all four cards from one production-rendered month template.
-       * Reinitialize the carousel against the new nodes at the matching game,
-       * so changing the time period retains the user's game context.
+       * Reapply the selected game so changing months retains the user's context.
        */
       const selectMonth = (
         month: string,
@@ -241,12 +244,7 @@ for (
         if (!template) return;
 
         cardGrid.replaceChildren(template.content.cloneNode(true));
-        const activeGameIndex = gameCardDetails().findIndex(
-          (game) => game.id === activeGame,
-        );
-        this.gameCarousel?.reInit({
-          startIndex: activeGameIndex < 0 ? 0 : activeGameIndex,
-        });
+        updateGameSelection();
         activeMonth = month;
         updateControls(month);
 
@@ -275,35 +273,23 @@ for (
             initialParams.get("date") === initialMonth;
       selectMonth(initialMonth, hasCanonicalState ? "none" : "replace");
 
-      /** Announce the selected game without exposing an arbitrary position. */
-      const updateActiveGame = (carousel: EmblaCarouselType) => {
-        const selectedGame = gameCardDetails()[carousel.selectedScrollSnap()];
-        if (!selectedGame || selectedGame.id === activeGame) return;
+      for (const button of gameButtons) {
+        button.addEventListener(
+          "click",
+          () => {
+            const selectedGame = gameCardDetails().find(
+              (game) => game.id === button.dataset.selectGame,
+            );
+            if (!selectedGame || selectedGame.id === activeGame) return;
 
-        activeGame = selectedGame.id;
-        carouselAnnouncement.textContent = selectedGame.label;
-      };
-
-      this.gameCarousel = EmblaCarousel(carouselViewport, {
-        align: "center",
-        loop: true,
-        watchSlides: false,
-        breakpoints: {
-          "(min-width: 821px)": { active: false },
-        },
-      });
-      this.gameCarousel.on("select", updateActiveGame);
-
-      previousGameButton.addEventListener(
-        "click",
-        () => this.gameCarousel?.scrollPrev(),
-        { signal },
-      );
-      nextGameButton.addEventListener(
-        "click",
-        () => this.gameCarousel?.scrollNext(),
-        { signal },
-      );
+            activeGame = selectedGame.id;
+            updateGameSelection();
+            gameAnnouncement.textContent = selectedGame.label;
+          },
+          { signal },
+        );
+      }
+      showcase.dataset.gameSelectionReady = "";
 
       previousButton.addEventListener(
         "click",
@@ -334,8 +320,7 @@ for (
     disconnectedCallback() {
       this.events?.abort();
       this.events = undefined;
-      this.gameCarousel?.destroy();
-      this.gameCarousel = undefined;
+      this.querySelector("#games")?.removeAttribute("data-game-selection-ready");
     }
   }
 
