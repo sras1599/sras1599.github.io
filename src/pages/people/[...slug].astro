@@ -3,11 +3,13 @@
  * Generate and render one /people page for each imported person note. The rest
  * parameter preserves slash-separated slugs, and the note body is the complete
  * public profile content beneath its note-owned title. People have individual
- * pages but no directory index or contextual back link.
+ * pages but no directory index or contextual back link. Folder metadata may
+ * opt individual profiles into the shared sidebar layout.
  * This entry template enables previews of links to other collection entries.
  */
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import FolderNavigationLayout from "../../layouts/FolderNavigationLayout.astro";
 import NotePreview from "../../components/NotePreview.astro";
 
 interface Props {
@@ -28,7 +30,7 @@ const { Content } = await render(person);
 ---
 
 <BaseLayout title={person.data.title}>
-  <main>
+  <FolderNavigationLayout collection="people" navigation={person.data.navigation}>
     <article class="article">
       <header class="article-header">
         <h2>{person.data.title}</h2>
@@ -37,6 +39,6 @@ const { Content } = await render(person);
         <Content />
       </div>
     </article>
-  </main>
+  </FolderNavigationLayout>
   <NotePreview />
 </BaseLayout>

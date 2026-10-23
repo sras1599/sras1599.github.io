@@ -1,7 +1,8 @@
 /**
  * Register notes at the website-owned /notes route. The marker authors the
  * collection index and may set publish or preview defaults; individual notes
- * provide dated entry metadata that is projected into generated Markdown.
+ * provide public entry metadata; folder-sidebar entries may omit their date.
+ * The importer projects shared navigation separately from collection metadata.
  */
 import { defineCollectionDefinition } from "../definition.mjs";
 import { baseIndexSchema } from "../schema.mjs";
@@ -25,7 +26,7 @@ export const notesCollectionDefinition = defineCollectionDefinition({
       ...(data.description === undefined
         ? {}
         : { description: data.description }),
-      publishDate: data.publishDate,
+      ...(data.publishDate === undefined ? {} : { publishDate: data.publishDate }),
       slug: data.slug,
       tags: data.tags ?? [],
     };

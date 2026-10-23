@@ -748,3 +748,96 @@ h3 {
     padding: 0rem 1rem;
   }
 }
+
+/* Folder explorers enhance only entries whose markers opt into navigation. */
+.folder-page {
+  display: grid;
+  gap: 2rem;
+  margin: 3rem 0 5rem;
+  min-width: 0;
+}
+
+.folder-page > .article {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.folder-sidebar {
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.folder-explorer {
+  background: var(--paper-high);
+  border: 2px solid var(--ink);
+  padding: 1rem;
+}
+
+.folder-explorer ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.folder-explorer > ul {
+  padding-left: 0;
+}
+
+.folder-explorer li {
+  margin: 0.4rem 0;
+  overflow-wrap: anywhere;
+}
+
+.folder-explorer li summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.folder-explorer li summary::-webkit-details-marker {
+  display: none;
+}
+
+.folder-disclosure {
+  flex: 0 0 0.75rem;
+}
+
+.folder-explorer li details[open] > summary > .folder-disclosure {
+  transform: rotate(90deg);
+}
+
+.folder-leaf {
+  display: inline-block;
+  margin-left: 1.1rem;
+}
+
+.folder-explorer a[aria-current="page"] {
+  background: var(--green-soft);
+  font-weight: 700;
+}
+
+.folder-explorer :is(a, summary):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.article-body audio {
+  max-width: 100%;
+}
+
+@media (min-width: 960px) {
+  .folder-page {
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .folder-sidebar {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
+}

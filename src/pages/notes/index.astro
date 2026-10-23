@@ -1,8 +1,9 @@
 ---
 /**
  * Render /notes from the authored notes index and imported note entries. Notes
- * are ordered newest first with stable ID tie-breaking, and their optional
- * descriptions and tags are omitted from cards when authors do not supply them.
+ * outside sidebar folders are ordered newest first with stable ID tie-breaking.
+ * Sidebar roots with published overviews appear as directory cards first in the
+ * same list, ordered alphabetically; other sidebar entries stay out of the feed.
  */
 import { getCollection, render } from "astro:content";
 import FeedCard from "../../components/FeedCard.astro";
@@ -19,8 +20,18 @@ if (!index) {
   throw new Error("Notes collection is missing its generated index document");
 }
 
-const notes = await getCollection("notes");
+const allNotes = await getCollection("notes");
+const directories = allNotes.filter((note) =>
+  note.data.directoryCard !== undefined,
+).sort((left, right) =>
+  left.data.navigation!.root.title.localeCompare(right.data.navigation!.root.title, "en", { numeric: true }),
+);
+const notes = allNotes.flatMap((note) => {
+  if (note.data.navigation || !note.data.publishDate) return [];
+  return [{ ...note, data: { ...note.data, publishDate: note.data.publishDate } }];
+});
 notes.sort(comparePublicationEntries);
+const cards = [...directories, ...notes];
 const { Content } = await render(index);
 
 ---
@@ -35,15 +46,16 @@ const { Content } = await render(index);
     </section>
 
     <section class="post-list" aria-label="Notes">
-      {notes.length === 0 && <p>No notes yet.</p>}
+      {cards.length === 0 && <p>No notes yet.</p>}
       {
-        notes.map((note) => (
+        cards.map((note) => (
           <FeedCard
             title={note.data.title}
             href={collectionEntryUrl(notesCollectionDefinition.route, note.id)}
             publishDate={note.data.publishDate}
             description={note.data.description}
             tags={note.data.tags}
+            directoryCard={note.data.directoryCard}
           />
         ))
       }

@@ -29,6 +29,14 @@ to ownership, entry points, or the rules described here.
   Source entry schemas and generated-content schemas have different roles: only
   explicitly projected frontmatter leaves the vault, but the selected body is
   published in full.
+- [sidebar.mjs](src/collections/sidebar.mjs) owns shared `directory` marker
+  validation, directory-card content, and generated `navigation` schemas for all
+  collections. `directory: true` requires `title` and `slug`; its Markdown body
+  supplies card content while `_index.md` remains the separate landing page. The importer derives titles
+  and slugs in sidebar folders and projects navigation independently of collection
+  metadata. Notes in sidebar folders may omit dates; Blog requirements stay intact.
+  Optional directory-marker tags are validated as lists of strings and projected
+  into `directoryCards`; omitted tags become an empty list.
 - Adding a collection also requires Astro registration and page templates; changing
   the registry alone does not create a rendered route.
 
@@ -41,22 +49,43 @@ to ownership, entry points, or the rules described here.
 - A **marker** is an exact `_website.md` file. A marker declaring `collection`
   establishes a **boundary** that owns descendant notes until another declaration.
   Unknown collections stop inherited ownership and their entries are skipped.
-  Hidden files/directories and symlinks are excluded.
+  Hidden files/directories and symlinks are excluded. A marker may declare
+  `directory: true`, `title`, and `slug` with an inherited registered collection.
+  Directory markers establish the internal `{ title, slug }` sidebar root and own
+  card Markdown, never collection index metadata/body; `metaDescription` is invalid
+  on them. Legacy `sidebar`, `sidebarTitle`, and `sidebarSlug` are rejected with
+  migration guidance. False/absent `directory` preserves ordinary marker behavior
+  and does not disable inherited navigation. Within sidebar
+  folders, markers without `collection` may override folder defaults. Changing
+  collections ends inherited navigation. Nested sidebar roots own their explorer;
+  their selected root overview is also linked in the parent tree.
 - Metadata precedence is collection defaults → owning marker defaults → note
   values. Arrays replace rather than merge. Production selects effective
   `publish: true`; writing mode additionally selects effective `preview: true`.
   These flags default to false. `publishDate` does not schedule publication.
-- Entry identity is collection ID plus authored slug, independent of source path.
-  Slash-separated slugs produce nested URLs. Index documents are separate from
-  entries. Both current definitions require one index provider per active collection,
+  Directory-marker tags label only the card and are excluded from folder defaults
+  in every collection. Ordinary Blog markers retain their existing tag defaults.
+- Entry identity is collection ID plus slug. Outside sidebar folders, slugs are
+  authored independently of source paths; inside, absent titles/slugs derive from
+  filenames and topic-relative paths. Exact `_index.md` files inside sidebar folders
+  are ordinary entries at folder URLs and make folder headings clickable. Collection
+  index documents remain separate from entries. All definitions require one index provider per active collection,
   supplying `title` and `metaDescription` through a marker.
 - For link/image changes, start at `prepareMarkdownDocument`, `transformNode`,
   `transformWikiMatch`, and `resolveReference`. Reference lookup tries the source
   folder, vault root, then unique filename. Existing unavailable note links become
-  labels; missing or ambiguous references fail. Local raster images are copied
-  under content-hashed names; note transclusion and plugin execution are unsupported.
-- The vault is read-only. `.generated/{collection}/`, `.generated/_indexes/`, and
-  `public/_vault/` are disposable importer-owned outputs; never edit them directly.
+  labels; missing or ambiguous references fail. Local raster images and `.m4a`
+  wiki embeds are copied under content-hashed names; audio uses native controls.
+  Block ID declarations are stripped from prose; block-reference links (literal
+  `#^id` or encoded `#%5Eid`) become labels after cross-note target validation.
+  Code examples and external URLs remain literal; no block anchors are generated.
+  Note transclusion and plugin execution are unsupported.
+- The vault is read-only. `.generated/{collection}/`, `.generated/_indexes/`,
+  `.generated/_directories/`, and `public/_vault/` are disposable importer-owned
+  outputs; never edit them directly. Directory card bodies are keyed by collection
+  and slug and exported only for selected root overviews, which receive the
+  importer-owned `directoryCard` reference. Marker-relative references reuse the
+  normal Markdown/media pipeline; the entire selected marker body is public.
   Preparation failures preserve previous output. Synchronization removes stale files
   but has no whole-import rollback if filesystem writes fail.
 
@@ -64,7 +93,9 @@ to ownership, entry points, or the rules described here.
 
 - Start with [content.config.ts](src/content.config.ts) and
   [loader.ts](src/collections/loader.ts). Astro registers `blog`, `notes`, `people`,
-  and the separate `collectionIndexes` collection explicitly.
+  and the separate `collectionIndexes` and `directoryCards` collections explicitly.
+  Both use the shared generated-Markdown loader and renderer; card documents
+  create no routes and do not enter normal entry queries.
 - The loader reads generated Markdown recursively, derives entry IDs from relative
   filenames without `.md`, validates public metadata, renders Markdown, and removes
   stale content-store entries. Each load session renders every entry initially,
@@ -99,6 +130,15 @@ to ownership, entry points, or the rules described here.
   [BaseLayout.astro](src/layouts/BaseLayout.astro) owns the document shell, SEO
   metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
+- [FolderNavigationLayout.astro](src/layouts/FolderNavigationLayout.astro) wraps
+  opted-in Blog, Notes, and People articles with a responsive folder explorer.
+  [folderNavigation.ts](src/components/folderNavigation.ts) builds the tree from
+  selected public entries; [FolderNavigationNode.astro](src/components/FolderNavigationNode.astro)
+  renders recursive disclosures, overview links, and current-page state. Tree
+  membership follows folder metadata independently of authored entry URL overrides.
+  The directory root is the explorer's sole heading and mobile disclosure; there
+  is no additional Browse heading.
+  Unrelated pages keep their existing layout; no site-wide explorer is created.
 - [ImageZoom.astro](src/components/ImageZoom.astro), included by `BaseLayout`,
   enhances images in entry bodies and authored blog/notes indexes in the browser.
   Clicking or keyboard-activating an image, including a linked image, opens a
@@ -121,13 +161,22 @@ to ownership, entry points, or the rules described here.
 - [blog/index.astro](src/pages/blog/index.astro) requires the generated blog index,
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.
   Hiding an entry from the feed does not unpublish its individual page.
-  [FeedCard.astro](src/components/FeedCard.astro) owns blog/notes card markup;
+  [FeedCard.astro](src/components/FeedCard.astro) owns blog/notes card markup,
+  optional dates, the blue `./` directory prefix, and rendered directory marker
+  bodies resolved through the `directoryCards` collection. Marker Markdown replaces
+  directory descriptions; ordinary cards keep their frontmatter descriptions;
+  directory badges use marker tags exclusively, while overview pages and ordinary
+  cards retain their own tags. There is no fallback to overview tags;
   [publication.ts](src/utils/publication.ts) owns their newest-first ordering with
   English ID tie-breaking and date labels, also used by dated entry headers.
 - `src/pages/blog/[...slug].astro`, `src/pages/notes/[...slug].astro`, and
   `src/pages/people/[...slug].astro` generate individual pages and preserve nested
   slugs. [notes/index.astro](src/pages/notes/index.astro) renders the dated notes
-  feed from its authored collection index. Blog reading time and series links come
+  feed from its authored collection index. Published sidebar root overviews appear
+  as directory cards, alphabetically before ordinary dated notes in the same list;
+  other sidebar descendants are excluded. `directory: true` enables directory
+  navigation; selected root overviews carry the `directoryCard` reference. Blog
+  cards render the same content while retaining `displayInFeed`. Blog reading time and series links come
   from [readingTime.ts](src/utils/readingTime.ts) and [series.ts](src/data/series.ts);
   unknown series fail during page rendering.
 - People currently have individual pages but no `/people` index template, even

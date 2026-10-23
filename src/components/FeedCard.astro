@@ -1,30 +1,127 @@
 ---
+import { getEntry, render } from "astro:content";
 import { formatPublicationDate } from "../utils/publication";
 
 interface Props {
   title: string;
   href: string;
-  publishDate: Date;
+  publishDate?: Date;
   description?: string;
-  tags: string[];
+  tags?: string[];
+  directoryCard?: string;
 }
 
-const { title, href, publishDate, description, tags } = Astro.props;
+const { title, href, publishDate, description, tags = [], directoryCard } = Astro.props;
+const directory = directoryCard ? await getEntry("directoryCards", directoryCard) : undefined;
+if (directoryCard && !directory) {
+  throw new Error(`Directory card ${directoryCard} for ${href} is missing its generated marker content`);
+}
+const displayTitle = directory?.data.title ?? title;
+const displayTags = directory ? (directory.data.tags ?? []) : tags;
+const rendered = directory?.body?.trim() ? await render(directory) : undefined;
+const DirectoryContent = rendered?.Content;
 ---
 
 <article class="post-card">
   <div>
-    <time datetime={publishDate.toISOString()}>
-      {formatPublicationDate(publishDate)}
-    </time>
-    <h2><a href={href}>{title}</a></h2>
-    {description && <p>{description}</p>}
+    {publishDate && (
+      <time datetime={publishDate.toISOString()}>
+        {formatPublicationDate(publishDate)}
+      </time>
+    )}
+    <h2>
+      <a href={href} aria-label={directory ? `${displayTitle} directory` : undefined}>
+        {directory && <span class="directory-prefix" aria-hidden="true">./</span>}{displayTitle}
+      </a>
+    </h2>
+    {directory ? (
+      DirectoryContent && <div class="directory-card-body"><DirectoryContent /></div>
+    ) : description && <p>{description}</p>}
   </div>
   {
-    tags.length > 0 && (
+    displayTags.length > 0 && (
       <ul aria-label="Tags">
-        {tags.map((tag) => <li>{tag}</li>)}
+        {displayTags.map((tag) => <li>{tag}</li>)}
       </ul>
     )
   }
 </article>
+
+<style>
+  .directory-prefix {
+    color: var(--blue);
+  }
+
+  .directory-card-body {
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
+  .directory-card-body :global(:is(p, ul, ol, blockquote, pre, figure)) {
+    margin: 0.75rem 0;
+  }
+
+  .directory-card-body > :global(:first-child) {
+    margin-top: 0;
+  }
+
+  .directory-card-body > :global(:last-child) {
+    margin-bottom: 0;
+  }
+
+  .directory-card-body :global(:is(ul, ol)) {
+    display: block;
+    padding-left: 1.5rem;
+  }
+
+  .directory-card-body :global(ul) {
+    list-style: disc;
+  }
+
+  .directory-card-body :global(ol) {
+    list-style: decimal;
+  }
+
+  .directory-card-body :global(li) {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+  }
+
+  .directory-card-body :global(:is(h1, h2, h3, h4, h5, h6)) {
+    font-size: 1.1em;
+    margin: 1rem 0 0.5rem;
+  }
+
+  .directory-card-body :global(:is(img, audio, video)) {
+    max-width: 100%;
+  }
+
+  .directory-card-body :global(img) {
+    height: auto;
+  }
+
+  .directory-card-body :global(.content-image-center) {
+    display: block;
+    margin-inline: auto;
+  }
+
+  .directory-card-body :global(.content-image-figure.content-image-center) {
+    text-align: center;
+  }
+
+  .directory-card-body :global(figcaption) {
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+  }
+
+  .directory-card-body :global(pre) {
+    overflow-x: auto;
+  }
+
+  .directory-card-body :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 0.15rem;
+  }
+</style>

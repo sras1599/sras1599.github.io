@@ -4,7 +4,8 @@
  * date format, and the title and description required by collection indexes.
  */
 import { z } from "zod";
-import { collectionSlugPattern } from "./definition.mjs";
+import { navigationSchema } from "./sidebar.mjs";
+import { collectionSlugPattern } from "./slug.mjs";
 
 const slugSegmentPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -49,11 +50,14 @@ export const publishDateSchema = z
 export const baseEntrySchema = selectionSchema.extend({
   title: nonemptyStringSchema,
   slug: slugSchema,
+  navigation: navigationSchema.optional(),
 });
 
 export const baseContentSchema = z.object({
   title: z.string(),
   slug: slugSchema,
+  navigation: navigationSchema.optional(),
+  directoryCard: slugSchema.optional(),
 });
 
 export const baseIndexSchema = z.strictObject({

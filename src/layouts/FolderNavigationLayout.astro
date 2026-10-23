@@ -1,0 +1,40 @@
+---
+/** Wrap existing article markup with the configured folder's published explorer. */
+import { getCollection } from "astro:content";
+import { CollectionRegistry } from "../collections/registry.mjs";
+import FolderNavigationNode from "../components/FolderNavigationNode.astro";
+import { buildFolderNavigation, type Navigation } from "../components/folderNavigation";
+
+interface Props {
+  collection: "blog" | "notes" | "people";
+  navigation?: Navigation;
+}
+const { collection, navigation } = Astro.props;
+const route = CollectionRegistry.get(collection)!.route;
+const tree = navigation
+  ? buildFolderNavigation(await getCollection(collection), navigation, route)
+  : undefined;
+const currentUrl = Astro.url.pathname.replace(/\/$/, "");
+---
+
+<main class:list={[{ "folder-page": tree }]}>
+  {tree && (
+    <aside class="folder-sidebar">
+      <nav class="folder-explorer" aria-label={`${navigation!.root.title} navigation`}>
+        <ul><FolderNavigationNode node={tree} currentUrl={currentUrl} /></ul>
+      </nav>
+    </aside>
+  )}
+  <slot />
+</main>
+
+<script>
+  // The directory root itself controls the explorer; no duplicate heading is needed.
+  // Keep it initially expanded on desktop and collapsed on mobile.
+  const explorer = document.querySelector<HTMLDetailsElement>(".folder-explorer > ul > li > details");
+  if (explorer) {
+    const desktop = window.matchMedia("(min-width: 960px)");
+    explorer.open = desktop.matches;
+    desktop.addEventListener("change", (event) => { explorer.open = event.matches; });
+  }
+</script>

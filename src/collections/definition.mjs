@@ -7,9 +7,10 @@
  * and Astro route generation.
  */
 import { z } from "zod";
+import { withDirectoryProperties } from "./sidebar.mjs";
+import { collectionSlugPattern } from "./slug.mjs";
 
-export const collectionSlugPattern =
-  /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
+export { collectionSlugPattern } from "./slug.mjs";
 
 /** Define all website-owned behavior for one vault collection. */
 export function defineCollectionDefinition({
@@ -37,11 +38,11 @@ export function defineCollectionDefinition({
     folderDefaultsSchema,
     entrySchema,
     projectEntry,
-    markerSchema: z.strictObject({
+    markerSchema: withDirectoryProperties(z.strictObject({
       collection: z.literal(id),
       ...(indexSchema?.partial().shape ?? {}),
       ...folderDefaultsSchema.shape,
-    }),
+    })),
   };
 }
 

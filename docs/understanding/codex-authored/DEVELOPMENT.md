@@ -38,12 +38,16 @@ tags:
 ---
 ```
 
-The `notes` marker accepts only `collection`, `title`, `metaDescription`,
-`publish`, and `preview`. Its `publish` and `preview` values are recursive folder
+The `notes` marker accepts `collection`, `title`, `metaDescription`,
+`publish`, `preview`, and the shared `directory`/`slug` properties (plus `tags`
+on directory markers) described
+below. Its `publish` and `preview` values are recursive folder
 defaults; note-level values override them.
 
-Marker properties are strict. `title` and `metaDescription`, together with the
-marker body, author the collection index. Public routes are defined in the website
+Marker properties are strict. On ordinary markers, `title` and `metaDescription`,
+together with the marker body, author the collection index. A marker with
+`directory: true` instead uses its title, slug, and body for a directory card and
+sidebar root; it never supplies the collection index. Public routes are defined in the website
 collection registry; declaring `route` or any other unsupported marker property is
 an error.
 
@@ -82,7 +86,8 @@ an optional list of strings. Other properties are discarded from generated
 frontmatter. The former `draft` property is not used.
 
 Notes use the same selection and identity rules. A selected note requires
-`title`, `publishDate`, and `slug`; `description` and `tags` are optional:
+`title`, `publishDate`, and `slug` outside sidebar folders; `description` and
+`tags` are optional:
 
 ```yaml
 ---
@@ -104,12 +109,145 @@ or folder. Changing a slug changes the URL; no automatic redirect is created.
 Removing `publish`, setting it to `false`, or deleting a note removes it at the next
 successful import/build. A vault with no selected notes produces an empty blog.
 
+## Directories and sidebar navigation
+
+Any registered collection (`blog`, `notes`, or `people`) can use directory markers.
+They supply sidebar navigation, default descendant titles/URLs, and Markdown content
+for directory cards. They do not create a collection or replace its entry metadata
+requirements. Sidebars appear only inside their configured directory; unrelated
+pages keep their existing layout.
+
+For German, author `Learning/German/_website.md` in the vault:
+
+```markdown
+---
+collection: notes
+directory: true
+title: German
+slug: german
+tags:
+  - languages
+  - learning
+publish: true
+---
+
+Notes from my German-learning journey, including **Language Transfer lessons**
+and general grammar concepts.
+```
+
+Set `directory` to a checkbox/boolean and `title` and `slug` to text properties in
+Obsidian. Both title and slug are required when `directory: true`. Titles must be
+nonempty; slugs use lowercase letters, digits, and single hyphens in slash-separated
+segments. If the folder inherits a registered collection, omit `collection` and
+keep the directory properties plus supported folder defaults. With `directory`
+false or absent, no new navigation root is created and existing inherited navigation
+is not disabled. Ordinary collection-index marker behavior remains unchanged.
+
+Optional marker `tags` label the directory card only, across all collections.
+Use an Obsidian tags property or a YAML list of strings; omitting tags or setting
+`tags: []` displays no badges. Directory tags never become defaults for descendants
+or replace `_index.md` page tags. Ordinary non-directory Blog markers retain their
+existing tag-default behavior.
+
+The marker body is the full Markdown displayed beneath its directory card title.
+It supports the same links, formatting, paragraphs, lists, and supported media as
+other imported Markdown, with references resolved relative to `_website.md`.
+The whole body is public wherever that card appears; it is not automatically
+truncated. An empty body adds no description area. Directory cards use this body
+instead of an overview's frontmatter `description`; ordinary cards still use their
+frontmatter description. An overview's description can still appear on its page.
+
+Keep the existing collection index marker (such as the one authoring `/notes`). A
+directory marker never supplies that index, and `metaDescription` is invalid on a
+directory marker. Its `title` names the directory card/sidebar, not the collection.
+
+Create `Learning/German/_index.md` with the separate landing-page content readers
+see after clicking the card. It needs no frontmatter when publishing is inherited
+and becomes `/notes/german`. Its title defaults to the directory title, but may be
+overridden for that page; the card retains the marker's title. A nested
+`General Concepts/_index.md` becomes `/notes/german/general-concepts`. Without a
+selected `_index.md`, a folder heading only expands. `_index.md` is exact and
+case-sensitive, and has special meaning only inside directory navigation. These
+pages are collection entries, not collection index providers.
+
+Only a selected root `_index.md` exports the marker body and creates its card;
+an absent or unpublished overview exports neither. Writing mode includes
+preview-only overviews normally. `publish: true` selects descendants unless an
+individual document overrides it with `publish: false`; directory configuration
+alone never publishes a document. Within a directory, markers without `collection`
+can override supported folder defaults. Outside directory navigation, a marker
+without `collection` retains its existing no-op behavior unless it declares a new
+directory. Notes in directory navigation may omit dates; Blog still requires its
+usual description, date, and tags, and People retains its contract.
+
+For regular descendants, absent titles use filenames without `.md`; absent slugs
+combine the directory slug, relative folders, and filename. For example,
+`Language Transfer/Lessons/02 - Basic Vocabulary.md` becomes
+`/notes/german/language-transfer/lessons/02-basic-vocabulary`. Segments use lowercase
+ASCII, remove diacritics, and replace punctuation/whitespace runs with hyphens.
+Empty segments and colliding URLs fail with source context. Renaming files or
+folders changes derived URLs without redirects. An explicit collection-relative
+`slug` pins a regular document's URL; explicit titles override filename defaults.
+Folder overviews may override titles but must omit `slug` so their URL represents
+the folder.
+
+A nested directory marker establishes its own explorer. Its selected root overview
+is a leaf link in the parent explorer; descendants appear only in its own explorer.
+Directory slugs must be unique within a collection. Switching collections ends
+inherited navigation. Only selected documents contribute to trees; unpublished
+overviews are unlinked and empty branches disappear.
+
+Folders sort before documents using English natural ordering. The current page is
+highlighted and its ancestors open. Disclosure arrows expand branches; linked
+titles navigate to overviews. Desktop uses a sticky, scrollable sidebar; mobile
+starts with the directory root collapsed above the article. That root is the
+explorer's sole heading and collapse control, without an extra Browse row.
+Native disclosures and links
+support keyboard navigation, and sidebar links do not open previews. Expansion
+state is not saved.
+
+`/notes` displays directory cards alphabetically before ordinary dated notes in
+one list. Card titles have a blue `./` prefix, such as `./German`; dates come from
+the overview, while tag badges come exclusively from the directory marker.
+Directory descendants, including nested
+folder overviews, stay out of the ordinary feed. Shared cards render marker Markdown
+wherever they appear, including Blog's feed, whose inclusion still follows
+`displayInFeed`. People receives no new directory route.
+
+### Migrating older sidebar markers
+
+Replace `sidebarTitle` with `title` and `sidebarSlug` with `slug`, and add
+`directory: true`. If using the older nested `sidebar` object, move its `title` and
+`slug` to those top-level properties and remove the object. Keep values unchanged
+to preserve URLs. Legacy or mixed configuration fails with source-qualified
+migration guidance. Keep `_index.md` for the landing page, and move any desired
+card description into the `_website.md` body. The importer does not edit the vault.
+
+Move existing directory-card tags from `_index.md` to `_website.md`. Leave tags
+in both files only when they should appear on both the directory card and overview
+page. Cards do not fall back to overview tags when marker tags are absent.
+
+`directory` belongs only on markers. Individual documents cannot author
+`navigation`, `directoryCard`, or legacy sidebar properties; these are reserved.
+Generated nested `navigation` metadata remains website-owned and needs no Obsidian
+migration.
+
 ## Supported content
 
 Standard Markdown, footnotes, tables, and fenced code are preserved. Wikilinks
 such as `[[Other note|label]]` become links when their target is selected. Links to
 unselected notes become plain labels; their contents are never included. Ordinary
 heading fragments and `[[Other note#Heading|label]]` are supported.
+
+Block anchors are temporarily ignored without warnings: trailing or standalone
+IDs such as `^present-perfect-form` are removed from prose, and block links such
+as `[[Forms#^present-perfect-form|Present Perfect]]` display only their label
+(`Present Perfect`), without a hyperlink. Same-page references and Markdown links
+use the same fallback, including encoded `#%5Eid` fragments. Formatted labels stay
+formatted. Cross-note targets must still resolve unambiguously; missing notes
+still fail the import. Code spans and code blocks retain literal caret syntax,
+and external URLs remain unchanged. No block anchors are generated, and block
+transclusion (`![[Note#^block]]`) remains unsupported.
 
 Local image references use standard Markdown or Obsidian syntax:
 
@@ -144,16 +282,25 @@ unique filename. Ambiguous and missing references fail the import. Local images
 support PNG, JPEG, GIF, WebP, AVIF, and BMP. HTTPS image URLs remain remote. Only
 referenced local images are copied, under content-hashed filenames.
 
-Note embeds/transclusions, block references, Dataview/Templater execution, local
-non-raster attachments, and HTML resource attributes are unsupported. Replace them
+Local M4A audio embeds use `![[recording.m4a]]` or
+`![[recording.m4a|Spoken example]]`. They resolve like images and are copied under
+content-hashed filenames, rendering native playback controls with `preload="none"`,
+an accessible label (alias or filename), and a fallback link. This support does not
+include remote audio, other audio formats, or note transclusion.
+
+Note embeds/transclusions, Dataview/Templater execution, local attachments other
+than supported raster images and M4A embeds, and HTML resource attributes are unsupported. Replace them
 with ordinary links, static Markdown, or raster image embeds. Code examples remain
 literal; recognized executable plugin blocks are rejected.
 
 ## Generated files and errors
 
 `.generated/{collection}` hold generated entries,
-`.generated/_indexes` holds authored collection indexes, and `public/_vault` holds
-selected images. They are gitignored and disposable. Never edit them. Astro derives
+`.generated/_indexes` holds collection indexes, `.generated/_directories` holds
+selected directory marker bodies keyed by collection and slug, and `public/_vault`
+holds referenced images and audio. Root overviews reference their generated card
+body with importer-owned `directoryCard` metadata. Astro registers `directoryCards`
+separately, using the same Markdown loader and renderer without creating routes. They are gitignored and disposable. Never edit them. Astro derives
 collection IDs from the generated slug filenames, then each collection's page
 module creates its public routes.
 

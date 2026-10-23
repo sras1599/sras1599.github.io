@@ -10,6 +10,7 @@
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import { formatPublicationDate } from "../../utils/publication";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import FolderNavigationLayout from "../../layouts/FolderNavigationLayout.astro";
 import NotePreview from "../../components/NotePreview.astro";
 import { blogCollectionDefinition } from "../../collections/blog/definition.mjs";
 import { collectionEntryUrl } from "../../collections/definition.mjs";
@@ -40,7 +41,7 @@ const series = post.data.series
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
-  <main>
+  <FolderNavigationLayout collection="blog" navigation={post.data.navigation}>
     <article class="article">
       <a class="back-link" href={route}>
         <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -78,6 +79,6 @@ const series = post.data.series
         <Content />
       </div>
     </article>
-  </main>
+  </FolderNavigationLayout>
   <NotePreview />
 </BaseLayout>

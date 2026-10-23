@@ -1,8 +1,8 @@
 /**
  * Define the vault and generated-content metadata accepted by people entries.
- * Authors must put title and slug on each note, while publish and preview may
- * come from either the note or its owning marker. Only title and slug are
- * projected into the website's generated Markdown.
+ * Title and slug are authored or derived inside sidebar folders; publish and preview may
+ * come from either the note or its owning marker. The collection projects title
+ * and slug; the importer separately projects shared navigation metadata.
  */
 import {
   baseContentSchema,

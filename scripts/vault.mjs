@@ -1,5 +1,5 @@
 /**
- * Convert an Obsidian vault into the Markdown and images consumed by the website.
+ * Convert an Obsidian vault into the Markdown and media consumed by the website.
  * importVault is the entry point used by scripts/site.mjs during builds and local
  * development. It reads the vault; it never modifies the author's source files.
  *
@@ -7,17 +7,19 @@
  * That boundary owns notes in its subtree until another collection declaration
  * takes over. The website's registry supplies schemas and publishing behavior;
  * marker frontmatter supplies folder defaults and the separately validated
- * metadata/body for a collection index. Public routes come only from the registry.
+ * metadata/body for a collection index. A directory marker instead uses title/slug
+ * to establish folder navigation and its body as card Markdown. Its _index.md pages
+ * are entries, not collection index providers. Public routes come from the registry.
  *
  * The import proceeds in four stages:
  * 1. Discover files and boundaries, then resolve each website-owned public route
  *    and optional authored index document.
  * 2. Merge note metadata with defaults, select published notes (plus preview notes
  *    in writing mode), and reject duplicate identities or conflicting public URLs.
- * 3. Rewrite entry and index Markdown and Obsidian links, read embedded local
- *    images, and prepare all output in memory. Links to existing unavailable
+ * 3. Rewrite entry, index, and directory-card Markdown and Obsidian links, read embedded local
+ *    images/audio, and prepare all output in memory. Links to existing unavailable
  *    notes and markers become their labels; missing or ambiguous references fail.
- * 4. Synchronize entry Markdown, separate .generated/_indexes documents, and
+ * 4. Synchronize entry Markdown, separate _indexes and _directories documents, and
  *    hashed public assets, removing stale output.
  *
  * Vault lookup paths use forward slashes and are relative to the vault root.
@@ -43,6 +45,7 @@ import {
   normalizeCollectionSlug,
 } from "../src/collections/definition.mjs";
 import { CollectionRegistry } from "../src/collections/registry.mjs";
+import { withDirectoryProperties } from "../src/collections/sidebar.mjs";
 
 const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkStringify);
 const rasterImagePattern = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
@@ -51,7 +54,7 @@ const rasterImagePattern = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
  * Import from vaultPath into projectRoot using the supplied collection registry.
  * preview includes notes with effective preview: true in addition to published
  * notes; folder defaults participate in both decisions. Return counts of selected
- * entries and unique generated image assets after both output directories sync.
+ * entries and unique generated media assets after both output directories sync.
  * Errors reject the call so the CLI can report them or retain its current preview.
  */
 export async function importVault({
@@ -93,6 +96,11 @@ export async function importVault({
       collectionEntryUrl(note.route, note.identity.slug),
     ]),
   );
+  for (const note of notes) {
+    if (note.directoryDocument) {
+      publicTargetsByFile.set(note.directoryDocument.file, collectionEntryUrl(note.route, note.identity.slug));
+    }
+  }
   for (const collection of activeCollections.values()) {
     if (!collection.index) continue;
     publicTargetsByFile.set(collection.index.file, collection.route);
@@ -116,6 +124,16 @@ export async function importVault({
     for (const [name, bytes] of prepared.assets) {
       assets.set(name, bytes);
     }
+
+    // Card Markdown is published only alongside its selected root overview.
+    // It is transformed relative to the marker, separately from the article body.
+    if (note.directoryDocument) {
+      const card = await prepareMarkdownDocument(note.directoryDocument, vault);
+      output.set(path.posix.join("_directories", `${note.metadata.directoryCard}.md`), card.contents);
+      for (const [name, bytes] of card.assets) {
+        assets.set(name, bytes);
+      }
+    }
   }
 
   // Index documents share the entry transformation pipeline but use distinct
@@ -138,7 +156,7 @@ export async function importVault({
   await syncGeneratedFiles(path.join(projectRoot, ".generated"), output, {
     // Collection IDs cannot contain underscores, so this internal directory
     // cannot collide with a future registered collection's entry directory.
-    directories: [...registry.keys(), "_indexes"],
+    directories: [...registry.keys(), "_indexes", "_directories"],
   });
 
   return { entries: notes.length, assets: assets.size };
@@ -156,7 +174,7 @@ async function discoverVault(
   registry,
   dir = "",
   inheritedOwner,
-  result = { files: [], boundaries: [], ownedMarkdown: new Map() },
+  result = { files: [], boundaries: [], ownedMarkdown: new Map(), sidebars: new Map() },
 ) {
   const entries = await fs.readdir(path.join(root, dir), {
     withFileTypes: true,
@@ -183,9 +201,21 @@ async function discoverVault(
       throw new Error(`${markerPath}: marker frontmatter must be a YAML mapping`);
     }
 
-    // A marker without a collection declaration leaves ownership and defaults
-    // unchanged. An unknown collection still replaces the inherited owner: its
-    // notes must be skipped, not accidentally published under a parent collection.
+    for (const property of ["sidebar", "sidebarTitle", "sidebarSlug"]) {
+      if (Object.hasOwn(document.metadata, property)) {
+        throw new Error(
+          `${markerPath}: ${property} is no longer supported; set directory: true and replace sidebarTitle/sidebar.title with title and sidebarSlug/sidebar.slug with slug; remove the old sidebar properties`,
+        );
+      }
+    }
+    if (Object.hasOwn(document.metadata, "directory") && typeof document.metadata.directory !== "boolean") {
+      throw new Error(`${markerPath}: directory must be a boolean`);
+    }
+    const declaresDirectory = document.metadata.directory === true;
+
+    // Collection ownership and navigation are independent. Changing collections
+    // ends inherited navigation; a marker can configure a sidebar without becoming
+    // another provider of the collection's authored index.
     if (Object.hasOwn(document.metadata, "collection")) {
       const collectionId = document.metadata.collection;
       if (typeof collectionId !== "string" || !collectionId.trim()) {
@@ -193,16 +223,66 @@ async function discoverVault(
       }
 
       const definition = registry.get(collectionId);
+      const inheritedSidebar = owner?.collectionId === collectionId ? owner.sidebar : undefined;
       owner = definition
         ? resolveCollectionBoundary(document, markerPath, definition)
         : { markerPath, collectionId, registered: false };
       if (owner.registered) {
+        owner.sidebar = inheritedSidebar;
         result.boundaries.push(owner);
       } else {
         console.warn(
           `Vault: unknown collection ${collectionId} at ${markerPath}; skipping its entries.`,
         );
       }
+    } else if (declaresDirectory || owner?.sidebar) {
+      if (!owner?.registered) {
+        throw new Error(`${markerPath}: directory requires a registered collection`);
+      }
+      const metadata = parseSchema(
+        withDirectoryProperties(owner.definition.folderDefaultsSchema.strict()),
+        document.metadata,
+        markerPath,
+        { unknownKeyLabel: "marker property" },
+      );
+      if (!declaresDirectory && document.body.trim()) {
+        throw new Error(`${markerPath}: card content requires directory: true; put folder overview content in _index.md`);
+      }
+      const defaults = parseFolderDefaults(owner.definition, metadata, markerPath);
+      owner = {
+        ...owner,
+        effectiveFolderDefaults: { ...owner.effectiveFolderDefaults, ...defaults },
+      };
+    }
+
+    if (declaresDirectory) {
+      if (!owner?.registered) {
+        throw new Error(`${markerPath}: directory requires a registered collection`);
+      }
+      const root = {
+        title: document.metadata.title,
+        slug: document.metadata.slug,
+      };
+      const key = `${owner.collectionId}/${root.slug}`;
+      const existing = result.sidebars.get(key);
+      if (existing) {
+        throw new Error(`${markerPath}: duplicate directory ${key}; also declared by ${existing}`);
+      }
+      result.sidebars.set(key, markerPath);
+      const parent = owner.sidebar
+        ? { root: owner.sidebar.root, folders: relativeFolders(owner.sidebar.dir, dir) }
+        : undefined;
+      owner = {
+        ...owner,
+        sidebar: {
+          root, dir, parent,
+          card: {
+            file: markerPath,
+            body: document.body,
+            metadata: { collection: owner.collectionId, ...root, tags: document.metadata.tags ?? [] },
+          },
+        },
+      };
     }
   }
 
@@ -225,16 +305,17 @@ async function discoverVault(
 }
 
 /**
- * Validate a registered marker and separate its two authored roles: entry-folder
- * defaults and optional index metadata/body. Collection routes are website-owned.
+ * Validate a registered marker and separate folder defaults from collection index
+ * metadata/body. Directory marker titles and bodies never become index providers.
+ * Collection routes are website-owned.
  */
 function resolveCollectionBoundary(document, markerPath, definition) {
   const { metadata, body } = document;
   const indexPropertyNames = ["title", "metaDescription"];
-  const declaredIndexProperties = indexPropertyNames.filter((property) =>
+  const declaredIndexProperties = indexPropertyNames.filter((property) => metadata.directory !== true &&
     Object.hasOwn(metadata, property),
   );
-  const hasIndexBody = Boolean(body.trim());
+  const hasIndexBody = metadata.directory !== true && Boolean(body.trim());
 
   if (
     !definition.indexSchema &&
@@ -255,8 +336,8 @@ function resolveCollectionBoundary(document, markerPath, definition) {
     markerPath,
     { unknownKeyLabel: "marker property" },
   );
-  const declaredDefaults = parseSchema(
-    definition.folderDefaultsSchema,
+  const declaredDefaults = parseFolderDefaults(
+    definition,
     markerMetadata,
     markerPath,
   );
@@ -286,6 +367,13 @@ function resolveCollectionBoundary(document, markerPath, definition) {
       ...declaredDefaults,
     },
   };
+}
+
+// Directory tags label the card only, even when the collection supports tag defaults.
+function parseFolderDefaults(definition, metadata, file) {
+  const folderMetadata = { ...metadata };
+  if (metadata.directory === true) delete folderMetadata.tags;
+  return parseSchema(definition.folderDefaultsSchema, folderMetadata, file);
 }
 
 /**
@@ -363,7 +451,8 @@ function resolveCollectionIndex(definition, boundaries) {
 /**
  * Read notes owned by registered collections and return only selected entries.
  * Pass the collection's website-owned route alongside the folder owner; the
- * owner carries local defaults, while the route belongs to the collection.
+ * owner carries local defaults and optional navigation, while the route belongs
+ * to the collection.
  * Notes under unknown collections are skipped before their contents are read.
  */
 async function readSelectedNotes(root, ownedMarkdown, activeCollections, preview) {
@@ -411,6 +500,12 @@ function parseSelectedNote(text, file, owner, route, preview) {
     );
   }
 
+  for (const property of ["directory", "directoryCard", "sidebar", "sidebarTitle", "sidebarSlug", "navigation"]) {
+    if (Object.hasOwn(rawMetadata, property)) {
+      throw new Error(`${file}: ${property} is reserved for directory navigation; configure directory: true, title, and slug in _website.md`);
+    }
+  }
+
   // Note values have final precedence over the collection and marker defaults.
   // Object spread replaces arrays rather than combining them.
   const effectiveMetadata = {
@@ -424,6 +519,32 @@ function parseSelectedNote(text, file, owner, route, preview) {
     return null;
   }
 
+  let navigation;
+  if (owner.sidebar) {
+    const { root, dir, parent } = owner.sidebar;
+    const folders = relativeFolders(dir, path.posix.dirname(file));
+    const overview = path.posix.basename(file) === "_index.md";
+    const basename = path.posix.basename(file, ".md");
+    const segments = overview ? folders : [...folders, basename];
+    const derivedSlug = rawMetadata.slug === undefined
+      ? [root.slug, ...segments.map((segment) => folderSlug(segment, file))].join("/")
+      : rawMetadata.slug;
+    if (overview && Object.hasOwn(rawMetadata, "slug")) {
+      throw new Error(`${file}: folder overviews derive their URL from the folder; remove slug`);
+    }
+    if (effectiveMetadata.title === undefined) {
+      effectiveMetadata.title = overview ? (folders.at(-1) ?? root.title) : basename;
+    }
+    if (effectiveMetadata.slug === undefined) effectiveMetadata.slug = derivedSlug;
+    navigation = {
+      root,
+      folders,
+      overview,
+      ...(overview && folders.length === 0 && parent ? { parent } : {}),
+    };
+    effectiveMetadata.navigation = navigation;
+  }
+
   // Full entry requirements apply only after selection. An unpublished draft may
   // therefore omit required entry fields without blocking other notes' imports.
   const validatedMetadata = parseSchema(
@@ -432,16 +553,37 @@ function parseSelectedNote(text, file, owner, route, preview) {
     file,
   );
 
+  const directoryDocument = navigation?.overview && navigation.folders.length === 0
+    ? owner.sidebar.card
+    : undefined;
+
   return {
     file,
     body: document.body,
+    directoryDocument,
     route,
     identity: {
       collectionId: owner.collectionId,
       slug: validatedMetadata.slug,
     },
-    metadata: owner.definition.projectEntry(validatedMetadata),
+    metadata: {
+      ...owner.definition.projectEntry(validatedMetadata),
+      ...(navigation ? { navigation } : {}),
+      ...(directoryDocument ? { directoryCard: `${owner.collectionId}/${navigation.root.slug}` } : {}),
+    },
   };
+}
+
+function relativeFolders(root, directory) {
+  const relative = path.posix.relative(root, directory);
+  return relative ? relative.split("/") : [];
+}
+
+function folderSlug(label, file) {
+  const slug = label.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (!slug) throw new Error(`${file}: cannot derive a URL segment from ${JSON.stringify(label)}; rename it or supply a slug`);
+  return slug;
 }
 
 /**
@@ -656,7 +798,7 @@ async function prepareMarkdownDocument(note, vault) {
  * ordinary node stays one node, and wiki text or a private link can become several.
  * file supplies the source path for references and errors; definitions belongs to
  * this document; vault provides shared lookups. Only assets is an output accumulator,
- * populated with local image bytes for this note as traversal reaches images.
+ * populated with local media bytes as traversal reaches supported embeds.
  */
 async function transformChildren(children, file, definitions, vault, assets) {
   const transformed = [];
@@ -784,17 +926,13 @@ function expandReference(node, definitions, file) {
   return node;
 }
 
-// Split a plain text node around [[note]] and ![[image]] occurrences, preserving
+// Split a plain text node around [[note]] and ![[media]] occurrences, preserving
 // the text before, between, and after them. Each occurrence can expand to several
 // nodes; start tracks the first character not yet consumed from the source text.
 async function transformWikiText(value, file, vault, assets) {
-  // Obsidian block references use the `^id` syntax to link to a specific block,
-  // like `^my-block` on its own line. They are unsupported here because this
-  // pipeline converts notes to plain Markdown and does not preserve block-level
-  // anchors/targets.
-  if (/(?:^|\s)\^[\w-]+\s*$/m.test(value)) {
-    throw new Error(`${file}: block references are unsupported`);
-  }
+  // Block anchors are not published yet. Hide trailing/standalone declarations
+  // in prose without consuming line breaks. Code nodes never reach this function.
+  value = value.replace(/(?:^|[ \t]+)\^[\w-]+[ \t]*(?=\r?$)/gm, "");
 
   const children = [];
   let start = 0;
@@ -818,7 +956,7 @@ async function transformWikiText(value, file, vault, assets) {
 }
 
 /**
- * Interpret one wiki match as a note link or raster-image embed. For a link,
+ * Interpret one wiki match as a note link, raster-image embed, or local M4A audio. For a link,
  * [[folder/note|Label]] uses Label, otherwise the filename supplies the label.
  * For an embed, pipe-delimited options may provide a description, `center`, and
  * dimensions such as 320 or 320x200. Layout options become HTML attributes while
@@ -834,6 +972,15 @@ async function transformWikiMatch(match, file, vault, assets) {
 
   if (embedMarker) {
     const fileTarget = target.split("#")[0];
+    if (/\.m4a$/i.test(fileTarget)) {
+      const audioFile = resolveReference(fileTarget, file, vault, { image: true });
+      const src = await collectLocalAsset(audioFile, vault, assets);
+      const label = alias || path.posix.basename(audioFile);
+      return [{
+        type: "html",
+        value: `<audio controls preload="none" aria-label="${escapeHtml(label)}" src="${src}"><a href="${src}">${escapeHtml(label)}</a></audio>`,
+      }];
+    }
     if (!rasterImagePattern.test(fileTarget)) {
       throw new Error(`${file}: note transclusions are unsupported; use a link`);
     }
@@ -953,13 +1100,7 @@ async function prepareImage(
     throw new Error(`${from}: only local raster images are supported: ${url}`);
   }
 
-  // Content-based names let notes share an asset and invalidate changed images.
-  const bytes = await fs.readFile(path.join(vault.root, file));
-  const hash = createHash("sha256").update(bytes).digest("hex");
-  const name = `${hash}${path.extname(file).toLowerCase()}`;
-  assets.set(name, bytes);
-
-  const src = `/_vault/${name}`;
+  const src = await collectLocalAsset(file, vault, assets);
   if (dimensions || centered) {
     const [width, height] = dimensions?.split("x") ?? [];
     const classAttribute = centered ? ' class="content-image-center"' : "";
@@ -973,6 +1114,15 @@ async function prepareImage(
   }
 
   return { type: "image", url: src, alt: alt ?? "" };
+}
+
+// Collect immutable, content-addressed image/audio bytes; synchronization owns writes.
+async function collectLocalAsset(file, vault, assets) {
+  const bytes = await fs.readFile(path.join(vault.root, file));
+  const hash = createHash("sha256").update(bytes).digest("hex");
+  const name = `${hash}${path.extname(file).toLowerCase()}`;
+  assets.set(name, bytes);
+  return `/_vault/${name}`;
 }
 
 // Escape author-supplied alt text before inserting it into the generated HTML
@@ -996,6 +1146,7 @@ function escapeHtml(value) {
  * resolve to Markdown notes; other attachments cannot be linked through this path.
  * wiki converts heading text such as "Getting Started" into "getting-started";
  * ordinary Markdown fragments are treated as authored anchors and kept unchanged.
+ * Block fragments retain only their labels, after validating cross-note targets.
  */
 function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
   const { files, publicTargetsByFile } = vault;
@@ -1006,13 +1157,10 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
 
   const [target, ...fragmentParts] = url.split("#");
   const fragment = fragmentParts.join("#");
-  if (fragment.startsWith("^")) {
-    throw new Error(
-      `${from}: block references are unsupported; use a heading link`,
-    );
-  }
+  const blockReference = /^(?:\^|%5e)/i.test(fragment);
 
   if (!target) {
+    if (blockReference) return children;
     const anchor = wiki ? heading(fragment) : fragment;
     return [{ type: "link", url: `#${anchor}`, children }];
   }
@@ -1026,6 +1174,7 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
     !files.has(target.slice(1)) &&
     !files.has(`${target.slice(1)}.md`)
   ) {
+    if (blockReference) return children;
     return [{ type: "link", url, children }];
   }
 
@@ -1035,6 +1184,8 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
       `${from}: attachment links are unsupported; embed a raster image instead`,
     );
   }
+
+  if (blockReference) return children;
 
   // Unselected notes keep their link label without exposing a private destination.
   const publicTarget = publicTargetsByFile.get(file);
