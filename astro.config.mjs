@@ -26,9 +26,11 @@ const imageCaptions = {
     visit(paragraph, context) {
       if (isInsideFigure(paragraph, context)) return;
 
+      const anchors = paragraph.children.filter(isBlockAnchor);
       const contents = paragraph.children.filter((node) =>
         !(node.type === "text" && !node.value.trim()) &&
-        !(node.type === "element" && node.tagName === "br"),
+        !(node.type === "element" && node.tagName === "br") &&
+        !isBlockAnchor(node),
       );
       if (!contents.length) return;
 
@@ -43,6 +45,7 @@ const imageCaptions = {
       );
       if (figures.length === 1) {
         const figure = figures[0];
+        figure.children.unshift(...anchors);
         const classes = paragraph.properties?.className ?? [];
         figure.properties = {
           ...paragraph.properties,
@@ -60,7 +63,7 @@ const imageCaptions = {
         type: "element",
         tagName: "div",
         properties: paragraph.properties,
-        children: figures,
+        children: [...anchors, ...figures],
       });
     },
   }, {
@@ -141,8 +144,16 @@ function captionedImage(content, image) {
 function hasOnlyChild(parent, child, context) {
   const childIndex = context.indexOf(child);
   return parent.children.every((node, index) =>
-    index === childIndex || (node.type === "text" && !node.value.trim()),
+    index === childIndex || (node.type === "text" && !node.value.trim()) || isBlockAnchor(node),
   );
+}
+
+// List-item anchors stay inline in generated Markdown. They must not prevent an
+// otherwise standalone image from receiving its usual figure and caption.
+function isBlockAnchor(node) {
+  return node.type === "element" && node.tagName === "span" &&
+    typeof node.properties?.id === "string" && node.properties.id.startsWith("^") &&
+    node.children.length === 0;
 }
 
 export default defineConfig({

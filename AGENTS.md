@@ -76,9 +76,18 @@ to ownership, entry points, or the rules described here.
   folder, vault root, then unique filename. Existing unavailable note links become
   labels; missing or ambiguous references fail. Local raster images and `.m4a`
   wiki embeds are copied under content-hashed names; audio uses native controls.
-  Block ID declarations are stripped from prose; block-reference links (literal
-  `#^id` or encoded `#%5Eid`) become labels after cross-note target validation.
-  Code examples and external URLs remain literal; no block anchors are generated.
+  [block-anchors.mjs](scripts/block-anchors.mjs) indexes declarations and inserts
+  native HTML anchors into selected entries and rendered Blog/Notes indexes before
+  links are rewritten. Paragraph, heading, and list-item suffixes and standalone
+  declarations following Markdown blocks are supported. Heading suffixes are
+  removed before rendering, preserving normal heading IDs alongside block anchors.
+  IDs are case-sensitive; duplicates,
+  orphan declarations, and missing IDs on public block targets fail preparation.
+  Literal `#^id` and encoded `#%5Eid` links share resolution without heading
+  slugification. Directory-card bodies and the unrendered People index retain
+  declaration stripping and label-only block references; links to their blocks
+  also become labels. Escaped carets, code examples, and external URLs stay literal
+  in addressable documents. Private bodies are never indexed for block validation.
   Note transclusion and plugin execution are unsupported.
 - The vault is read-only. `.generated/{collection}/`, `.generated/_indexes/`,
   `.generated/_directories/`, and `public/_vault/` are disposable importer-owned
@@ -107,7 +116,8 @@ to ownership, entry points, or the rules described here.
   text. Raw HTML is parsed so dimensioned/centered importer images share the
   caption transform. Image-only paragraphs, including multiple images separated
   by line breaks, become captioned blocks; inline images and authored figures
-  are left unchanged.
+  are left unchanged. Inline block anchors in list items are preserved without
+  preventing image captions.
   Caption presentation lives in `global.css` for entry bodies and authored indexes.
   Vault syntax rewriting belongs to the importer; final Markdown-to-HTML rendering
   belongs to Astro.
@@ -194,6 +204,10 @@ to ownership, entry points, or the rules described here.
 - Fetched pages must expose `.article > .article-header` and
   `.article > .article-body`. This markup is a contract with page presentation;
   coordinate selector changes across both. Failed fetches provide a normal link.
+- Preview HTML is cached once per note URL, independently of fragments. Before
+  IDs are removed, their values are retained in preview-only data attributes.
+  Each opening scrolls only the panel to the linked heading or block, keeping the
+  whole note available. Missing, malformed, or absent fragments open at the top.
 
 ### 6. Development lifecycle and deployment
 

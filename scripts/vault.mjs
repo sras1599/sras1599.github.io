@@ -40,6 +40,7 @@ import remarkStringify from "remark-stringify";
 import remarkGfm from "remark-gfm";
 import { slug as heading } from "github-slugger";
 import { parseMarkdownDocument } from "./markdown-document.mjs";
+import { prepareBlockAnchors } from "./block-anchors.mjs";
 import {
   collectionEntryUrl,
   normalizeCollectionSlug,
@@ -106,10 +107,31 @@ export async function importVault({
     publicTargetsByFile.set(collection.index.file, collection.route);
   }
 
+  // Index every addressable document before rewriting any links, including
+  // forward references. Cards render inside feeds rather than at their marker's
+  // public URL, and People currently has no rendered collection index.
+  const blockDocuments = [
+    ...notes,
+    ...Array.from(activeCollections.values()).flatMap((collection) =>
+      collection.index && ["blog", "notes"].includes(collection.definition.id)
+        ? [collection.index]
+        : [],
+    ),
+  ];
+  const treesByFile = new Map();
+  const blockIdsByFile = new Map();
+  for (const document of blockDocuments) {
+    const tree = markdown.parse(document.body);
+    const ids = prepareBlockAnchors(tree, document.body, document.file);
+    treesByFile.set(document.file, tree);
+    blockIdsByFile.set(document.file, ids);
+  }
+
   const vault = {
     root,
     files: new Set(discovery.files),
     publicTargetsByFile,
+    blockIdsByFile,
   };
   const output = new Map();
   const assets = new Map();
@@ -118,7 +140,7 @@ export async function importVault({
   // Asset filenames encode their contents, so repeated map keys share one output
   // file even when several notes embed the same image.
   for (const note of notes) {
-    const prepared = await prepareMarkdownDocument(note, vault);
+    const prepared = await prepareMarkdownDocument(note, vault, treesByFile.get(note.file));
     output.set(generatedEntryPath(note.identity), prepared.contents);
 
     for (const [name, bytes] of prepared.assets) {
@@ -141,7 +163,7 @@ export async function importVault({
   for (const collection of activeCollections.values()) {
     if (!collection.index) continue;
 
-    const prepared = await prepareMarkdownDocument(collection.index, vault);
+    const prepared = await prepareMarkdownDocument(collection.index, vault, treesByFile.get(collection.index.file));
     output.set(
       path.posix.join("_indexes", `${collection.definition.id}.md`),
       prepared.contents,
@@ -768,13 +790,12 @@ async function listFiles(directory, { skip = new Set() } = {}) {
 
 /**
  * Prepare one entry or index document's generated Markdown and image bytes.
- * Parse into a Markdown syntax tree so links and images can be rewritten without
- * interpreting wiki syntax inside code. Collect reference definitions before
+ * Reuse the block-indexed tree, or parse unsupported documents without publishing
+ * anchors. Collect reference definitions before
  * transforming nodes, since a definition may appear after a link that uses it.
  * Image reads happen here; output writes happen later in importVault.
  */
-async function prepareMarkdownDocument(note, vault) {
-  const tree = markdown.parse(note.body);
+async function prepareMarkdownDocument(note, vault, tree = markdown.parse(note.body)) {
   const definitions = collectDefinitions(tree);
   const assets = new Map();
 
@@ -930,9 +951,12 @@ function expandReference(node, definitions, file) {
 // the text before, between, and after them. Each occurrence can expand to several
 // nodes; start tracks the first character not yet consumed from the source text.
 async function transformWikiText(value, file, vault, assets) {
-  // Block anchors are not published yet. Hide trailing/standalone declarations
-  // in prose without consuming line breaks. Code nodes never reach this function.
-  value = value.replace(/(?:^|[ \t]+)\^[\w-]+[ \t]*(?=\r?$)/gm, "");
+  // Cards and unrendered indexes retain the legacy label-only block behavior.
+  // Addressable documents already had their declarations indexed and removed;
+  // leave other caret text there literal, including escaped declarations.
+  if (!vault.blockIdsByFile.has(file)) {
+    value = value.replace(/(?:^|[ \t]+)\^[\w-]+[ \t]*(?=\r?$)/gm, "");
+  }
 
   const children = [];
   let start = 0;
@@ -1146,7 +1170,8 @@ function escapeHtml(value) {
  * resolve to Markdown notes; other attachments cannot be linked through this path.
  * wiki converts heading text such as "Getting Started" into "getting-started";
  * ordinary Markdown fragments are treated as authored anchors and kept unchanged.
- * Block fragments retain only their labels, after validating cross-note targets.
+ * Block fragments match published IDs directly, without heading slugification.
+ * Documents without addressable blocks retain their label-only fallback.
  */
 function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
   const { files, publicTargetsByFile } = vault;
@@ -1160,7 +1185,11 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
   const blockReference = /^(?:\^|%5e)/i.test(fragment);
 
   if (!target) {
-    if (blockReference) return children;
+    if (blockReference) {
+      const anchor = resolveBlockAnchor(fragment, from, from, vault);
+      if (!anchor) return children;
+      return [{ type: "link", url: `#${anchor}`, children }];
+    }
     const anchor = wiki ? heading(fragment) : fragment;
     return [{ type: "link", url: `#${anchor}`, children }];
   }
@@ -1185,11 +1214,15 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
     );
   }
 
-  if (blockReference) return children;
-
   // Unselected notes keep their link label without exposing a private destination.
   const publicTarget = publicTargetsByFile.get(file);
   if (!publicTarget) return children;
+
+  if (blockReference) {
+    const anchor = resolveBlockAnchor(fragment, from, file, vault);
+    if (!anchor) return children;
+    return [{ type: "link", url: `${publicTarget}#${anchor}`, children }];
+  }
 
   let destination = publicTarget;
   if (fragment) {
@@ -1198,6 +1231,22 @@ function transformNoteLink(url, children, from, vault, { wiki = false } = {}) {
   }
 
   return [{ type: "link", url: destination, children }];
+}
+
+function resolveBlockAnchor(fragment, from, target, vault) {
+  const { blockIdsByFile } = vault;
+  if (!blockIdsByFile.has(from) || !blockIdsByFile.has(target)) return;
+
+  let anchor;
+  try {
+    anchor = decodeURIComponent(fragment);
+  } catch {
+    throw new Error(`${from}: invalid encoded block reference #${fragment} in ${target}`);
+  }
+  if (!blockIdsByFile.get(target).has(anchor)) {
+    throw new Error(`${from}: missing block ID ${anchor} in ${target}`);
+  }
+  return anchor;
 }
 
 /**

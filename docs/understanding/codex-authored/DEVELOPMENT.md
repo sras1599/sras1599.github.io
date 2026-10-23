@@ -239,15 +239,60 @@ such as `[[Other note|label]]` become links when their target is selected. Links
 unselected notes become plain labels; their contents are never included. Ordinary
 heading fragments and `[[Other note#Heading|label]]` are supported.
 
-Block anchors are temporarily ignored without warnings: trailing or standalone
-IDs such as `^present-perfect-form` are removed from prose, and block links such
-as `[[Forms#^present-perfect-form|Present Perfect]]` display only their label
-(`Present Perfect`), without a hyperlink. Same-page references and Markdown links
-use the same fallback, including encoded `#%5Eid` fragments. Formatted labels stay
-formatted. Cross-note targets must still resolve unambiguously; missing notes
-still fail the import. Code spans and code blocks retain literal caret syntax,
-and external URLs remain unchanged. No block anchors are generated, and block
-transclusion (`![[Note#^block]]`) remains unsupported.
+Block anchors work in selected entry pages and authored Blog/Notes indexes.
+Place a declaration at the end of a paragraph, heading, or list item, or put it
+in its own paragraph immediately after a structured block:
+
+```markdown
+## Present Perfect ^present-perfect
+
+The form uses have or has with a past participle. ^present-perfect-form
+
+- An example sentence. ^example
+  - A nested explanation.
+
+> A quotation spanning the whole block.
+
+^quotation
+
+[[Forms#^present-perfect-form|Present Perfect]]
+[[Forms#^present-perfect|The section]]
+[[#^example|This example]]
+[Quotation](Forms.md#%5Equotation)
+```
+
+Standalone declarations also work after lists, tables, headings, and fenced code.
+The declaration must be outside the code fence. List-item declarations identify
+the item, including its nested content. IDs are case-sensitive and accept Latin
+letters, digits, hyphens, and underscores. Each ID must be unique within its source
+document. The importer removes declarations and emits invisible native HTML
+anchors without changing heading IDs, list formatting, or image captions.
+For example, `## Present Perfect ^present-perfect` retains the normal
+`#present-perfect` heading link and also supports the `#^present-perfect` block
+link. The declaration is removed before the normal heading ID is generated.
+
+Wiki links and inline or reference-style Markdown links support same-note and
+cross-note blocks, including encoded `#%5Eid` carets. Published destinations use
+the exact ID rather than a heading slug. Duplicate IDs, standalone declarations
+without a preceding Markdown block, and links to missing IDs on selected public
+targets fail preparation with source/target context, preserving previous output.
+Block references to unavailable notes become formatted labels; private bodies are
+not indexed. Missing or ambiguous note targets still fail the import.
+
+Directory-card marker bodies and the unrendered People collection index retain
+the previous behavior: their declarations are stripped, their outgoing block
+links become labels, and links to their blocks also become labels. Escaped carets,
+code contents, raw HTML, and external URLs are left literal in supported documents.
+Block transclusion (`![[Note#^block]]`) remains unsupported.
+
+Hovering or keyboard-focusing an eligible cross-note link previews the whole note.
+For heading or block fragments, the panel initially scrolls to that target while
+the main page stays still; readers can scroll above and below it. Links without
+fragments, malformed encoded fragments, and targets absent from the fetched
+article open at the top. Different fragments share one cached copy of a note but
+each opening selects its own target. Preview copies remove actual IDs to avoid
+collisions with the current page. Clicking still follows the original link.
+Same-page links and collection roots retain normal navigation without previews.
 
 Local image references use standard Markdown or Obsidian syntax:
 

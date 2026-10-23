@@ -4,7 +4,9 @@
  * include this component; the collection registry supplies eligible target routes
  * without a separate collection list. Hover or keyboard focus fetches the article
  * header and body into a scrollable panel, caching successful responses for this
- * page's lifetime. Links marked data-no-preview, indexes, external links,
+ * page's lifetime. Heading and block fragments initially scroll only the preview
+ * to their target, with the whole note available above and below. Links marked
+ * data-no-preview, indexes, external links,
  * same-page anchors, and touch taps navigate normally. Target pages must use
  * the shared article markup. The opt-out depends on attribute presence, not value.
  * Eligible links receive an inline blue highlight and ink border, using the same
@@ -95,11 +97,13 @@ import { CollectionRegistry } from "../collections/registry.mjs";
 
   /**
    * Fetch an entry on demand and copy its rendered content. Resolve relative URLs
-   * against the fetched page and remove IDs to avoid collisions with this page.
+   * against the fetched page, retaining IDs only as data attributes so fragments
+   * can locate cloned content without colliding with IDs on this page.
    * Failed requests show a navigation fallback and remain retryable.
    */
   async function showPreview(link: HTMLAnchorElement) {
     const url = new URL(link.href);
+    const fragment = url.hash.slice(1);
     url.hash = "";
     url.search = "";
     panel.textContent = "Loading note…";
@@ -133,6 +137,8 @@ import { CollectionRegistry } from "../collections/registry.mjs";
             .querySelectorAll("script, iframe, object, embed")
             .forEach((node) => node.remove());
           for (const element of [section, ...section.querySelectorAll("*")]) {
+            const id = element.getAttribute("id");
+            if (id !== null) element.setAttribute("data-preview-anchor", id);
             element.removeAttribute("id");
             for (const attribute of ["href", "src", "poster"]) {
               const value = element.getAttribute(attribute);
@@ -151,6 +157,7 @@ import { CollectionRegistry } from "../collections/registry.mjs";
       panel.replaceChildren(...content.map((node) => node.cloneNode(true)));
       panel.scrollTop = 0;
       positionPanel();
+      scrollToFragment(fragment);
     } catch {
       if (activeLink !== link) return;
       const fallback = document.createElement("a");
@@ -159,6 +166,26 @@ import { CollectionRegistry } from "../collections/registry.mjs";
       panel.replaceChildren(fallback);
       positionPanel();
     }
+  }
+
+  function scrollToFragment(fragment: string) {
+    if (!fragment) return;
+
+    let anchor: string;
+    try {
+      anchor = decodeURIComponent(fragment);
+    } catch {
+      return;
+    }
+
+    // Compare values rather than putting authored IDs into a CSS selector.
+    const target = Array.from(panel.querySelectorAll<HTMLElement>("[data-preview-anchor]"))
+      .find((element) => element.dataset.previewAnchor === anchor);
+    if (!target) return;
+
+    const padding = parseFloat(getComputedStyle(panel).paddingTop);
+    panel.scrollTop += target.getBoundingClientRect().top -
+      panel.getBoundingClientRect().top - panel.clientTop - padding;
   }
 
   /** Briefly delay opening so passing across a list does not fetch every note. */
