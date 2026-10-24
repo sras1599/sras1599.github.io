@@ -41,6 +41,7 @@ import remarkGfm from "remark-gfm";
 import { slug as heading } from "github-slugger";
 import { parseMarkdownDocument } from "./markdown-document.mjs";
 import { prepareBlockAnchors } from "./block-anchors.mjs";
+import { highlightTextParts, preservedHighlightText } from "./markdown-highlights.mjs";
 import {
   collectionEntryUrl,
   normalizeCollectionSlug,
@@ -805,6 +806,7 @@ async function prepareMarkdownDocument(note, vault, tree = markdown.parse(note.b
     definitions,
     vault,
     assets,
+    note.body,
   );
 
   return {
@@ -821,7 +823,7 @@ async function prepareMarkdownDocument(note, vault, tree = markdown.parse(note.b
  * this document; vault provides shared lookups. Only assets is an output accumulator,
  * populated with local media bytes as traversal reaches supported embeds.
  */
-async function transformChildren(children, file, definitions, vault, assets) {
+async function transformChildren(children, file, definitions, vault, assets, source) {
   const transformed = [];
 
   for (const node of children) {
@@ -831,6 +833,7 @@ async function transformChildren(children, file, definitions, vault, assets) {
       definitions,
       vault,
       assets,
+      source,
     );
     transformed.push(...replacement);
   }
@@ -845,7 +848,7 @@ async function transformChildren(children, file, definitions, vault, assets) {
  * private, the returned label still contains its transformed formatting or images.
  * Definitions can be removed because their destinations were already collected.
  */
-async function transformNode(node, file, definitions, vault, assets) {
+async function transformNode(node, file, definitions, vault, assets, source) {
   if (node.type === "definition") {
     return [];
   }
@@ -854,7 +857,7 @@ async function transformNode(node, file, definitions, vault, assets) {
   node = expandReference(node, definitions, file);
 
   if (node.type === "text") {
-    return transformWikiText(node.value, file, vault, assets);
+    return transformWikiText(node.value, file, vault, assets, highlightTextParts(node, source));
   }
 
   if (node.type === "image") {
@@ -871,6 +874,7 @@ async function transformNode(node, file, definitions, vault, assets) {
         definitions,
         vault,
         assets,
+        source,
       ),
     };
   }
@@ -950,24 +954,14 @@ function expandReference(node, definitions, file) {
 // Split a plain text node around [[note]] and ![[media]] occurrences, preserving
 // the text before, between, and after them. Each occurrence can expand to several
 // nodes; start tracks the first character not yet consumed from the source text.
-async function transformWikiText(value, file, vault, assets) {
-  // Cards and unrendered indexes retain the legacy label-only block behavior.
-  // Addressable documents already had their declarations indexed and removed;
-  // leave other caret text there literal, including escaped declarations.
-  if (!vault.blockIdsByFile.has(file)) {
-    value = value.replace(/(?:^|[ \t]+)\^[\w-]+[ \t]*(?=\r?$)/gm, "");
-  }
-
+async function transformWikiText(value, file, vault, assets, highlightParts) {
   const children = [];
   let start = 0;
   const wikiPattern = /(!?)\[\[([^\]\n]+)\]\]/g;
 
   for (const match of value.matchAll(wikiPattern)) {
     if (match.index > start) {
-      children.push({
-        type: "text",
-        value: value.slice(start, match.index),
-      });
+      children.push(...preservedHighlightText(highlightParts, start, match.index));
     }
 
     const replacement = await transformWikiMatch(match, file, vault, assets);
@@ -975,7 +969,18 @@ async function transformWikiText(value, file, vault, assets) {
     start = match.index + match[0].length;
   }
 
-  children.push({ type: "text", value: value.slice(start) });
+  children.push(...preservedHighlightText(highlightParts, start, value.length));
+
+  // Strip legacy declarations after source-relative text slicing so removing a
+  // declaration cannot shift later highlight or wiki-link offsets.
+  // Addressable documents already had their declarations indexed and removed.
+  if (!vault.blockIdsByFile.has(file)) {
+    for (const child of children) {
+      if (child.type === "text") {
+        child.value = child.value.replace(/(?:^|[ \t]+)\^[\w-]+[ \t]*(?=\r?$)/gm, "");
+      }
+    }
+  }
   return children;
 }
 

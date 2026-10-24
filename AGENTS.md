@@ -118,6 +118,11 @@ to ownership, entry points, or the rules described here.
   by line breaks, become captioned blocks; inline images and authored figures
   are left unchanged. Inline block anchors in list items are preserved without
   preventing image captions.
+  [markdown-highlights.mjs](scripts/markdown-highlights.mjs) renders paired `==`
+  delimiters as native `mark` elements within inline content, preserving emphasis
+  and links. Unmatched/empty pairs, escaped markers, and code remain literal;
+  highlights cannot cross blocks. The importer uses the same source-aware text
+  handling to preserve delimiter intent through Markdown serialization.
   Caption presentation lives in `global.css` for entry bodies and authored indexes.
   Vault syntax rewriting belongs to the importer; final Markdown-to-HTML rendering
   belongs to Astro.

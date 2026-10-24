@@ -239,6 +239,14 @@ such as `[[Other note|label]]` become links when their target is selected. Links
 unselected notes become plain labels; their contents are never included. Ordinary
 heading fragments and `[[Other note#Heading|label]]` are supported.
 
+Wrap inline content in `==` to highlight it with a native HTML `<mark>` element:
+`The ==-er== suffix` or `==some **bold** text and [a link](/notes)==`.
+Multiple highlights can appear in the same paragraph, heading, list item, or
+table cell. Highlights cannot span separate blocks. Unmatched markers, empty
+pairs, and markers inside code remain literal. Escape a marker as `\==` to
+display it literally. Highlights use the browser's default appearance and work
+in articles, authored collection indexes, directory cards, and note previews.
+
 Block anchors work in selected entry pages and authored Blog/Notes indexes.
 Place a declaration at the end of a paragraph, heading, or list item, or put it
 in its own paragraph immediately after a structured block:

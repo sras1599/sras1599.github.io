@@ -6,6 +6,7 @@
 import { defineConfig } from "astro/config";
 import { satteri } from "@astrojs/markdown-satteri";
 import developmentAdmin from "./src/dev-admin/integration.mjs";
+import { markdownHighlights } from "./scripts/markdown-highlights.mjs";
 
 const removeFootnoteBacklinks = {
   name: "remove-footnote-backlinks",
@@ -164,6 +165,7 @@ export default defineConfig({
   markdown: {
     processor: satteri({
       features: { rawHtml: true },
+      mdastPlugins: [markdownHighlights],
       hastPlugins: [removeFootnoteBacklinks, imageCaptions],
     }),
   },
