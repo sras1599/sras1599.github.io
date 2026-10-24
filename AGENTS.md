@@ -153,12 +153,15 @@ to ownership, entry points, or the rules described here.
   existing anchor IDs, excluding the generated footnote heading. Its links are
   rendered statically; a browser controller marks the current section accessibly at
   a 96px reading offset, selecting the final heading at the document bottom.
-  TOC links become bold, purple, and underlined only on hover.
+  TOC links share the folder explorer's purple underline on hover and keyboard focus,
+  preserving their normal text color and weight.
   Entries without headings have no TOC. Heading links respect reduced motion.
   [folderNavigation.ts](src/components/folderNavigation.ts) builds the tree from
   selected public entries; [FolderNavigationNode.astro](src/components/FolderNavigationNode.astro)
   renders recursive disclosures with caret colors cycling blue, orange, green,
-  and purple by nesting depth, overview links, and current-page state. Tree
+  and purple by nesting depth, overview links, and current-page state.
+  `FolderNavigationLayout.astro` animates folder expansion and collapse while
+  respecting reduced motion; `global.css` owns vertical child guides and row hover styling. Tree
   membership follows folder metadata independently of authored entry URL overrides.
   The directory root is the explorer's sole heading and mobile disclosure; there
   is no additional Browse heading.

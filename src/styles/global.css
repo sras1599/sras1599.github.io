@@ -791,6 +791,12 @@ h3 {
   padding-left: 0;
 }
 
+.folder-explorer details>ul {
+  margin-left: calc(var(--folder-caret-width) / 2);
+  padding-left: 0.65rem;
+  border-left: 1px solid color-mix(in srgb, var(--outline) 25%, transparent);
+}
+
 .folder-explorer li {
   margin: 0.4rem 0;
   overflow-wrap: anywhere;
@@ -804,6 +810,20 @@ h3 {
   list-style: none;
 }
 
+.folder-explorer li summary,
+.folder-leaf {
+  padding-block: 0.15rem;
+}
+
+.folder-explorer li summary:is(:hover, :focus-visible)>:not(.folder-disclosure),
+.folder-leaf:is(:hover, :focus-visible),
+.toc-panel a:is(:hover, :focus-visible) {
+  text-decoration: underline;
+  text-decoration-color: var(--purple);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.3em;
+}
+
 .folder-explorer li summary::-webkit-details-marker {
   display: none;
 }
@@ -812,14 +832,15 @@ h3 {
   flex: 0 0 var(--folder-caret-width);
   font-size: 1.5em;
   line-height: 1;
+  transition: transform 220ms ease;
 }
 
-.folder-explorer li details[open]>summary>.folder-disclosure {
+.folder-explorer li details[open]:not([data-closing])>summary>.folder-disclosure {
   transform: rotate(90deg);
 }
 
 .folder-leaf {
-  display: inline-block;
+  display: block;
   margin-left: calc(var(--folder-caret-width) + var(--folder-label-gap));
 }
 
@@ -880,12 +901,6 @@ h3 {
   display: block;
 }
 
-.toc-panel a:hover {
-  color: var(--green);
-  font-weight: 700;
-  text-decoration: underline;
-}
-
 .article-body :is(h1, h2, h3, h4, h5, h6)[id] {
   scroll-margin-top: 96px;
 }
@@ -893,6 +908,12 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .folder-explorer li summary,
+  .folder-leaf,
+  .folder-disclosure {
+    transition: none;
   }
 }
 

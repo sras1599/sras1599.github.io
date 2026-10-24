@@ -38,10 +38,57 @@ const currentUrl = Astro.url.pathname.replace(/\/$/, "");
   const explorer = document.querySelector<HTMLDetailsElement>(".folder-explorer > ul > li > details");
   const toc = document.querySelector<HTMLDetailsElement>(".article-toc details");
   const desktop = window.matchMedia("(min-width: 1680px)");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const transitions = new Map<HTMLDetailsElement, { animation: Animation; opening: boolean }>();
   const updateDisclosures = () => {
-    if (explorer) explorer.open = desktop.matches;
+    if (explorer) {
+      transitions.get(explorer)?.animation.cancel();
+      transitions.delete(explorer);
+      delete explorer.dataset.closing;
+      explorer.open = desktop.matches;
+    }
     if (toc) toc.open = desktop.matches;
   };
   updateDisclosures();
   desktop.addEventListener("change", updateDisclosures);
+
+  document.querySelectorAll<HTMLDetailsElement>(".folder-explorer details").forEach((details) => {
+    const summary = details.querySelector<HTMLElement>(":scope > summary");
+    if (!summary) return;
+
+    summary.addEventListener("click", (event) => {
+      if (event.target instanceof Element && event.target.closest("a")) return;
+      event.preventDefault();
+
+      const previous = transitions.get(details);
+      const opening = previous ? !previous.opening : !details.open;
+      const startHeight = details.getBoundingClientRect().height;
+      previous?.animation.cancel();
+      transitions.delete(details);
+      delete details.dataset.closing;
+
+      if (reducedMotion.matches) {
+        details.open = opening;
+        return;
+      }
+
+      // Keep native details open until the closing animation has finished.
+      details.open = true;
+      const endHeight = opening
+        ? details.getBoundingClientRect().height
+        : summary.getBoundingClientRect().height;
+      if (!opening) details.dataset.closing = "";
+
+      const animation = details.animate(
+        { height: [`${startHeight}px`, `${endHeight}px`], overflow: ["hidden", "hidden"] },
+        { duration: 220, easing: "ease-in-out" },
+      );
+      transitions.set(details, { animation, opening });
+      animation.onfinish = () => {
+        details.open = opening;
+        delete details.dataset.closing;
+        transitions.delete(details);
+      };
+    });
+  });
 </script>
