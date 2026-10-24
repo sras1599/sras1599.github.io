@@ -3,8 +3,10 @@ import { containsCurrentPage, type NavigationNode } from "./folderNavigation";
 interface Props {
   node: NavigationNode;
   currentUrl: string;
+  depth?: number;
 }
-const { node, currentUrl } = Astro.props;
+const { node, currentUrl, depth = 0 } = Astro.props;
+const caretColors = ["var(--blue)", "var(--orange)", "var(--green)", "var(--purple)"];
 const active = node.href === currentUrl;
 ---
 <li>
@@ -12,13 +14,13 @@ const active = node.href === currentUrl;
     node.folder && node.children.length > 0 ? (
       <details open={containsCurrentPage(node, currentUrl)}>
         <summary>
-          <span class="folder-disclosure" aria-hidden="true">▸</span>
+          <span class="folder-disclosure" style={{ color: caretColors[depth % caretColors.length] }} aria-hidden="true">▸</span>
           {node.href ? (
             <a href={node.href} aria-current={active ? "page" : undefined} data-no-preview>{node.label}</a>
           ) : <span>{node.label}</span>}
         </summary>
         <ul>
-          {node.children.map((child) => <Astro.self node={child} currentUrl={currentUrl} />)}
+          {node.children.map((child) => <Astro.self node={child} currentUrl={currentUrl} depth={depth + 1} />)}
         </ul>
       </details>
     ) : node.href ? (

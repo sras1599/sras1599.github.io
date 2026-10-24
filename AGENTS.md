@@ -144,7 +144,8 @@ to ownership, entry points, or the rules described here.
   opted-in Blog, Notes, and People articles with a responsive folder explorer.
   [folderNavigation.ts](src/components/folderNavigation.ts) builds the tree from
   selected public entries; [FolderNavigationNode.astro](src/components/FolderNavigationNode.astro)
-  renders recursive disclosures, overview links, and current-page state. Tree
+  renders recursive disclosures with caret colors cycling blue, orange, green,
+  and purple by nesting depth, overview links, and current-page state. Tree
   membership follows folder metadata independently of authored entry URL overrides.
   The directory root is the explorer's sole heading and mobile disclosure; there
   is no additional Browse heading.
