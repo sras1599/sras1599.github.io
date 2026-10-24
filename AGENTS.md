@@ -141,7 +141,20 @@ to ownership, entry points, or the rules described here.
   metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
 - [FolderNavigationLayout.astro](src/layouts/FolderNavigationLayout.astro) wraps
-  opted-in Blog, Notes, and People articles with a responsive folder explorer.
+  all Blog, Notes, and People articles at the site's full content width. At
+  viewport widths of 1680px and above, matching flexible rails fill the space
+  outside that width with 24px article gaps and 16px viewport margins;
+  missing rails leave the article centered. Both rails
+  are sticky and independently scrollable. Below that breakpoint, navigation
+  becomes separate, initially collapsed disclosures above the article.
+  Directory metadata alone enables the left folder explorer.
+  [TableOfContents.astro](src/components/TableOfContents.astro) owns the right
+  “On this page” navigation, using Astro's rendered H1–H6 heading metadata and
+  existing anchor IDs, excluding the generated footnote heading. Its links are
+  rendered statically; a browser controller marks the current section accessibly at
+  a 96px reading offset, selecting the final heading at the document bottom.
+  TOC links become bold, purple, and underlined only on hover.
+  Entries without headings have no TOC. Heading links respect reduced motion.
   [folderNavigation.ts](src/components/folderNavigation.ts) builds the tree from
   selected public entries; [FolderNavigationNode.astro](src/components/FolderNavigationNode.astro)
   renders recursive disclosures with caret colors cycling blue, orange, green,

@@ -461,7 +461,6 @@ h3 {
 }
 
 .article {
-  max-width: 860px;
   margin: 3rem auto 5rem;
   box-shadow: 8px 8px 0 var(--orange);
 }
@@ -749,21 +748,23 @@ h3 {
   }
 }
 
-/* Folder explorers enhance only entries whose markers opt into navigation. */
-.folder-page {
+/* Article rails sit outside the normal site content width on wide screens. */
+.article-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2rem;
   margin: 3rem 0 5rem;
   min-width: 0;
 }
 
-.folder-page>.article {
+.article-page>.article {
   width: 100%;
   min-width: 0;
   margin: 0;
 }
 
-.folder-sidebar {
+.folder-sidebar,
+.article-toc {
   min-width: 0;
   font-size: 0.85rem;
 }
@@ -771,6 +772,10 @@ h3 {
 .folder-explorer {
   --folder-caret-width: 0.75rem;
   --folder-label-gap: 0.35rem;
+}
+
+.folder-explorer,
+.toc-panel {
   background: var(--paper-high);
   border: 2px solid var(--ink);
   padding: 1rem;
@@ -826,7 +831,8 @@ h3 {
   text-underline-offset: 0.3em;
 }
 
-.folder-explorer :is(a, summary):focus-visible {
+.folder-explorer :is(a, summary):focus-visible,
+.article-toc :is(a, summary):focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
@@ -835,17 +841,91 @@ h3 {
   max-width: 100%;
 }
 
-@media (min-width: 960px) {
-  .folder-page {
-    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+.toc-panel summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.toc-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.toc-panel summary svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.toc-panel ul {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.toc-panel li {
+  margin: 0.4rem 0;
+  padding-inline-start: calc(var(--toc-level) * 0.75rem);
+  overflow-wrap: anywhere;
+}
+
+.toc-panel a {
+  display: block;
+}
+
+.toc-panel a:hover {
+  color: var(--green);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.article-body :is(h1, h2, h3, h4, h5, h6)[id] {
+  scroll-margin-top: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (min-width: 1680px) {
+  .article-page {
+    /* Equal rails preserve the site's center even when either rail is absent. */
+    width: calc(100vw - 32px);
+    margin-inline: calc((100% - 100vw) / 2 + 16px);
+    grid-template-columns: minmax(0, 1fr) calc(var(--container) - 2 * var(--gutter)) minmax(0, 1fr);
+    column-gap: 24px;
     align-items: start;
   }
 
   .folder-sidebar {
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100dvh - 2rem);
-    overflow-y: auto;
+    grid-column: 1;
+    grid-row: 1;
   }
 
+  .article-page>.article {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .article-toc {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .folder-sidebar,
+  .article-toc {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+  }
 }

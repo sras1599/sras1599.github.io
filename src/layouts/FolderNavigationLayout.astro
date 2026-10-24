@@ -1,15 +1,18 @@
 ---
-/** Wrap existing article markup with the configured folder's published explorer. */
+/** Keep collection articles centered between optional directory and heading navigation. */
+import type { MarkdownHeading } from "astro";
 import { getCollection } from "astro:content";
 import { CollectionRegistry } from "../collections/registry.mjs";
 import FolderNavigationNode from "../components/FolderNavigationNode.astro";
+import TableOfContents from "../components/TableOfContents.astro";
 import { buildFolderNavigation, type Navigation } from "../components/folderNavigation";
 
 interface Props {
   collection: "blog" | "notes" | "people";
   navigation?: Navigation;
+  headings: MarkdownHeading[];
 }
-const { collection, navigation } = Astro.props;
+const { collection, navigation, headings } = Astro.props;
 const route = CollectionRegistry.get(collection)!.route;
 const tree = navigation
   ? buildFolderNavigation(await getCollection(collection), navigation, route)
@@ -17,7 +20,7 @@ const tree = navigation
 const currentUrl = Astro.url.pathname.replace(/\/$/, "");
 ---
 
-<main class:list={[{ "folder-page": tree }]}>
+<main class="article-page">
   {tree && (
     <aside class="folder-sidebar">
       <nav class="folder-explorer" aria-label={`${navigation!.root.title} navigation`}>
@@ -25,16 +28,20 @@ const currentUrl = Astro.url.pathname.replace(/\/$/, "");
       </nav>
     </aside>
   )}
+  <TableOfContents headings={headings} />
   <slot />
 </main>
 
 <script>
   // The directory root itself controls the explorer; no duplicate heading is needed.
-  // Keep it initially expanded on desktop and collapsed on mobile.
+  // Both rails move above the article when they cannot fit outside the site width.
   const explorer = document.querySelector<HTMLDetailsElement>(".folder-explorer > ul > li > details");
-  if (explorer) {
-    const desktop = window.matchMedia("(min-width: 960px)");
-    explorer.open = desktop.matches;
-    desktop.addEventListener("change", (event) => { explorer.open = event.matches; });
-  }
+  const toc = document.querySelector<HTMLDetailsElement>(".article-toc details");
+  const desktop = window.matchMedia("(min-width: 1680px)");
+  const updateDisclosures = () => {
+    if (explorer) explorer.open = desktop.matches;
+    if (toc) toc.open = desktop.matches;
+  };
+  updateDisclosures();
+  desktop.addEventListener("change", updateDisclosures);
 </script>

@@ -1,0 +1,85 @@
+---
+import type { MarkdownHeading } from "astro";
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+// The renderer gives the generated footnote heading this reserved ID.
+const headings = Astro.props.headings.filter((heading) => heading.slug !== "footnote-label");
+const ancestors: number[] = [];
+const items = headings.map((heading) => {
+  while (ancestors.length && ancestors[ancestors.length - 1] >= heading.depth) {
+    ancestors.pop();
+  }
+  const level = ancestors.length;
+  ancestors.push(heading.depth);
+  return { ...heading, level };
+});
+---
+
+{items.length > 0 && (
+  <aside class="article-toc">
+    <nav class="toc-panel" aria-label="On this page">
+      <details>
+        <summary>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h10M4 18h16" />
+          </svg>
+          <span>On this page</span>
+        </summary>
+        <ul>
+          {items.map((heading) => (
+            <li style={{ "--toc-level": heading.level }}>
+              <a href={`#${encodeURIComponent(heading.slug)}`} data-heading-id={heading.slug} data-no-preview>
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </nav>
+  </aside>
+)}
+
+<script>
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".article-toc a[data-heading-id]"));
+  const sections = links.flatMap((link) => {
+    const heading = document.getElementById(link.dataset.headingId!);
+    return heading ? [{ link, heading }] : [];
+  });
+
+  if (sections.length) {
+    let activeLink: HTMLAnchorElement | undefined;
+    let frame: number | undefined;
+
+    const updateCurrentSection = () => {
+      frame = undefined;
+      let current = sections[0];
+      for (const section of sections) {
+        if (section.heading.getBoundingClientRect().top <= 96) current = section;
+      }
+
+      const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1;
+      if (atBottom) current = sections[sections.length - 1];
+      if (current.link === activeLink) return;
+
+      activeLink?.removeAttribute("aria-current");
+      current.link.setAttribute("aria-current", "location");
+      activeLink = current.link;
+    };
+
+    const scheduleUpdate = () => {
+      if (frame === undefined) frame = window.requestAnimationFrame(updateCurrentSection);
+    };
+
+    updateCurrentSection();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("hashchange", scheduleUpdate);
+    window.addEventListener("load", scheduleUpdate);
+    // Fonts and images can move headings without a scroll or viewport resize.
+    const article = document.querySelector(".article");
+    if (article) new ResizeObserver(scheduleUpdate).observe(article);
+  }
+</script>

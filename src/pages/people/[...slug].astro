@@ -26,11 +26,11 @@ export async function getStaticPaths() {
 }
 
 const { person } = Astro.props;
-const { Content } = await render(person);
+const { Content, headings } = await render(person);
 ---
 
 <BaseLayout title={person.data.title}>
-  <FolderNavigationLayout collection="people" navigation={person.data.navigation}>
+  <FolderNavigationLayout collection="people" navigation={person.data.navigation} headings={headings}>
     <article class="article">
       <header class="article-header">
         <h2>{person.data.title}</h2>

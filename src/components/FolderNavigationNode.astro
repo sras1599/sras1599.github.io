@@ -11,8 +11,8 @@ const active = node.href === currentUrl;
 ---
 <li>
   {
-    node.folder && node.children.length > 0 ? (
-      <details open={containsCurrentPage(node, currentUrl)}>
+    node.folder && (node.children.length > 0 || depth === 0) ? (
+      <details open={depth > 0 && containsCurrentPage(node, currentUrl)}>
         <summary>
           <span class="folder-disclosure" style={{ color: caretColors[depth % caretColors.length] }} aria-hidden="true">▸</span>
           {node.href ? (
