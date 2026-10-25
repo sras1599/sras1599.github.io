@@ -1,5 +1,7 @@
 # Analytics recommendation
 
+Status (2026-10-25): Superseded. The site uses analytics already provided through Cloudflare. The Umami tracking script and contact-link events have been removed. The research below is retained for historical context.
+
 Research date: 2026-09-05. Site context verified locally by the coordinating agent: rasmalai.dev is a static Astro personal portfolio/blog deployed to GitHub Pages, with a shared `src/layouts/BaseLayout.astro`.
 
 ## Recommendation

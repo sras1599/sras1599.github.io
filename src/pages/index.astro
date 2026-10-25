@@ -28,12 +28,10 @@ const links = [
   {
     label: "GitHub",
     href: "https://github.com/sras1599",
-    umamiEvent: "Viewed GitHub",
   },
   {
     label: "LinkedIn",
     href: "https://www.linkedin.com/in/singh-ras/",
-    umamiEvent: "Viewed LinkedIn",
   },
   { label: "Email", href: "mailto:raspreet800@gmail.com" },
 ];
@@ -159,7 +157,6 @@ const links = [
           links.map((link) => (
             <a
               href={link.href}
-              data-umami-event={link.umamiEvent}
               target={link.href.startsWith("http") ? "_blank" : undefined}
               rel={
                 link.href.startsWith("http") ? "noopener noreferrer" : undefined

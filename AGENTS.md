@@ -143,7 +143,8 @@ to ownership, entry points, or the rules described here.
   visible through the showcase's Kolkata date. Begun absences can extend the first
   selectable month; future-only ranges cannot. Actual results take precedence.
   [BaseLayout.astro](src/layouts/BaseLayout.astro) owns the document shell, SEO
-  metadata, navigation, Google Fonts, and Umami analytics. Shared design tokens,
+  metadata, navigation, and Google Fonts. Analytics are provided through Cloudflare;
+  the site does not include an Umami tracker. Shared design tokens,
   responsive layouts, and article styles live in [global.css](src/styles/global.css).
 - [FolderNavigationLayout.astro](src/layouts/FolderNavigationLayout.astro) wraps
   all Blog, Notes, and People articles at the site's full content width. At
