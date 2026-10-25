@@ -14,7 +14,8 @@ read local writing. The importer never edits the vault.
 - `npm run routes`: list current published routes grouped alphabetically by collection,
   with natural path ordering within each group and standalone pages last.
 - `npm run routes -- --preview`: also include entries selected by `preview: true`,
-  matching writing mode. `--help` shows usage.
+  matching writing mode. Preview-only routes have a `(preview)` suffix; published
+  routes remain unlabeled even if `preview: true` is also set. `--help` shows usage.
 
 Route listing reads `VAULT_PATH` from the same environment as development. It shares
 the importer's metadata selection, slug resolution, and collision validation, but

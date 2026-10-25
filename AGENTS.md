@@ -104,7 +104,8 @@ to ownership, entry points, or the rules described here.
   selection, slug resolution, and collision validation with `importVault`, without
   transforming Markdown or writing output. [routes.mjs](scripts/routes.mjs) exposes
   `npm run routes` and `--preview`, grouping routes by collection and listing
-  standalone pages last. Concrete page files and public HTML supplement vault
+  standalone pages last. Preview-only entries carry a `(preview)` suffix;
+  published entries remain unlabeled. Concrete page files and public HTML supplement vault
   entries; index schemas alone do not imply rendered index routes. Other dynamic
   routes cannot be inferred.
 

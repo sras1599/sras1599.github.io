@@ -14,7 +14,7 @@ try {
   });
 
   if (values.help) {
-    console.log("Usage: npm run routes -- [--preview]\n\nList published routes grouped by collection. --preview also includes writing-preview entries.");
+    console.log("Usage: npm run routes -- [--preview]\n\nList published routes grouped by collection. --preview also includes writing-preview entries, labeled (preview).");
   } else {
     const routes = await listVaultRoutes({
       vaultPath: process.env.VAULT_PATH,
@@ -23,12 +23,12 @@ try {
     });
     console.log(values.preview ? "Published and preview routes" : "Published routes");
     let previousCollection;
-    for (const { collection, url } of routes) {
+    for (const { collection, url, previewOnly } of routes) {
       if (collection !== previousCollection) {
         console.log(`\n${collection ?? "Standalone pages"}:`);
         previousCollection = collection;
       }
-      console.log(`  ${url}`);
+      console.log(`  ${url}${previewOnly ? " (preview)" : ""}`);
     }
     if (routes.length === 0) console.log("No routes found.");
   }

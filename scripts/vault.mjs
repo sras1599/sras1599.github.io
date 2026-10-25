@@ -178,15 +178,19 @@ export async function listVaultRoutes({
 }) {
   const { notes } = await selectVaultEntries({ vaultPath, projectRoot, preview, registry });
   const handwritten = await readHandwrittenRouteOwners(projectRoot, new Set());
-  const urls = new Set(notes.map((note) => collectionEntryUrl(note.route, note.identity.slug)));
+  const routes = new Map(notes.map((note) => [
+    collectionEntryUrl(note.route, note.identity.slug),
+    note.previewOnly,
+  ]));
   for (const { url, owner } of handwritten) {
     if (owner.startsWith("static file ") && url !== "/" && !url.endsWith(".html")) continue;
-    urls.add(url);
+    routes.set(url, false);
   }
 
   const definitions = [...registry.values()].sort((a, b) => b.route.length - a.route.length);
-  return [...urls].map((url) => ({
+  return [...routes].map(([url, previewOnly]) => ({
     url,
+    previewOnly,
     collection: definitions.find(({ route }) => url === route || url.startsWith(`${route}/`))?.id ?? null,
   })).sort((a, b) => {
     if (a.collection !== b.collection) {
@@ -638,6 +642,7 @@ function parseSelectedNote(text, file, owner, route, preview) {
   return {
     file,
     body: document.body,
+    previewOnly: validatedMetadata.publish !== true,
     directoryDocument,
     route,
     identity: {
