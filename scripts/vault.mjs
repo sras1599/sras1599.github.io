@@ -65,30 +65,9 @@ export async function importVault({
   preview = false,
   registry = CollectionRegistry,
 }) {
-  if (!vaultPath) {
-    throw new Error(
-      "Set VAULT_PATH in .env to an accessible Obsidian vault directory.",
-    );
-  }
-
-  const root = path.resolve(vaultPath);
-  let discovery;
-  try {
-    discovery = await discoverVault(root, registry);
-  } catch (error) {
-    if (!error.code) throw error;
-    throw new Error(`Cannot read VAULT_PATH (${root}): ${error.message}`);
-  }
-
-  const activeCollections = resolveActiveCollections(discovery.boundaries);
-  const notes = await readSelectedNotes(
-    root,
-    discovery.ownedMarkdown,
-    activeCollections,
-    preview,
-  );
-  await validateUrlOwnership(notes, activeCollections, projectRoot);
-  validateUniqueIdentities(notes);
+  const { root, discovery, activeCollections, notes } = await selectVaultEntries({
+    vaultPath, projectRoot, preview, registry,
+  });
 
   // All discovered files distinguish unavailable notes from missing references;
   // only selected entries and active index markers have public destinations.
@@ -183,6 +162,71 @@ export async function importVault({
   });
 
   return { entries: notes.length, assets: assets.size };
+}
+
+/**
+ * Read selected entry identities and concrete website pages without preparing
+ * Markdown, reading embedded media, or writing generated output. Collection
+ * indexes come from actual page files: an index schema alone creates no route.
+ * Dynamic routes outside the vault collections cannot be inferred here.
+ */
+export async function listVaultRoutes({
+  vaultPath,
+  projectRoot = process.cwd(),
+  preview = false,
+  registry = CollectionRegistry,
+}) {
+  const { notes } = await selectVaultEntries({ vaultPath, projectRoot, preview, registry });
+  const handwritten = await readHandwrittenRouteOwners(projectRoot, new Set());
+  const urls = new Set(notes.map((note) => collectionEntryUrl(note.route, note.identity.slug)));
+  for (const { url, owner } of handwritten) {
+    if (owner.startsWith("static file ") && url !== "/" && !url.endsWith(".html")) continue;
+    urls.add(url);
+  }
+
+  const definitions = [...registry.values()].sort((a, b) => b.route.length - a.route.length);
+  return [...urls].map((url) => ({
+    url,
+    collection: definitions.find(({ route }) => url === route || url.startsWith(`${route}/`))?.id ?? null,
+  })).sort((a, b) => {
+    if (a.collection !== b.collection) {
+      if (a.collection === null) return 1;
+      if (b.collection === null) return -1;
+      return a.collection.localeCompare(b.collection, "en");
+    }
+    return a.url.localeCompare(b.url, "en", { numeric: true });
+  });
+}
+
+// Discovery, selection, identity validation, and URL collision checks are shared
+// by imports and route listings so both use identical publishing and slug rules.
+async function selectVaultEntries({ vaultPath, projectRoot, preview, registry }) {
+  if (!vaultPath) {
+    throw new Error(
+      "Set VAULT_PATH in .env to an accessible Obsidian vault directory.",
+    );
+  }
+
+  const root = path.resolve(vaultPath);
+  let discovery;
+  try {
+    discovery = await discoverVault(root, registry);
+  } catch (error) {
+    if (!error.code) throw error;
+    throw new Error(`Cannot read VAULT_PATH (${root}): ${error.message}`);
+  }
+
+  const activeCollections = resolveActiveCollections(discovery.boundaries);
+  const notes = await readSelectedNotes(
+    root,
+    discovery.ownedMarkdown,
+    activeCollections,
+    preview,
+  );
+  await validateUrlOwnership(notes, activeCollections, projectRoot);
+  validateUniqueIdentities(notes);
+
+  return { root, discovery, activeCollections, notes };
 }
 
 /**
@@ -548,17 +592,28 @@ function parseSelectedNote(text, file, owner, route, preview) {
     const folders = relativeFolders(dir, path.posix.dirname(file));
     const overview = path.posix.basename(file) === "_index.md";
     const basename = path.posix.basename(file, ".md");
-    const segments = overview ? folders : [...folders, basename];
-    const derivedSlug = rawMetadata.slug === undefined
-      ? [root.slug, ...segments.map((segment) => folderSlug(segment, file))].join("/")
-      : rawMetadata.slug;
     if (overview && Object.hasOwn(rawMetadata, "slug")) {
       throw new Error(`${file}: folder overviews derive their URL from the folder; remove slug`);
     }
     if (effectiveMetadata.title === undefined) {
       effectiveMetadata.title = overview ? (folders.at(-1) ?? root.title) : basename;
     }
-    if (effectiveMetadata.slug === undefined) effectiveMetadata.slug = derivedSlug;
+
+    if (effectiveMetadata.slug === undefined) {
+      const segments = overview ? folders : [...folders, basename];
+      effectiveMetadata.slug = [root.slug, ...segments.map((segment) => folderSlug(segment, file))].join("/");
+    } else {
+      // Within directory trees, / starts at the collection root; other slugs
+      // replace the filename segment while retaining the containing folder URL.
+      const authoredSlug = effectiveMetadata.slug;
+      const collectionRelative = typeof authoredSlug === "string" && authoredSlug.startsWith("/");
+      const slug = normalizeCollectionSlug(collectionRelative ? authoredSlug.slice(1) : authoredSlug, {
+        label: `${file}: slug`,
+      });
+      effectiveMetadata.slug = collectionRelative
+        ? slug
+        : [root.slug, ...folders.map((segment) => folderSlug(segment, file)), slug].join("/");
+    }
     navigation = {
       root,
       folders,

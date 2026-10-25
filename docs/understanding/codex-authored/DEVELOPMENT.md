@@ -11,6 +11,18 @@ read local writing. The importer never edits the vault.
 - `npm run dev:writing`: also include notes marked `preview: true` for local review.
 - `npm run build`: import published notes only, run Astro checks, and build `dist`.
 - `npm run preview`: serve the existing production build; it does not import or rebuild.
+- `npm run routes`: list current published routes grouped alphabetically by collection,
+  with natural path ordering within each group and standalone pages last.
+- `npm run routes -- --preview`: also include entries selected by `preview: true`,
+  matching writing mode. `--help` shows usage.
+
+Route listing reads `VAULT_PATH` from the same environment as development. It shares
+the importer's metadata selection, slug resolution, and collision validation, but
+does not write generated content, process Markdown links/media, or run Astro. It
+includes concrete pages from `src/pages` and HTML pages in `public`; assets and the
+development-only admin page are excluded. Dynamic routes outside the registered
+vault collections cannot be inferred. This describes current local sources, not
+the last build or the deployed site.
 
 Development commands accept `--port`, `--host`, `--open`, and `--mode`, such as `npm run dev -- --port 4323`.
 
@@ -186,8 +198,20 @@ combine the directory slug, relative folders, and filename. For example,
 `/notes/german/language-transfer/lessons/02-basic-vocabulary`. Segments use lowercase
 ASCII, remove diacritics, and replace punctuation/whitespace runs with hyphens.
 Empty segments and colliding URLs fail with source context. Renaming files or
-folders changes derived URLs without redirects. An explicit collection-relative
-`slug` pins a regular document's URL; explicit titles override filename defaults.
+folders changes derived URLs without redirects. Within directory navigation, an
+explicit `slug` is relative to the containing folder URL. For example, a note in
+`German/Language Transfer/` with `slug: "02"` uses
+`/notes/german/language-transfer/02`, independent of its filename. Quote numeric
+slugs so YAML preserves them as strings, including leading zeros. Slugs may also
+contain multiple path segments, relative to the same containing folder.
+
+A leading `/` overrides from the collection root: `slug: /german/lesson-02`
+produces `/notes/german/lesson-02`, independent of the note's containing folder.
+The collection route itself (`/notes` here) is never part of the authored slug.
+Existing full slugs inside directory navigation must either gain a leading `/`
+or be shortened to their folder-relative suffix to preserve their URLs. Directory
+marker slugs remain collection-relative, and slugs outside directory navigation
+keep their existing behavior. Explicit titles override filename defaults.
 Folder overviews may override titles but must omit `slug` so their URL represents
 the folder.
 

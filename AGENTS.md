@@ -67,7 +67,9 @@ to ownership, entry points, or the rules described here.
   in every collection. Ordinary Blog markers retain their existing tag defaults.
 - Entry identity is collection ID plus slug. Outside sidebar folders, slugs are
   authored independently of source paths; inside, absent titles/slugs derive from
-  filenames and topic-relative paths. Exact `_index.md` files inside sidebar folders
+  filenames and topic-relative paths. Explicit note slugs inside sidebar folders
+  are relative to the containing folder URL; a leading `/` overrides from the
+  collection root. Directory-marker slugs remain collection-relative. Exact `_index.md` files inside sidebar folders
   are ordinary entries at folder URLs and make folder headings clickable. Collection
   index documents remain separate from entries. All definitions require one index provider per active collection,
   supplying `title` and `metaDescription` through a marker.
@@ -97,6 +99,14 @@ to ownership, entry points, or the rules described here.
   normal Markdown/media pipeline; the entire selected marker body is public.
   Preparation failures preserve previous output. Synchronization removes stale files
   but has no whole-import rollback if filesystem writes fail.
+
+- `listVaultRoutes` in [vault.mjs](scripts/vault.mjs) shares discovery, metadata
+  selection, slug resolution, and collision validation with `importVault`, without
+  transforming Markdown or writing output. [routes.mjs](scripts/routes.mjs) exposes
+  `npm run routes` and `--preview`, grouping routes by collection and listing
+  standalone pages last. Concrete page files and public HTML supplement vault
+  entries; index schemas alone do not imply rendered index routes. Other dynamic
+  routes cannot be inferred.
 
 ### 3. Astro content loading and Markdown rendering
 
