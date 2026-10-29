@@ -210,19 +210,33 @@ h3 {
 }
 
 h1 {
-  max-width: 13ch;
   margin: 0.5rem 0 1.25rem;
-  font-size: clamp(3rem, 8vw, 6.4rem);
+  font-size: clamp(2.75rem, 1.5rem + 6vw, 6.4rem);
 }
 
 h2 {
   margin: 0.25rem 0 1rem;
-  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-size: clamp(1.75rem, 1.2rem + 2.75vw, 3.4rem);
 }
 
 h3 {
   margin: 0.2rem 0 0.6rem;
-  font-size: 1.6rem;
+  font-size: clamp(1.4rem, 1.3rem + 0.4vw, 1.6rem);
+}
+
+h4 {
+  margin: 0.15rem 0 0.5rem;
+  font-size: clamp(1.25rem, 1.2rem + 0.25vw, 1.4rem);
+}
+
+h5 {
+  margin: 0.1rem 0 0.4rem;
+  font-size: clamp(1.125rem, 1.1rem + 0.125vw, 1.2rem);
+}
+
+h6 {
+  margin: 0.05rem 0 0.3rem;
+  font-size: clamp(1rem, 0.98rem + 0.125vw, 1.08rem);
 }
 
 .hero-lede,
@@ -515,6 +529,18 @@ h3 {
   font-size: 1.08rem;
 }
 
+.note-body :is(p, ul, ol) {
+  margin-block: 0.5rem;
+}
+
+.note-body p:has(+ :is(ul, ol)) {
+  margin-bottom: 0;
+}
+
+.note-body p + :is(ul, ol) {
+  margin-top: 0.25rem;
+}
+
 :is(.article-body, .blog-index-body, .notes-index-body) blockquote {
   margin: 1.5rem 0;
   padding: 1rem clamp(1rem, 3vw, 1.5rem);
@@ -684,10 +710,6 @@ h3 {
   .site-nav a {
     padding: 0.38rem clamp(0.42rem, 2.2vw, 0.65rem);
     text-align: center;
-  }
-
-  h1 {
-    font-size: 2.75rem;
   }
 
   .hero {

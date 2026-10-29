@@ -223,7 +223,9 @@ to ownership, entry points, or the rules described here.
   English ID tie-breaking and date labels, also used by dated entry headers.
 - `src/pages/blog/[...slug].astro`, `src/pages/notes/[...slug].astro`, and
   `src/pages/people/[...slug].astro` generate individual pages and preserve nested
-  slugs. [notes/index.astro](src/pages/notes/index.astro) renders the dated notes
+  slugs. Individual Notes bodies use the additional `note-body` class for tighter
+  paragraph and list margins in `global.css`, including in fetched note previews.
+  [notes/index.astro](src/pages/notes/index.astro) renders the dated notes
   feed from its authored collection index. Published sidebar root overviews appear
   as directory cards, alphabetically before ordinary dated notes in the same list;
   other sidebar descendants are excluded. `directory: true` enables directory
