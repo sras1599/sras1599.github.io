@@ -141,6 +141,14 @@ to ownership, entry points, or the rules described here.
 ### 4. Pages, navigation, and visual presentation
 
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
+  Its Intro uses the named `intro` slot and optional `homepage` mode on
+  `BaseLayout.astro`, which owns the homepage's main landmark and groups the
+  header and Intro into one opening wrapper. Homepage-only styles in
+  `global.css` give that wrapper a minimum height of `100svh`, keep the header
+  at the top, and center the Intro in the remaining space. Taller content grows
+  naturally; subsequent sections retain their content-driven heights and normal
+  scrolling. [SiteHeader.astro](src/components/SiteHeader.astro) owns the shared
+  header markup used by both layout modes.
   [HomepageGameShowcase.astro](src/components/HomepageGameShowcase.astro) owns
   the homepage showcase's repository-data integration, Kolkata calendar range,
   pre-rendered Month choices, mobile game selection, reduced-motion handling,

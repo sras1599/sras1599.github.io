@@ -37,138 +37,136 @@ const links = [
 ];
 ---
 
-<BaseLayout>
-  <main>
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <h4 id="hero-title">Hello There!</h4>
-        <p class="hero-lede">
-          I am Raspreet Singh. I love programming, word games, badminton, and
-          mountaineering. I got disillusioned with my work in the IT sector and
-          left my job. I'm now on a quest to find the mountain I want to climb.
+<BaseLayout homepage>
+  <section slot="intro" class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h4 id="hero-title">Hello There!</h4>
+      <p class="hero-lede">
+        I am Raspreet Singh. I love programming, word games, badminton, and
+        mountaineering. I got disillusioned with my work in the IT sector and
+        left my job. I'm now on a quest to find the mountain I want to climb.
 
-          <br /><br />
-          I don't live my life with any innate purpose. I exist to <i>wander</i
-          >.
-        </p>
-      </div>
-      <div class="hero-art">
-        <span class="blob blob-blue" aria-hidden="true"></span>
-        <Image
-          class="hero-profile"
-          src={profileImage}
-          alt="Raspreet Singh"
-          loading="eager"
-          fetchpriority="high"
-        />
-      </div>
-    </section>
+        <br /><br />
+        I don't live my life with any innate purpose. I exist to <i>wander</i
+        >.
+      </p>
+    </div>
+    <div class="hero-art">
+      <span class="blob blob-blue" aria-hidden="true"></span>
+      <Image
+        class="hero-profile"
+        src={profileImage}
+        alt="Raspreet Singh"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+  </section>
 
-    <HomepageGameShowcase />
+  <HomepageGameShowcase />
 
-    <section
-      class="section work-section"
-      id="work"
-      aria-labelledby="work-title"
-    >
-      <div class="section-heading">
-        <p class="eyebrow">Work</p>
-        <h2 id="work-title">
-          What I've built, and what I'm building currently
-        </h2>
-      </div>
-      <div class="project-grid">
-        {
-          projects.map((project, index) => (
-            <article class={`project-card project-card-${project.accent}`}>
-              <div class="project-media" aria-hidden="true">
-                <span>{project.type}</span>
+  <section
+    class="section work-section"
+    id="work"
+    aria-labelledby="work-title"
+  >
+    <div class="section-heading">
+      <p class="eyebrow">Work</p>
+      <h2 id="work-title">
+        What I've built, and what I'm building currently
+      </h2>
+    </div>
+    <div class="project-grid">
+      {
+        projects.map((project, index) => (
+          <article class={`project-card project-card-${project.accent}`}>
+            <div class="project-media" aria-hidden="true">
+              <span>{project.type}</span>
+            </div>
+            <div class="project-body">
+              <div class="project-meta">
+                <p class="project-type">{project.type}</p>
+                {project.year && (
+                  <span class="project-year">{project.year}</span>
+                )}
               </div>
-              <div class="project-body">
-                <div class="project-meta">
-                  <p class="project-type">{project.type}</p>
-                  {project.year && (
-                    <span class="project-year">{project.year}</span>
-                  )}
-                </div>
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <div class="project-actions">
-                  {project.hosted ? (
-                    <a
-                      href={project.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${project.type === "Game" ? "Play Now" : "Open project"} (opens in a new tab)`}
+              <h3>{project.title}</h3>
+              <p>{project.description}</p>
+              <div class="project-actions">
+                {project.hosted ? (
+                  <a
+                    href={project.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${project.type === "Game" ? "Play Now" : "Open project"} (opens in a new tab)`}
+                  >
+                    {project.type === "Game" ? "Play Now" : "Open project"}
+                    <span aria-hidden="true"> ↗</span>
+                  </a>
+                ) : (
+                  <span class="project-unavailable">
+                    <button
+                      type="button"
+                      aria-disabled="true"
+                      aria-describedby={`hosting-note-${index}`}
                     >
                       {project.type === "Game" ? "Play Now" : "Open project"}
-                      <span aria-hidden="true"> ↗</span>
-                    </a>
-                  ) : (
-                    <span class="project-unavailable">
-                      <button
-                        type="button"
-                        aria-disabled="true"
-                        aria-describedby={`hosting-note-${index}`}
-                      >
-                        {project.type === "Game" ? "Play Now" : "Open project"}
-                      </button>
-                      <span
-                        class="project-hosting-note"
-                        id={`hosting-note-${index}`}
-                        role="tooltip"
-                      >
-                        Not hosted right now
-                      </span>
+                    </button>
+                    <span
+                      class="project-hosting-note"
+                      id={`hosting-note-${index}`}
+                      role="tooltip"
+                    >
+                      Not hosted right now
                     </span>
-                  )}
-                  {project.github && (
-                    <>
-                      <span class="project-action-divider" aria-hidden="true">
-                        |
-                      </span>
-                      <a
-                        href={project.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="GitHub (opens in a new tab)"
-                      >
-                        GitHub<span aria-hidden="true"> ↗</span>
-                      </a>
-                    </>
-                  )}
-                </div>
+                  </span>
+                )}
+                {project.github && (
+                  <>
+                    <span class="project-action-divider" aria-hidden="true">
+                      |
+                    </span>
+                    <a
+                      href={project.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="GitHub (opens in a new tab)"
+                    >
+                      GitHub<span aria-hidden="true"> ↗</span>
+                    </a>
+                  </>
+                )}
               </div>
-            </article>
-          ))
-        }
-      </div>
-    </section>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
 
-    <section
-      class="section contact-section"
-      id="contact"
-      aria-labelledby="contact-title"
-    >
-      <p class="eyebrow">Contact</p>
-      <h3 id="contact-title">*I rarely post on social media though</h3>
-      <div class="contact-links">
-        {
-          links.map((link) => (
-            <a
-              href={link.href}
-              target={link.href.startsWith("http") ? "_blank" : undefined}
-              rel={
-                link.href.startsWith("http") ? "noopener noreferrer" : undefined
-              }
-            >
-              {link.label}
-            </a>
-          ))
-        }
-      </div>
-    </section>
-  </main>
+  <section
+    class="section contact-section"
+    id="contact"
+    aria-labelledby="contact-title"
+  >
+    <p class="eyebrow">Contact</p>
+    <h3 id="contact-title">*I rarely post on social media though</h3>
+    <div class="contact-links">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            target={link.href.startsWith("http") ? "_blank" : undefined}
+            rel={
+              link.href.startsWith("http") ? "noopener noreferrer" : undefined
+            }
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+  </section>
 </BaseLayout>
 
 <script>

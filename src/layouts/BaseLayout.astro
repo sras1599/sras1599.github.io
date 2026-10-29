@@ -7,26 +7,27 @@
  * retaining an accessible label containing both the term and its expansion.
  * Desktop presents the brand and navigation in one row, while mobile centers
  * the brand above a compact row containing all four navigation destinations.
+ * Homepage mode owns the main landmark and groups the shared header with the
+ * named intro slot. Other pages supply their own main in the default slot.
  */
 import "../styles/global.css";
 import ImageZoom from "../components/ImageZoom.astro";
-import { blogCollectionDefinition } from "../collections/blog/definition.mjs";
-import { notesCollectionDefinition } from "../collections/notes/definition.mjs";
+import SiteHeader from "../components/SiteHeader.astro";
 
 interface Props {
   title?: string;
   description?: string;
+  homepage?: boolean;
 }
 
 const {
   title = "Raspreet Singh",
   description = "Raspreet Singh's personal website",
+  homepage = false,
 } = Astro.props;
 
 const pageTitle =
   title === "Raspreet Singh" ? title : `${title} | Raspreet Singh`;
-const blogRoute = blogCollectionDefinition.route;
-const notesRoute = notesCollectionDefinition.route;
 ---
 
 <!doctype html>
@@ -48,19 +49,23 @@ const notesRoute = notesCollectionDefinition.route;
     />
   </head>
   <body>
-    <div class="site-shell">
-      <header class="site-header">
-        <a class="brand-mark" href="/" aria-label="Raspreet Singh home"
-          >Raspreet</a
-        >
-        <nav class="site-nav" aria-label="Primary navigation">
-          <a class="nav-work" href="/#work">Work</a>
-          <a class="nav-blog" href={blogRoute}>Blog</a>
-          <a class="nav-notes" href={notesRoute}>Notes</a>
-          <a class="nav-cta" href="/#contact">Contact</a>
-        </nav>
-      </header>
-      <slot />
+    <div class:list={["site-shell", { homepage }]}>
+      {
+        homepage ? (
+          <main>
+            <div class="home-intro">
+              <SiteHeader />
+              <slot name="intro" />
+            </div>
+            <slot />
+          </main>
+        ) : (
+          <>
+            <SiteHeader />
+            <slot />
+          </>
+        )
+      }
     </div>
     <ImageZoom />
     <script>

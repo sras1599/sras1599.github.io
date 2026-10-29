@@ -139,6 +139,28 @@ hr {
   max-width: 780px;
 }
 
+/* Include the header in the opening screen, allowing taller content to grow. */
+.site-shell.homepage {
+  padding-top: 0;
+}
+
+.homepage .home-intro {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  padding-top: 1rem;
+}
+
+.home-intro > .site-header {
+  flex-shrink: 0;
+}
+
+.home-intro > .hero {
+  flex: 1;
+  min-height: auto;
+  align-content: center;
+}
+
 .eyebrow,
 .project-type,
 time,
