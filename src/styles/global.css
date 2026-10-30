@@ -209,36 +209,6 @@ h3 {
   letter-spacing: 0;
 }
 
-h1 {
-  margin: 0.5rem 0 1.25rem;
-  font-size: clamp(2.75rem, 1.5rem + 6vw, 6.4rem);
-}
-
-h2 {
-  margin: 0.25rem 0 1rem;
-  font-size: clamp(1.75rem, 1.2rem + 2.75vw, 3.4rem);
-}
-
-h3 {
-  margin: 0.2rem 0 0.6rem;
-  font-size: clamp(1.4rem, 1.3rem + 0.4vw, 1.6rem);
-}
-
-h4 {
-  margin: 0.15rem 0 0.5rem;
-  font-size: clamp(1.25rem, 1.2rem + 0.25vw, 1.4rem);
-}
-
-h5 {
-  margin: 0.1rem 0 0.4rem;
-  font-size: clamp(1.125rem, 1.1rem + 0.125vw, 1.2rem);
-}
-
-h6 {
-  margin: 0.05rem 0 0.3rem;
-  font-size: clamp(1rem, 0.98rem + 0.125vw, 1.08rem);
-}
-
 .hero-lede,
 .blog-header p,
 .article-header p {
@@ -465,10 +435,6 @@ h6 {
   border: 2px solid var(--ink);
   box-shadow: 5px 5px 0 var(--ink);
   padding: 1.4rem;
-}
-
-.post-card h2 {
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
 }
 
 .post-card p {

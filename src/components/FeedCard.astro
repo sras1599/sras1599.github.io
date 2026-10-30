@@ -11,10 +11,21 @@ interface Props {
   directoryCard?: string;
 }
 
-const { title, href, publishDate, description, tags = [], directoryCard } = Astro.props;
-const directory = directoryCard ? await getEntry("directoryCards", directoryCard) : undefined;
+const {
+  title,
+  href,
+  publishDate,
+  description,
+  tags = [],
+  directoryCard,
+} = Astro.props;
+const directory = directoryCard
+  ? await getEntry("directoryCards", directoryCard)
+  : undefined;
 if (directoryCard && !directory) {
-  throw new Error(`Directory card ${directoryCard} for ${href} is missing its generated marker content`);
+  throw new Error(
+    `Directory card ${directoryCard} for ${href} is missing its generated marker content`,
+  );
 }
 const displayTitle = directory?.data.title ?? title;
 const displayTags = directory ? (directory.data.tags ?? []) : tags;
@@ -24,30 +35,54 @@ const DirectoryContent = rendered?.Content;
 
 <article class="post-card">
   <div>
-    {publishDate && (
-      <time datetime={publishDate.toISOString()}>
-        {formatPublicationDate(publishDate)}
-      </time>
-    )}
+    {
+      publishDate && (
+        <time datetime={publishDate.toISOString()}>
+          {formatPublicationDate(publishDate)}
+        </time>
+      )
+    }
     <h2>
-      <a href={href} aria-label={directory ? `${displayTitle} directory` : undefined}>
-        {directory && <span class="directory-prefix" aria-hidden="true">./</span>}{displayTitle}
+      <a
+        href={href}
+        aria-label={directory ? `${displayTitle} directory` : undefined}
+      >
+        {
+          directory && (
+            <span class="directory-prefix" aria-hidden="true">
+              ./
+            </span>
+          )
+        }{displayTitle}
       </a>
     </h2>
-    {directory ? (
-      DirectoryContent && <div class="directory-card-body"><DirectoryContent /></div>
-    ) : description && <p>{description}</p>}
+    {
+      directory
+        ? DirectoryContent && (
+            <div class="directory-card-body">
+              <DirectoryContent />
+            </div>
+          )
+        : description && <p>{description}</p>
+    }
   </div>
   {
     displayTags.length > 0 && (
       <ul aria-label="Tags">
-        {displayTags.map((tag) => <li>{tag}</li>)}
+        {displayTags.map((tag) => (
+          <li>{tag}</li>
+        ))}
       </ul>
     )
   }
 </article>
 
 <style>
+  .post-card > div > h2 {
+    margin: 0.25rem 0 1rem;
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+  }
+
   .directory-prefix {
     color: var(--blue);
   }

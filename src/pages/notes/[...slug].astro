@@ -25,12 +25,18 @@ export async function getStaticPaths() {
 }
 
 const { note } = Astro.props;
-const date = note.data.publishDate ? formatPublicationDate(note.data.publishDate) : undefined;
+const date = note.data.publishDate
+  ? formatPublicationDate(note.data.publishDate)
+  : undefined;
 const { Content, headings } = await render(note);
 ---
 
 <BaseLayout title={note.data.title} description={note.data.description}>
-  <FolderNavigationLayout collection="notes" navigation={note.data.navigation} headings={headings}>
+  <FolderNavigationLayout
+    collection="notes"
+    navigation={note.data.navigation}
+    headings={headings}
+  >
     <article class="article">
       <a class="back-link" href={notesCollectionDefinition.route}>
         <svg aria-hidden="true" viewBox="0 0 24 24">
