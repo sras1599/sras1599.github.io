@@ -11,8 +11,9 @@ interface Props {
   collection: "blog" | "notes" | "people";
   navigation?: Navigation;
   headings: MarkdownHeading[];
+  showToc?: boolean;
 }
-const { collection, navigation, headings } = Astro.props;
+const { collection, navigation, headings, showToc = true } = Astro.props;
 const route = CollectionRegistry.get(collection)!.route;
 const tree = navigation
   ? buildFolderNavigation(await getCollection(collection), navigation, route)
@@ -28,7 +29,7 @@ const currentUrl = Astro.url.pathname.replace(/\/$/, "");
       </nav>
     </aside>
   )}
-  <TableOfContents headings={headings} />
+  {showToc && <TableOfContents headings={headings} />}
   <slot />
 </main>
 

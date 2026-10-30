@@ -1,6 +1,6 @@
 /**
  * Register notes at the website-owned /notes route. The marker authors the
- * collection index and may set publish or preview defaults; individual notes
+ * collection index and may set publish, preview, or toc defaults; individual notes
  * provide public entry metadata; folder-sidebar entries may omit their date.
  * The importer projects shared navigation separately from collection metadata.
  */
@@ -15,6 +15,7 @@ export const notesCollectionDefinition = defineCollectionDefinition({
   metadataDefaults: {
     publish: false,
     preview: false,
+    toc: true,
     tags: [],
   },
   folderDefaultsSchema: notesFolderDefaultsSchema,
@@ -29,6 +30,7 @@ export const notesCollectionDefinition = defineCollectionDefinition({
       ...(data.publishDate === undefined ? {} : { publishDate: data.publishDate }),
       slug: data.slug,
       tags: data.tags ?? [],
+      toc: data.toc,
     };
   },
 });

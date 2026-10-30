@@ -117,6 +117,20 @@ Its slug determines `/notes/a-short-note`. The marker's `title`,
 `metaDescription`, and body render the `/notes` index, where notes appear newest
 first.
 
+Notes show an “On this page” table of contents when they have eligible headings.
+Add `toc: false` to a note's frontmatter to hide it, or set `toc: false` in a Notes
+`_website.md` marker alongside its existing properties to disable it for descendant
+notes. An individual note can override that default with `toc: true`. Both values
+must be YAML booleans, without quotes.
+
+The precedence is the collection default (`true`), then the owning marker's
+defaults, then the note's explicit value. Existing marker rules apply: a
+collection declaration establishes fresh defaults; within sidebar folders, nested
+markers without `collection` inherit defaults and may override `toc`. Outside
+sidebar folders, a defaults marker must declare `collection: notes`. A note with
+no eligible headings has no TOC even with `toc: true`. Hiding the TOC preserves
+folder navigation and heading anchors; Blog and People behavior is unchanged.
+
 The slug determines `/blog/an-example-article`, independent of the vault filename
 or folder. Changing a slug changes the URL; no automatic redirect is created.
 Removing `publish`, setting it to `false`, or deleting a note removes it at the next

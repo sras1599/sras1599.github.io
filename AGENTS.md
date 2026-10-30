@@ -25,6 +25,10 @@ to ownership, entry points, or the rules described here.
   `src/collections/notes/`, or `src/collections/people/` own its defaults, source
   metadata validation, public metadata projection (`projectEntry`), and
   generated-content schema.
+- Notes support boolean `toc` in note metadata and marker folder defaults, with
+  collection default `true` and note values overriding marker defaults. The
+  effective value is projected into generated Notes metadata using the existing
+  marker inheritance rules.
 - Routes are website-owned (`/blog`, `/notes`, `/people`), not configurable in vault markers.
   Source entry schemas and generated-content schemas have different roles: only
   explicitly projected frontmatter leaves the vault, but the selected body is
@@ -180,7 +184,9 @@ to ownership, entry points, or the rules described here.
   a 96px reading offset, selecting the final heading at the document bottom.
   TOC links share the folder explorer's purple underline on hover and keyboard focus,
   preserving their normal text color and weight.
-  Entries without headings have no TOC. Heading links respect reduced motion.
+  Entries without headings have no TOC. Notes pass their effective `toc` metadata
+  to the layout's `showToc` prop; `false` omits only the TOC. Other collections
+  retain the layout default of `true`. Heading links respect reduced motion.
   [folderNavigation.ts](src/components/folderNavigation.ts) builds the tree from
   selected public entries; [FolderNavigationNode.astro](src/components/FolderNavigationNode.astro)
   renders recursive disclosures with caret colors cycling blue, orange, green,

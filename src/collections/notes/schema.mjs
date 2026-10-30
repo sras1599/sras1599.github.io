@@ -14,12 +14,17 @@ import {
   selectionSchema,
 } from "../schema.mjs";
 
-export const notesFolderDefaultsSchema = selectionSchema.partial();
+const tocSchema = z.boolean({ error: "must be a boolean" });
+
+export const notesFolderDefaultsSchema = selectionSchema.partial().extend({
+  toc: tocSchema.optional(),
+});
 
 export const notesEntrySchema = baseEntrySchema
   .extend({
     description: nonemptyStringSchema.optional(),
     publishDate: publishDateSchema.optional(),
+    toc: tocSchema.optional(),
     tags: z
       .array(z.string({ error: "must be a string" }), {
         error: "must be a list of strings",
@@ -35,6 +40,7 @@ export const notesEntrySchema = baseEntrySchema
 export const notesContentSchema = baseContentSchema.extend({
   description: z.string().optional(),
   publishDate: z.coerce.date().optional(),
+  toc: tocSchema.default(true),
   tags: z.array(z.string()).default([]),
 }).refine((data) => data.navigation || data.publishDate, {
   path: ["publishDate"],

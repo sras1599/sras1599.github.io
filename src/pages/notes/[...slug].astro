@@ -36,6 +36,7 @@ const { Content, headings } = await render(note);
     collection="notes"
     navigation={note.data.navigation}
     headings={headings}
+    showToc={note.data.toc}
   >
     <article class="article">
       <a class="back-link" href={notesCollectionDefinition.route}>
