@@ -152,7 +152,16 @@ to ownership, entry points, or the rules described here.
   at the top, and center the Intro in the remaining space. Taller content grows
   naturally; subsequent sections retain their content-driven heights and normal
   scrolling. [SiteHeader.astro](src/components/SiteHeader.astro) owns the shared
-  header markup used by both layout modes.
+  header markup used by both layout modes, with Work, Blog, and Notes links.
+  [SiteFooter.astro](src/components/SiteFooter.astro) owns the shared footer,
+  rendered by `BaseLayout.astro` after page content outside the main landmark.
+  It centers accessible GitHub, LinkedIn, and Email SVG links above the copyright
+  and homepage-linked name at every viewport width. The icons' paper-colored
+  interiors and the name transition to a shared dark purple accent on hover and
+  keyboard focus, respecting reduced motion. Icon outlines stay ink-colored;
+  accessible link names are retained without visible tooltips. Its scoped styles
+  own footer presentation; `id="contact"` preserves existing homepage fragments.
+  Contact links live only in the footer; the homepage has no contact section.
   [HomepageGameShowcase.astro](src/components/HomepageGameShowcase.astro) owns
   the homepage showcase's repository-data integration, Kolkata calendar range,
   pre-rendered Month choices, mobile game selection, reduced-motion handling,

@@ -4,7 +4,7 @@
  * Markdown; local content images remain fluid within their bordered sections,
  * and abbreviations expose their expansions as paper-and-ink tooltips.
  * Desktop navigation uses a single row, while mobile centers the brand above a
- * tightly grouped row of destination links.
+ * tightly grouped row of Work, Blog, and Notes links.
  */
 :root {
   --paper: #faf9f6;
@@ -68,8 +68,7 @@ hr {
 }
 
 .brand-mark,
-.site-nav a,
-.contact-links a {
+.site-nav a {
   border: 2px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink);
   transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
@@ -103,8 +102,7 @@ hr {
 }
 
 .site-nav a:hover,
-.brand-mark:hover,
-.contact-links a:hover {
+.brand-mark:hover {
   box-shadow: 1px 1px 0 var(--ink);
   transform: translate(3px, 3px) rotate(0deg);
 }
@@ -119,10 +117,6 @@ hr {
 
 .nav-notes {
   background: var(--orange-soft) !important;
-}
-
-.nav-cta {
-  background: var(--pink-soft) !important;
 }
 
 .hero {
@@ -364,7 +358,6 @@ h3 {
   color: var(--muted);
 }
 
-.contact-section,
 .blog-header,
 .notes-header,
 .article {
@@ -372,30 +365,6 @@ h3 {
   border: 3px solid var(--ink);
   box-shadow: 8px 8px 0 var(--blue);
   padding: clamp(1.5rem, 4vw, 3rem);
-}
-
-.contact-section {
-  margin-top: 2rem;
-  background: var(--orange-soft);
-  box-shadow: 8px 8px 0 var(--green);
-}
-
-.contact-section p {
-  font-size: 1rem;
-}
-
-.contact-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.contact-links a {
-  background: var(--paper-high);
-  padding: 0.65rem 1rem;
-  font-family: "Space Mono", monospace;
-  font-weight: 700;
 }
 
 .blog-header,
@@ -646,10 +615,6 @@ h3 {
   .post-card {
     grid-template-columns: 1fr;
   }
-
-  .contact-section * {
-    padding: 0rem 1rem;
-  }
 }
 
 @media (max-width: 520px) {
@@ -742,19 +707,6 @@ h3 {
 
   .project-actions {
     flex-wrap: wrap;
-  }
-
-  .contact-links {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .contact-links a {
-    width: 100%;
-  }
-
-  .contact-section * {
-    padding: 0rem 1rem;
   }
 }
 

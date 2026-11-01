@@ -1,6 +1,6 @@
 ---
 /**
- * Render the public homepage's hero, game showcase, work, and contact sections
+ * Render the public homepage's hero, game showcase, and work sections
  * in their intended order. Each substantial section owns its internal data,
  * presentation, and browser behavior behind a focused module where needed.
  */
@@ -24,17 +24,6 @@ const projects = [
   },
 ];
 
-const links = [
-  {
-    label: "GitHub",
-    href: "https://github.com/sras1599",
-  },
-  {
-    label: "LinkedIn",
-    href: "https://www.linkedin.com/in/singh-ras/",
-  },
-  { label: "Email", href: "mailto:raspreet800@gmail.com" },
-];
 ---
 
 <BaseLayout homepage>
@@ -144,29 +133,6 @@ const links = [
     </div>
   </section>
 
-  <section
-    class="section contact-section"
-    id="contact"
-    aria-labelledby="contact-title"
-  >
-    <p class="eyebrow">Contact</p>
-    <h3 id="contact-title">*I rarely post on social media though</h3>
-    <div class="contact-links">
-      {
-        links.map((link) => (
-          <a
-            href={link.href}
-            target={link.href.startsWith("http") ? "_blank" : undefined}
-            rel={
-              link.href.startsWith("http") ? "noopener noreferrer" : undefined
-            }
-          >
-            {link.label}
-          </a>
-        ))
-      }
-    </div>
-  </section>
 </BaseLayout>
 
 <script>

@@ -6,13 +6,15 @@
  * Authored abbreviations are enhanced into focusable, styled tooltips while
  * retaining an accessible label containing both the term and its expansion.
  * Desktop presents the brand and navigation in one row, while mobile centers
- * the brand above a compact row containing all four navigation destinations.
+ * the brand above a compact row containing all three navigation destinations.
  * Homepage mode owns the main landmark and groups the shared header with the
  * named intro slot. Other pages supply their own main in the default slot.
+ * The shared footer follows page content outside the main landmark.
  */
 import "../styles/global.css";
 import ImageZoom from "../components/ImageZoom.astro";
 import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
 interface Props {
   title?: string;
@@ -66,6 +68,7 @@ const pageTitle =
           </>
         )
       }
+      <SiteFooter />
     </div>
     <ImageZoom />
     <script>
