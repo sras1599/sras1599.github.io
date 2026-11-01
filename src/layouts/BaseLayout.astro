@@ -9,7 +9,8 @@
  * the brand above a compact row containing all three navigation destinations.
  * Homepage mode owns the main landmark and groups the shared header with the
  * named intro slot. Other pages supply their own main in the default slot.
- * The shared footer follows page content outside the main landmark.
+ * The content wrapper fills spare viewport height, keeping the shared footer
+ * at the bottom of short pages and outside the main landmark.
  */
 import "../styles/global.css";
 import ImageZoom from "../components/ImageZoom.astro";
@@ -52,6 +53,7 @@ const pageTitle =
   </head>
   <body>
     <div class:list={["site-shell", { homepage }]}>
+      <div class="site-content">
       {
         homepage ? (
           <main>
@@ -68,6 +70,7 @@ const pageTitle =
           </>
         )
       }
+      </div>
       <SiteFooter />
     </div>
     <ImageZoom />

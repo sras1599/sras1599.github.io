@@ -155,6 +155,9 @@ to ownership, entry points, or the rules described here.
   header markup used by both layout modes, with Work, Blog, and Notes links.
   [SiteFooter.astro](src/components/SiteFooter.astro) owns the shared footer,
   rendered by `BaseLayout.astro` after page content outside the main landmark.
+  The site shell fills at least the viewport height; a growing content wrapper
+  pushes the footer to the bottom on short pages without stretching articles.
+  On longer pages, the footer follows the content in normal flow.
   It centers accessible GitHub, LinkedIn, and Email SVG links above the copyright
   and homepage-linked name at every viewport width. The icons' paper-colored
   interiors and the name transition to a shared dark purple accent on hover and

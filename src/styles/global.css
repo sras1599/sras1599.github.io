@@ -54,9 +54,17 @@ hr {
 }
 
 .site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
   width: min(100%, var(--container));
   margin: 0 auto;
-  padding: 1rem var(--gutter) 4rem;
+  padding: 1rem var(--gutter) 2rem;
+}
+
+.site-content {
+  flex: 1 0 auto;
+  min-width: 0;
 }
 
 .site-header {
@@ -145,11 +153,11 @@ hr {
   padding-top: 1rem;
 }
 
-.home-intro > .site-header {
+.home-intro>.site-header {
   flex-shrink: 0;
 }
 
-.home-intro > .hero {
+.home-intro>.hero {
   flex: 1;
   min-height: auto;
   align-content: center;
@@ -472,7 +480,7 @@ h3 {
   margin-bottom: 0;
 }
 
-.note-body p + :is(ul, ol) {
+.note-body p+ :is(ul, ol) {
   margin-top: 0.25rem;
 }
 
