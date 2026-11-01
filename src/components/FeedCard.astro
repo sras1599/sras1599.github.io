@@ -36,7 +36,7 @@ const DirectoryContent = rendered?.Content;
 <article class="post-card">
   <div>
     {
-      publishDate && (
+      !directory && publishDate && (
         <time datetime={publishDate.toISOString()}>
           {formatPublicationDate(publishDate)}
         </time>

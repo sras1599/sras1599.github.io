@@ -241,9 +241,9 @@ to ownership, entry points, or the rules described here.
   sorts entries newest first with ID tie-breaking, and filters `displayInFeed`.
   Hiding an entry from the feed does not unpublish its individual page.
   [FeedCard.astro](src/components/FeedCard.astro) owns blog/notes card markup,
-  optional dates, the blue `./` directory prefix, and rendered directory marker
+  optional dates for ordinary entries, the blue `./` directory prefix, and rendered directory marker
   bodies resolved through the `directoryCards` collection. Marker Markdown replaces
-  directory descriptions; ordinary cards keep their frontmatter descriptions;
+  directory descriptions; directory cards omit dates; ordinary cards keep their frontmatter descriptions;
   directory badges use marker tags exclusively, while overview pages and ordinary
   cards retain their own tags. There is no fallback to overview tags;
   [publication.ts](src/utils/publication.ts) owns their newest-first ordering with
