@@ -294,21 +294,24 @@ async function discoverVault(
       }
 
       const definition = registry.get(collectionId);
-      const inheritedSidebar = owner?.collectionId === collectionId ? owner.sidebar : undefined;
+      const sameCollection = owner?.collectionId === collectionId;
+      const inheritedSidebar = sameCollection ? owner.sidebar : undefined;
+      const inheritedSortBy = sameCollection ? owner.sortBy : "title";
       owner = definition
         ? resolveCollectionBoundary(document, markerPath, definition)
         : { markerPath, collectionId, registered: false };
       if (owner.registered) {
         owner.sidebar = inheritedSidebar;
+        owner.sortBy = inheritedSortBy;
         result.boundaries.push(owner);
       } else {
         console.warn(
           `Vault: unknown collection ${collectionId} at ${markerPath}; skipping its entries.`,
         );
       }
-    } else if (declaresDirectory || owner?.sidebar) {
+    } else if (declaresDirectory || owner?.sidebar || Object.hasOwn(document.metadata, "sortBy")) {
       if (!owner?.registered) {
-        throw new Error(`${markerPath}: directory requires a registered collection`);
+        throw new Error(`${markerPath}: directory configuration requires a registered collection`);
       }
       const metadata = parseSchema(
         withDirectoryProperties(owner.definition.folderDefaultsSchema.strict()),
@@ -326,6 +329,19 @@ async function discoverVault(
       };
     }
 
+    if (owner?.registered && document.metadata.sortBy !== undefined) {
+      owner = { ...owner, sortBy: document.metadata.sortBy };
+      if (owner.sidebar && !declaresDirectory) {
+        owner.sidebar = {
+          ...owner.sidebar,
+          sortRules: [
+            ...owner.sidebar.sortRules,
+            { folders: relativeFolders(owner.sidebar.dir, dir), sortBy: owner.sortBy },
+          ],
+        };
+      }
+    }
+
     if (declaresDirectory) {
       if (!owner?.registered) {
         throw new Error(`${markerPath}: directory requires a registered collection`);
@@ -341,12 +357,17 @@ async function discoverVault(
       }
       result.sidebars.set(key, markerPath);
       const parent = owner.sidebar
-        ? { root: owner.sidebar.root, folders: relativeFolders(owner.sidebar.dir, dir) }
+        ? {
+          root: owner.sidebar.root,
+          folders: relativeFolders(owner.sidebar.dir, dir),
+          sortRules: owner.sidebar.sortRules,
+        }
         : undefined;
       owner = {
         ...owner,
         sidebar: {
           root, dir, parent,
+          sortRules: [{ folders: [], sortBy: owner.sortBy ?? "title" }],
           card: {
             file: markerPath,
             body: document.body,
@@ -440,9 +461,11 @@ function resolveCollectionBoundary(document, markerPath, definition) {
   };
 }
 
-// Directory tags label the card only, even when the collection supports tag defaults.
+// Sorting configures navigation, not notes. Directory tags label the card only,
+// even when the collection supports tag defaults.
 function parseFolderDefaults(definition, metadata, file) {
   const folderMetadata = { ...metadata };
+  delete folderMetadata.sortBy;
   if (metadata.directory === true) delete folderMetadata.tags;
   return parseSchema(definition.folderDefaultsSchema, folderMetadata, file);
 }
@@ -571,9 +594,9 @@ function parseSelectedNote(text, file, owner, route, preview) {
     );
   }
 
-  for (const property of ["directory", "directoryCard", "sidebar", "sidebarTitle", "sidebarSlug", "navigation"]) {
+  for (const property of ["directory", "directoryCard", "sidebar", "sidebarTitle", "sidebarSlug", "navigation", "sortBy"]) {
     if (Object.hasOwn(rawMetadata, property)) {
-      throw new Error(`${file}: ${property} is reserved for directory navigation; configure directory: true, title, and slug in _website.md`);
+      throw new Error(`${file}: ${property} is reserved for directory navigation; configure it in _website.md`);
     }
   }
 
@@ -592,7 +615,7 @@ function parseSelectedNote(text, file, owner, route, preview) {
 
   let navigation;
   if (owner.sidebar) {
-    const { root, dir, parent } = owner.sidebar;
+    const { root, dir, parent, sortRules } = owner.sidebar;
     const folders = relativeFolders(dir, path.posix.dirname(file));
     const overview = path.posix.basename(file) === "_index.md";
     const basename = path.posix.basename(file, ".md");
@@ -621,6 +644,7 @@ function parseSelectedNote(text, file, owner, route, preview) {
     navigation = {
       root,
       folders,
+      sortRules,
       overview,
       ...(overview && folders.length === 0 && parent ? { parent } : {}),
     };

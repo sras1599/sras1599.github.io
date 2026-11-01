@@ -236,7 +236,32 @@ Directory slugs must be unique within a collection. Switching collections ends
 inherited navigation. Only selected documents contribute to trees; unpublished
 overviews are unlinked and empty branches disappear.
 
-Folders sort before documents using English natural ordering. The current page is
+Folders sort before documents using English natural ordering. To change the note
+order, add a text property to the folder's `_website.md`:
+
+```yaml
+sortBy: -publishDate
+```
+
+Supported values are `title` (natural alphabetical order), `-title` (reverse
+alphabetical), `publishDate` (oldest first), and `-publishDate` (newest first).
+The default is `title`. Other values fail importing with the marker path and valid
+choices. `sortBy` belongs only in markers, not individual notes.
+
+The setting applies to the marker's folder and descendants. A nested marker can
+override it without declaring `directory: true` or repeating `collection`.
+Nested directory roots inherit the effective setting; changing collections resets
+it to `title` unless the new marker supplies a setting. Marker settings can also
+be established before a directory root. They remain separate from note metadata.
+
+Only note links are affected: subfolders retain their existing alphabetical order,
+and folder overview dates do not change their position. Notes without a public
+`publishDate` appear last in either date direction. Equal dates use ascending
+natural title order; equal titles use entry ID. People entries currently have no
+public dates, so their date ordering falls back to title. Feeds and directory-card
+ordering are unchanged.
+
+The current page is
 highlighted and its ancestors open. Disclosure arrows expand branches; linked
 titles navigate to overviews. Desktop uses a sticky, scrollable sidebar; mobile
 starts with the directory root collapsed above the article. That root is the

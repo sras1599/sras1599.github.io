@@ -7,6 +7,9 @@ const label = z.string().refine((value) => Boolean(value.trim()), "must be nonem
 const tagsSchema = z.array(z.string({ error: "must be a string" }), {
   error: "must be a list of strings",
 });
+const sortBySchema = z.enum(["title", "-title", "publishDate", "-publishDate"], {
+  error: "must be title, -title, publishDate, or -publishDate",
+});
 
 export const sidebarSchema = z.strictObject({ title: label, slug });
 
@@ -18,6 +21,7 @@ export function withDirectoryProperties(schema) {
     title: label.optional(),
     slug: slug.optional(),
     tags: tagsSchema.optional(),
+    sortBy: sortBySchema.optional(),
   }).superRefine((data, context) => {
     if (data.directory === true) {
       for (const property of ["title", "slug"]) {
@@ -47,6 +51,11 @@ export const directoryCardSchema = sidebarSchema.extend({
 const locationSchema = z.strictObject({
   root: sidebarSchema,
   folders: z.array(label),
+  // Ancestor rules travel with descendants even when the ancestor has no public notes.
+  sortRules: z.array(z.strictObject({
+    folders: z.array(label),
+    sortBy: sortBySchema,
+  })).default([]),
 });
 
 export const navigationSchema = locationSchema.extend({

@@ -41,6 +41,9 @@ to ownership, entry points, or the rules described here.
   metadata. Notes in sidebar folders may omit dates; Blog requirements stay intact.
   Optional directory-marker tags are validated as lists of strings and projected
   into `directoryCards`; omitted tags become an empty list.
+  Marker-only `sortBy` accepts `title`, `-title`, `publishDate`, or `-publishDate`;
+  shared navigation metadata carries ancestor folder sorting rules separately
+  from note defaults and public note properties.
 - Adding a collection also requires Astro registration and page templates; changing
   the registry alone does not create a rendered route.
 
@@ -63,6 +66,8 @@ to ownership, entry points, or the rules described here.
   folders, markers without `collection` may override folder defaults. Changing
   collections ends inherited navigation. Nested sidebar roots own their explorer;
   their selected root overview is also linked in the parent tree.
+  Folder `sortBy` settings inherit through markers and nested directory roots,
+  with local overrides; changing collections resets sorting to `title`.
 - Metadata precedence is collection defaults → owning marker defaults → note
   values. Arrays replace rather than merge. Production selects effective
   `publish: true`; writing mode additionally selects effective `preview: true`.
@@ -206,6 +211,10 @@ to ownership, entry points, or the rules described here.
   `FolderNavigationLayout.astro` animates folder expansion and collapse while
   respecting reduced motion; `global.css` owns vertical child guides and row hover styling. Tree
   membership follows folder metadata independently of authored entry URL overrides.
+  Folder sorting rules order note links by title or public date in either direction;
+  undated notes stay last, date ties use ascending natural titles, and title ties
+  use entry IDs. Subfolders remain first and alphabetically ordered. Ancestor rules
+  apply even when a folder has no directly selected notes; feeds are unaffected.
   The directory root is the explorer's sole heading and mobile disclosure; there
   is no additional Browse heading.
   Unrelated pages keep their existing layout; no site-wide explorer is created.

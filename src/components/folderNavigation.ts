@@ -4,9 +4,11 @@ import type { navigationSchema } from "../collections/sidebar.mjs";
 import { collectionEntryUrl } from "../collections/definition.mjs";
 
 export type Navigation = z.infer<typeof navigationSchema>;
+type SortBy = Navigation["sortRules"][number]["sortBy"];
+
 export type NavigationEntry = {
   id: string;
-  data: { title: string; navigation?: Navigation };
+  data: { title: string; publishDate?: Date; navigation?: Navigation };
 };
 
 export type NavigationNode = {
@@ -27,6 +29,8 @@ export function buildFolderNavigation(
     folder: true,
     children: [],
   };
+  const sortRules = new Map<string, SortBy>();
+  const noteEntries = new Map<NavigationNode, NavigationEntry>();
 
   for (const entry of entries) {
     const descriptor = entry.data.navigation;
@@ -35,7 +39,11 @@ export function buildFolderNavigation(
     const parentTree = descriptor.parent?.root.slug === navigation.root.slug;
     if (!ownTree && !parentTree) continue;
 
-    const folders = ownTree ? descriptor.folders : descriptor.parent!.folders;
+    const location = ownTree ? descriptor : descriptor.parent!;
+    const folders = location.folders;
+    for (const rule of location.sortRules) {
+      sortRules.set(rule.folders.join("/"), rule.sortBy);
+    }
     let folder = root;
     for (const label of folders) {
       let child = folder.children.find((node) => node.folder && node.folderName === label);
@@ -51,18 +59,46 @@ export function buildFolderNavigation(
       folder.href = href;
       folder.label = entry.data.title;
     } else {
-      folder.children.push({ label: entry.data.title, href, folder: false, children: [] });
+      const note = { label: entry.data.title, href, folder: false, children: [] };
+      folder.children.push(note);
+      noteEntries.set(note, entry);
     }
   }
 
-  const sort = (node: NavigationNode) => {
-    node.children.sort((left, right) =>
-      Number(right.folder) - Number(left.folder) ||
-      left.label.localeCompare(right.label, "en", { numeric: true }),
-    );
-    node.children.forEach(sort);
+  const sort = (node: NavigationNode, folders: string[], inheritedSortBy: SortBy) => {
+    const sortBy = sortRules.get(folders.join("/")) ?? inheritedSortBy;
+    const direction = sortBy.startsWith("-") ? -1 : 1;
+    node.children.sort((left, right) => {
+      if (left.folder !== right.folder) return Number(right.folder) - Number(left.folder);
+
+      const titleOrder = left.label.localeCompare(right.label, "en", { numeric: true });
+      if (left.folder) {
+        return titleOrder || left.folderName!.localeCompare(right.folderName!, "en");
+      }
+
+      const leftEntry = noteEntries.get(left)!;
+      const rightEntry = noteEntries.get(right)!;
+      const idOrder = leftEntry.id.localeCompare(rightEntry.id, "en");
+      if (sortBy === "title" || sortBy === "-title") {
+        return direction * titleOrder || idOrder;
+      }
+
+      const leftDate = leftEntry.data.publishDate;
+      const rightDate = rightEntry.data.publishDate;
+      // Missing dates remain last even when chronological order is reversed.
+      if (leftDate === undefined && rightDate !== undefined) return 1;
+      if (leftDate !== undefined && rightDate === undefined) return -1;
+      if (leftDate !== undefined && rightDate !== undefined) {
+        const dateOrder = leftDate.getTime() - rightDate.getTime();
+        if (dateOrder !== 0) return direction * dateOrder;
+      }
+      return titleOrder || idOrder;
+    });
+    for (const child of node.children) {
+      if (child.folder) sort(child, [...folders, child.folderName!], sortBy);
+    }
   };
-  sort(root);
+  sort(root, [], "title");
   return root;
 }
 
