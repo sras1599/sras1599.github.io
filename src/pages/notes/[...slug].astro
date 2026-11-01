@@ -47,7 +47,7 @@ const { Content, headings } = await render(note);
       </a>
       <header class="article-header">
         {date && <time datetime={date}>{date}</time>}
-        <h2>{note.data.title}</h2>
+        <h1>{note.data.title}</h1>
         {note.data.description && <p>{note.data.description}</p>}
         {
           note.data.tags.length > 0 && (
