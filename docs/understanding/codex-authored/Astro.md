@@ -141,7 +141,7 @@ converts one entry's body into a component that can be placed in the page:
 <Content />
 ```
 
-The importer selects only `publish: true` notes for production. Both the listing and `getStaticPaths()` consume that same selected collection. Local writing preview can additionally include `preview: true` notes.
+The importer selects only effective `publish: true` notes without effective `preview: true` for production. Both the listing and `getStaticPaths()` consume that same selected collection. Effective `preview: true` overrides publication and makes a note exclusive to local writing preview, which includes both published and preview-only notes.
 
 ## Build-time versus browser-time code
 

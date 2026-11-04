@@ -54,8 +54,8 @@ const rasterImagePattern = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
 
 /**
  * Import from vaultPath into projectRoot using the supplied collection registry.
- * preview includes notes with effective preview: true in addition to published
- * notes; folder defaults participate in both decisions. Return counts of selected
+ * Effective preview: true makes a note exclusive to preview mode, overriding
+ * publish: true; folder defaults participate in both decisions. Return counts of selected
  * entries and unique generated media assets after both output directories sync.
  * Errors reject the call so the CLI can report them or retain its current preview.
  */
@@ -606,10 +606,10 @@ function parseSelectedNote(text, file, owner, route, preview) {
     ...owner.effectiveFolderDefaults,
     ...rawMetadata,
   };
-  if (
-    effectiveMetadata.publish !== true &&
-    !(preview && effectiveMetadata.preview === true)
-  ) {
+  // Preview takes precedence after folder defaults and note overrides merge.
+  const previewOnly = effectiveMetadata.preview === true;
+  const published = effectiveMetadata.publish === true && !previewOnly;
+  if (!published && !(preview && previewOnly)) {
     return null;
   }
 
@@ -666,7 +666,7 @@ function parseSelectedNote(text, file, owner, route, preview) {
   return {
     file,
     body: document.body,
-    previewOnly: validatedMetadata.publish !== true,
+    previewOnly,
     directoryDocument,
     route,
     identity: {

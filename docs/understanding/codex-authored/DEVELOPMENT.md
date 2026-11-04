@@ -14,8 +14,9 @@ read local writing. The importer never edits the vault.
 - `npm run routes`: list current published routes grouped alphabetically by collection,
   with natural path ordering within each group and standalone pages last.
 - `npm run routes -- --preview`: also include entries selected by `preview: true`,
-  matching writing mode. Preview-only routes have a `(preview)` suffix; published
-  routes remain unlabeled even if `preview: true` is also set. `--help` shows usage.
+  matching writing mode. Routes with effective `preview: true` have a `(preview)`
+  suffix even if `publish: true` is also set; published routes remain unlabeled.
+  `--help` shows usage.
 
 Route listing reads `VAULT_PATH` from the same environment as development. It shares
 the importer's metadata selection, slug resolution, and collision validation, but
@@ -71,8 +72,10 @@ default to `false`, `displayInFeed` defaults to `true`, and `tags` defaults to a
 empty list. A note may opt out of an inherited default with `publish: false`.
 
 Only the YAML boolean `true` selects a note: the string `"true"` does not.
-Production imports effective `publish: true`; `npm run dev:writing` also imports
-effective `preview: true`. The entire selected note becomes the article, so keep
+Production imports effective `publish: true` only when effective `preview` is not
+`true`. Effective `preview: true` overrides `publish: true`, including an inherited
+folder value, and makes the note exclusive to `npm run dev:writing`. Writing mode
+includes both published and preview-only notes. The entire selected note becomes the article, so keep
 planning text in separate notes. A `collection` property is invalid on an ordinary
 note; move the note beneath the intended marker or edit that `_website.md`.
 
@@ -88,7 +91,7 @@ tags:
 ---
 ```
 
-For unpublished work, use `preview: true` without `publish: true` and run
+For unpublished work, use `preview: true` and run
 `npm run dev:writing`. Preview posts require the same metadata. Production builds
 always exclude preview-only notes, even after a writing-preview session.
 

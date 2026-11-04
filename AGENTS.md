@@ -70,7 +70,8 @@ to ownership, entry points, or the rules described here.
   with local overrides; changing collections resets sorting to `title`.
 - Metadata precedence is collection defaults → owning marker defaults → note
   values. Arrays replace rather than merge. Production selects effective
-  `publish: true`; writing mode additionally selects effective `preview: true`.
+  `publish: true` unless effective `preview: true` overrides it, making the note
+  exclusive to writing mode. Writing mode includes published and preview-only notes.
   These flags default to false. `publishDate` does not schedule publication.
   Directory-marker tags label only the card and are excluded from folder defaults
   in every collection. Ordinary Blog markers retain their existing tag defaults.
