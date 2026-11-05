@@ -204,7 +204,9 @@ to ownership, entry points, or the rules described here.
   rendered statically; a browser controller marks the current section accessibly at
   a 96px reading offset, selecting the final heading at the document bottom.
   TOC links share the folder explorer's purple underline on hover and keyboard focus,
-  preserving their normal text color and weight.
+  preserving their normal text color and weight. These links and the previous/next
+  links reveal their underline from left to right over 180ms, with no transition
+  under reduced motion. The folder explorer's current-page underline stays visible.
   Entries without eligible headings have no TOC. Notes pass their effective `toc` metadata
   to the layout's `showToc` prop; `false` omits only the TOC. Other collections
   retain the layout default of `true`. Heading links respect reduced motion.
@@ -219,6 +221,12 @@ to ownership, entry points, or the rules described here.
   undated notes stay last, date ties use ascending natural titles, and title ties
   use entry IDs. Subfolders remain first and alphabetically ordered. Ancestor rules
   apply even when a folder has no directly selected notes; feeds are unaffected.
+  Below directory articles in all three collections, Previous and Next links reuse
+  this sorted tree and stay among direct notes in the same folder. Folder overviews
+  show only Next to their first direct note; that note links back to the overview
+  with Previous when available. Links never wrap or cross into subfolders, and
+  empty folders and standalone entries have none. The shared layout groups the
+  article and these links in one column while preserving the article's preview markup.
   The directory root is the explorer's sole heading and mobile disclosure; there
   is no additional Browse heading.
   Unrelated pages keep their existing layout; no site-wide explorer is created.

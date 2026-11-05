@@ -727,10 +727,75 @@ h3 {
   min-width: 0;
 }
 
-.article-page>.article {
+.article-column {
+  width: 100%;
+  min-width: 0;
+}
+
+.article-column>.article {
   width: 100%;
   min-width: 0;
   margin: 0;
+}
+
+.folder-page-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.folder-page-links a {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.folder-page-direction {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.folder-page-next {
+  grid-column: 2;
+  text-align: right;
+}
+
+.folder-page-links .folder-page-next {
+  align-items: flex-end;
+}
+
+.navigation-link-text {
+  background-image: linear-gradient(var(--purple), var(--purple));
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0% 2px;
+  padding-bottom: 0.15em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size 180ms ease;
+}
+
+.folder-page-links .navigation-link-text {
+  max-width: 100%;
+}
+
+.folder-page-links a:is(:hover, :focus-visible) .navigation-link-text,
+.folder-explorer summary:is(:hover, :focus-visible) .navigation-link-text,
+.folder-explorer a:is(:hover, :focus-visible) .navigation-link-text,
+.toc-panel a:is(:hover, :focus-visible) .navigation-link-text,
+.folder-explorer a[aria-current="page"] .navigation-link-text {
+  background-size: 100% 2px;
+}
+
+.folder-page-links a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
 }
 
 .folder-sidebar,
@@ -785,15 +850,6 @@ h3 {
   padding-block: 0.15rem;
 }
 
-.folder-explorer li summary:is(:hover, :focus-visible)>:not(.folder-disclosure),
-.folder-leaf:is(:hover, :focus-visible),
-.toc-panel a:is(:hover, :focus-visible) {
-  text-decoration: underline;
-  text-decoration-color: var(--purple);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 0.3em;
-}
-
 .folder-explorer li summary::-webkit-details-marker {
   display: none;
 }
@@ -816,10 +872,6 @@ h3 {
 
 .folder-explorer a[aria-current="page"] {
   font-weight: 700;
-  text-decoration: underline;
-  text-decoration-color: var(--purple);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 0.3em;
 }
 
 .folder-explorer :is(a, summary):focus-visible,
@@ -882,7 +934,8 @@ h3 {
 
   .folder-explorer li summary,
   .folder-leaf,
-  .folder-disclosure {
+  .folder-disclosure,
+  .navigation-link-text {
     transition: none;
   }
 }
@@ -902,7 +955,7 @@ h3 {
     grid-row: 1;
   }
 
-  .article-page>.article {
+  .article-page>.article-column {
     grid-column: 2;
     grid-row: 1;
   }

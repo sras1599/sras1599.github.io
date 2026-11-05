@@ -32,6 +32,7 @@ const gameLabels: Record<GameId, string> = {
 const modeButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode-button]"));
 const modePanels = Array.from(document.querySelectorAll<HTMLElement>("[data-mode-panel]"));
 const pasteInput = document.querySelector<HTMLTextAreaElement>("#shared-result")!;
+const parseButton = document.querySelector<HTMLButtonElement>("[data-parse]")!;
 const parseError = document.querySelector<HTMLElement>("[data-parse-error]")!;
 const manualGame = document.querySelector<HTMLSelectElement>("#manual-game")!;
 const editor = document.querySelector<HTMLElement>("[data-editor]")!;
@@ -308,7 +309,14 @@ async function save(replaceExisting: boolean) {
 
 modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.modeButton as "paste" | "manual")));
 document.querySelector("[data-switch-manual]")!.addEventListener("click", () => setMode("manual"));
-document.querySelector("[data-parse]")!.addEventListener("click", () => {
+document.addEventListener("keydown", (event) => {
+  if (!event.ctrlKey || event.key !== "Enter" || event.repeat || event.isComposing) return;
+  if (!modePanels.some((panel) => panel.dataset.modePanel === "paste" && !panel.hidden)) return;
+
+  event.preventDefault();
+  parseButton.click();
+});
+parseButton.addEventListener("click", () => {
   if (saving) return;
   parseError.hidden = true;
   try {

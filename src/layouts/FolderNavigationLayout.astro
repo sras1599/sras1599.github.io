@@ -5,7 +5,7 @@ import { getCollection } from "astro:content";
 import { CollectionRegistry } from "../collections/registry.mjs";
 import FolderNavigationNode from "../components/FolderNavigationNode.astro";
 import TableOfContents from "../components/TableOfContents.astro";
-import { buildFolderNavigation, type Navigation } from "../components/folderNavigation";
+import { buildFolderNavigation, getFolderPageLinks, type Navigation } from "../components/folderNavigation";
 
 interface Props {
   collection: "blog" | "notes" | "people";
@@ -20,6 +20,7 @@ const tree = navigation
   ? buildFolderNavigation(await getCollection(collection), navigation, route)
   : undefined;
 const currentUrl = Astro.url.pathname.replace(/\/$/, "");
+const { previous, next } = tree ? getFolderPageLinks(tree, currentUrl) : {};
 ---
 
 <main class="article-page">
@@ -31,7 +32,25 @@ const currentUrl = Astro.url.pathname.replace(/\/$/, "");
     </aside>
   )}
   {showToc && <TableOfContents headings={tocHeadings} />}
-  <slot />
+  <div class="article-column">
+    <slot />
+    {(previous || next) && (
+      <nav class="folder-page-links" aria-label="Previous and next pages">
+        {previous && (
+          <a class="folder-page-previous" href={previous.href} rel="prev" data-no-preview>
+            <span class="folder-page-direction navigation-link-text"><span aria-hidden="true">←</span> Previous</span>
+            <span class="navigation-link-text">{previous.label}</span>
+          </a>
+        )}
+        {next && (
+          <a class="folder-page-next" href={next.href} rel="next" data-no-preview>
+            <span class="folder-page-direction navigation-link-text">Next <span aria-hidden="true">→</span></span>
+            <span class="navigation-link-text">{next.label}</span>
+          </a>
+        )}
+      </nav>
+    )}
+  </div>
 </main>
 
 <script>

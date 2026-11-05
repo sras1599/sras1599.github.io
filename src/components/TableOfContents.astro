@@ -32,7 +32,7 @@ const items = headings.map((heading) => {
           {items.map((heading) => (
             <li style={{ "--toc-level": heading.level }}>
               <a href={`#${encodeURIComponent(heading.slug)}`} data-heading-id={heading.slug} data-no-preview>
-                {heading.text}
+                <span class="navigation-link-text">{heading.text}</span>
               </a>
             </li>
           ))}

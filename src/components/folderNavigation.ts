@@ -105,3 +105,30 @@ export function buildFolderNavigation(
 export function containsCurrentPage(node: NavigationNode, currentUrl: string): boolean {
   return node.href === currentUrl || node.children.some((child) => containsCurrentPage(child, currentUrl));
 }
+
+/** Adjacent pages stay among direct notes; folder overviews only lead forward. */
+export function getFolderPageLinks(
+  tree: NavigationNode,
+  currentUrl: string,
+): { previous?: NavigationNode; next?: NavigationNode } {
+  const notes = tree.children.filter((child) => !child.folder);
+  if (tree.href === currentUrl) {
+    return { next: notes[0] };
+  }
+
+  const index = notes.findIndex((note) => note.href === currentUrl);
+  if (index !== -1) {
+    let previous = notes[index - 1];
+    if (index === 0 && tree.href) {
+      previous = tree;
+    }
+    return { previous, next: notes[index + 1] };
+  }
+
+  for (const child of tree.children) {
+    if (child.folder && containsCurrentPage(child, currentUrl)) {
+      return getFolderPageLinks(child, currentUrl);
+    }
+  }
+  return {};
+}

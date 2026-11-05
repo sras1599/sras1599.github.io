@@ -16,15 +16,15 @@ const active = node.href === currentUrl;
         <summary>
           <span class="folder-disclosure" style={{ color: caretColors[depth % caretColors.length] }} aria-hidden="true">▸</span>
           {node.href ? (
-            <a href={node.href} aria-current={active ? "page" : undefined} data-no-preview>{node.label}</a>
-          ) : <span>{node.label}</span>}
+            <a href={node.href} aria-current={active ? "page" : undefined} data-no-preview><span class="navigation-link-text">{node.label}</span></a>
+          ) : <span class="navigation-link-text">{node.label}</span>}
         </summary>
         <ul>
           {node.children.map((child) => <Astro.self node={child} currentUrl={currentUrl} depth={depth + 1} />)}
         </ul>
       </details>
     ) : node.href ? (
-      <a class="folder-leaf" href={node.href} aria-current={active ? "page" : undefined} data-no-preview>{node.label}</a>
+      <a class="folder-leaf" href={node.href} aria-current={active ? "page" : undefined} data-no-preview><span class="navigation-link-text">{node.label}</span></a>
     ) : <span>{node.label}</span>
   }
 </li>
