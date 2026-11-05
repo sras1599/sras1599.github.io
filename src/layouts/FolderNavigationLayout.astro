@@ -14,6 +14,7 @@ interface Props {
   showToc?: boolean;
 }
 const { collection, navigation, headings, showToc = true } = Astro.props;
+const tocHeadings = navigation ? headings.filter((heading) => heading.depth <= 3) : headings;
 const route = CollectionRegistry.get(collection)!.route;
 const tree = navigation
   ? buildFolderNavigation(await getCollection(collection), navigation, route)
@@ -29,7 +30,7 @@ const currentUrl = Astro.url.pathname.replace(/\/$/, "");
       </nav>
     </aside>
   )}
-  {showToc && <TableOfContents headings={headings} />}
+  {showToc && <TableOfContents headings={tocHeadings} />}
   <slot />
 </main>
 

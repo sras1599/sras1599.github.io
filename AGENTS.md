@@ -197,12 +197,15 @@ to ownership, entry points, or the rules described here.
   Directory metadata alone enables the left folder explorer.
   [TableOfContents.astro](src/components/TableOfContents.astro) owns the right
   “On this page” navigation, using Astro's rendered H1–H6 heading metadata and
-  existing anchor IDs, excluding the generated footnote heading. Its links are
+  existing anchor IDs, excluding the generated footnote heading. The shared layout
+  limits TOCs to H1–H3 for all pages with directory navigation, including overviews
+  and descendants across collections; standalone pages retain H1–H6.
+  Its links are
   rendered statically; a browser controller marks the current section accessibly at
   a 96px reading offset, selecting the final heading at the document bottom.
   TOC links share the folder explorer's purple underline on hover and keyboard focus,
   preserving their normal text color and weight.
-  Entries without headings have no TOC. Notes pass their effective `toc` metadata
+  Entries without eligible headings have no TOC. Notes pass their effective `toc` metadata
   to the layout's `showToc` prop; `false` omits only the TOC. Other collections
   retain the layout default of `true`. Heading links respect reduced motion.
   [folderNavigation.ts](src/components/folderNavigation.ts) builds the tree from
