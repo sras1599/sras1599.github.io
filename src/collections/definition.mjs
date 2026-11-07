@@ -17,6 +17,7 @@ export function defineCollectionDefinition({
   id,
   route,
   indexSchema,
+  supportsDirectories = true,
   metadataDefaults = { publish: false, preview: false },
   folderDefaultsSchema = z.object({}),
   entrySchema,
@@ -29,20 +30,22 @@ export function defineCollectionDefinition({
   const normalizedRoute = normalizeCollectionRoute(route, {
     label: `route for collection ${id}`,
   });
+  const markerSchema = z.strictObject({
+    collection: z.literal(id),
+    ...(indexSchema?.partial().shape ?? {}),
+    ...folderDefaultsSchema.shape,
+  });
 
   return {
     id,
     route: normalizedRoute,
     indexSchema,
+    supportsDirectories,
     metadataDefaults,
     folderDefaultsSchema,
     entrySchema,
     projectEntry,
-    markerSchema: withDirectoryProperties(z.strictObject({
-      collection: z.literal(id),
-      ...(indexSchema?.partial().shape ?? {}),
-      ...folderDefaultsSchema.shape,
-    })),
+    markerSchema: supportsDirectories ? withDirectoryProperties(markerSchema) : markerSchema,
   };
 }
 
@@ -65,7 +68,7 @@ export function normalizeCollectionRoute(route, { label = "route" } = {}) {
     throw new Error(`${label} must be an absolute URL path`);
   }
   if (route === "/") {
-    throw new Error(`${label} must not be the site root /`);
+    return route;
   }
   if (route.includes("?") || route.includes("#")) {
     throw new Error(`${label} must not contain a query string or fragment`);
@@ -104,5 +107,6 @@ export function normalizeCollectionSlug(slug, { label = "slug" } = {}) {
 
 /** Construct URLs from a website-owned route and canonical entry slug. */
 export function collectionEntryUrl(route, slug) {
-  return `${normalizeCollectionRoute(route)}/${normalizeCollectionSlug(slug)}`;
+  const root = normalizeCollectionRoute(route);
+  return `${root === "/" ? "" : root}/${normalizeCollectionSlug(slug)}`;
 }

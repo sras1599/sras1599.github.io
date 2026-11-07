@@ -21,7 +21,8 @@ import { CollectionRegistry } from "../collections/registry.mjs";
   aria-label="Note preview"
   tabindex="0"
   data-routes={JSON.stringify(
-    Array.from(CollectionRegistry.values(), (collection) => collection.route),
+    Array.from(CollectionRegistry.values(), (collection) => collection.route)
+      .filter((route) => route !== "/"),
   )}
   hidden
 >

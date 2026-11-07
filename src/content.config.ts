@@ -1,5 +1,5 @@
 /**
- * Register Astro's build-time blog, notes, and people content collections.
+ * Register Astro's build-time blog, notes, people, and pages content collections.
  * Ordinary vault entries load by collection ID, while authored collection
  * indexes and directory card bodies load from dedicated generated directories
  * so they never enter entry queries or entry schemas.
@@ -13,6 +13,7 @@ import {
 import { blogContentSchema } from "./collections/blog/schema.mjs";
 import { notesContentSchema } from "./collections/notes/schema.mjs";
 import { peopleContentSchema } from "./collections/people/schema.mjs";
+import { pagesContentSchema } from "./collections/pages/schema.mjs";
 import { indexContentSchema } from "./collections/schema.mjs";
 import { directoryCardSchema } from "./collections/sidebar.mjs";
 
@@ -36,9 +37,14 @@ const collectionIndexes = defineCollection({
   schema: indexContentSchema,
 });
 
+const pages = defineCollection({
+  loader: collectionLoader("pages"),
+  schema: pagesContentSchema,
+});
+
 const directoryCards = defineCollection({
   loader: directoryCardLoader(),
   schema: directoryCardSchema,
 });
 
-export const collections = { blog, notes, people, collectionIndexes, directoryCards };
+export const collections = { blog, notes, people, pages, collectionIndexes, directoryCards };

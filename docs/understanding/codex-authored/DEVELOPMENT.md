@@ -139,9 +139,55 @@ or folder. Changing a slug changes the URL; no automatic redirect is created.
 Removing `publish`, setting it to `false`, or deleting a note removes it at the next
 successful import/build. A vault with no selected notes produces an empty blog.
 
+## Standalone pages
+
+Use the `pages` collection for vault-authored pages relative to the website root.
+Create a `_website.md` marker in their folder:
+
+```yaml
+---
+collection: pages
+---
+```
+
+Unlike Blog, Notes, and People, Pages has no collection index. Its marker accepts
+only `collection` and optional boolean `publish` and `preview` defaults. Do not add
+index titles, descriptions, marker body content, directory configuration, or sorting.
+To set defaults in a nested folder, declare `collection: pages` again.
+
+Each selected page requires a title and slug and may supply a description:
+
+```yaml
+---
+title: About
+slug: about
+description: A little about me.
+publish: true
+---
+
+The complete page body goes here.
+```
+
+This publishes at `/about`. Use `slug: guides/start` for `/guides/start`, independent
+of the vault filename or folder. Slugs follow the shared lowercase segment rules,
+with no leading or trailing slash. Empty slugs cannot replace the homepage.
+The first segment cannot match another registered collection's ID or route
+namespace: `blog`, `notes`, `people`, and their descendants are reserved even if
+those collections have no published entries. Duplicate URLs and collisions with
+handwritten pages or static files fail the import; public `about/index.html` also
+conflicts with `/about`.
+
+Pages project only title, slug, and optional description; dates and tags are not
+required or displayed. They reuse ordinary publishing/preview selection, Markdown,
+media, heading anchors, block anchors, and vault link rewriting. They render the
+shared header/footer, title, optional description, and article body, without a feed,
+TOC, directory navigation, back link, or link previews in either direction. Header
+navigation links are not added automatically. `npm run routes` groups these imported
+URLs under `pages`; handwritten standalone pages retain their separate group.
+
 ## Directories and sidebar navigation
 
-Any registered collection (`blog`, `notes`, or `people`) can use directory markers.
+Blog, Notes, and People can use directory markers; Pages does not support them.
 They supply sidebar navigation, default descendant titles/URLs, and Markdown content
 for directory cards. They do not create a collection or replace its entry metadata
 requirements. Sidebars appear only inside their configured directory; unrelated

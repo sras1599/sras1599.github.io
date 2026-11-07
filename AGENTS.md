@@ -16,26 +16,32 @@ to ownership, entry points, or the rules described here.
 ### 1. Collection contracts and metadata
 
 - Start with [registry.mjs](src/collections/registry.mjs), the authoritative set of
-  production collection IDs: `blog`, `notes`, and `people`. These are content types
+  production collection IDs: `blog`, `notes`, `people`, and `pages`. These are content types
   within the publishing system, not independent publishing pipelines.
 - [definition.mjs](src/collections/definition.mjs) owns collection definitions,
   canonical routes, slug validation, and `collectionEntryUrl`.
 - Shared schemas live in [schema.mjs](src/collections/schema.mjs); each collection's
   `definition.mjs` and `schema.mjs` under `src/collections/blog/`,
-  `src/collections/notes/`, or `src/collections/people/` own its defaults, source
+  `src/collections/notes/`, `src/collections/people/`, or `src/collections/pages/` own its defaults, source
   metadata validation, public metadata projection (`projectEntry`), and
   generated-content schema.
 - Notes support boolean `toc` in note metadata and marker folder defaults, with
   collection default `true` and note values overriding marker defaults. The
   effective value is projected into generated Notes metadata using the existing
   marker inheritance rules.
-- Routes are website-owned (`/blog`, `/notes`, `/people`), not configurable in vault markers.
+- Routes are website-owned (`/blog`, `/notes`, `/people`, and `/` for `pages`), not configurable in vault markers.
   Source entry schemas and generated-content schemas have different roles: only
   explicitly projected frontmatter leaves the vault, but the selected body is
   published in full.
+- Pages require title and slug, allow an optional description, and publish root-relative
+  URLs without dates, feeds, or an index provider. Slugs use the shared syntax without
+  a leading slash; nested paths are allowed. The first segment cannot match another
+  registered collection's ID or route namespace, even when that collection is inactive.
+  Pages markers accept only collection, publish, and preview; index content,
+  directory configuration, and sorting are unsupported.
 - [sidebar.mjs](src/collections/sidebar.mjs) owns shared `directory` marker
-  validation, directory-card content, and generated `navigation` schemas for all
-  collections. `directory: true` requires `title` and `slug`; its Markdown body
+  validation, directory-card content, and generated `navigation` schemas for Blog,
+  Notes, and People. `directory: true` requires `title` and `slug`; its Markdown body
   supplies card content while `_index.md` remains the separate landing page. The importer derives titles
   and slugs in sidebar folders and projects navigation independently of collection
   metadata. Notes in sidebar folders may omit dates; Blog requirements stay intact.
@@ -81,8 +87,9 @@ to ownership, entry points, or the rules described here.
   are relative to the containing folder URL; a leading `/` overrides from the
   collection root. Directory-marker slugs remain collection-relative. Exact `_index.md` files inside sidebar folders
   are ordinary entries at folder URLs and make folder headings clickable. Collection
-  index documents remain separate from entries. All definitions require one index provider per active collection,
-  supplying `title` and `metaDescription` through a marker.
+  index documents remain separate from entries. Blog, Notes, and People require one
+  index provider per active collection, supplying `title` and `metaDescription`
+  through a marker. Pages has no collection index and cannot replace the homepage.
 - For link/image changes, start at `prepareMarkdownDocument`, `transformNode`,
   `transformWikiMatch`, and `resolveReference`. Reference lookup tries the source
   folder, vault root, then unique filename. Existing unavailable note links become
@@ -116,13 +123,16 @@ to ownership, entry points, or the rules described here.
   `npm run routes` and `--preview`, grouping routes by collection and listing
   standalone pages last. Preview-only entries carry a `(preview)` suffix;
   published entries remain unlabeled. Concrete page files and public HTML supplement vault
-  entries; index schemas alone do not imply rendered index routes. Other dynamic
+  entries; imported routes retain collection identity, including root-relative Pages.
+  Root collection registration does not exempt the homepage from collision checks;
+  public `*/index.html` files also reserve their corresponding clean URLs.
+  Index schemas alone do not imply rendered index routes. Other dynamic
   routes cannot be inferred.
 
 ### 3. Astro content loading and Markdown rendering
 
 - Start with [content.config.ts](src/content.config.ts) and
-  [loader.ts](src/collections/loader.ts). Astro registers `blog`, `notes`, `people`,
+  [loader.ts](src/collections/loader.ts). Astro registers `blog`, `notes`, `people`, `pages`,
   and the separate `collectionIndexes` and `directoryCards` collections explicitly.
   Both use the shared generated-Markdown loader and renderer; card documents
   create no routes and do not enter normal entry queries.
@@ -272,6 +282,11 @@ to ownership, entry points, or the rules described here.
   cards render the same content while retaining `displayInFeed`. Blog reading time and series links come
   from [readingTime.ts](src/utils/readingTime.ts) and [series.ts](src/data/series.ts);
   unknown series fail during page rendering.
+- [\[...slug\].astro](src/pages/[...slug].astro) renders only imported Pages at
+  root-relative URLs, preserving nested slugs. It uses BaseLayout and article
+  typography with an H1 title, optional description, and body; it has no TOC,
+  directory navigation, feed, back link, or NotePreview controller. No header links
+  are added automatically.
 - People currently have individual pages but no `/people` index template, even
   though their collection definition requires an imported index document. Keep
   this implementation distinction visible when working on indexes or marker links.
@@ -281,7 +296,8 @@ to ownership, entry points, or the rules described here.
 - Start with [NotePreview.astro](src/components/NotePreview.astro), included by the
   blog, notes, and people entry templates. It owns link highlighting, hover/focus behavior,
   fetching and caching target page HTML, panel positioning, and keyboard dismissal.
-- Eligible routes come from the collection registry. External links, collection
+- Eligible routes come from non-root collections in the registry; Pages neither
+  opens previews nor acts as a preview target. External links, collection
   roots, same-page links, touch taps, and links bearing `data-no-preview` use normal
   navigation. Preview content does not recursively open further previews.
 - Fetched pages must expose `.article > .article-header` and

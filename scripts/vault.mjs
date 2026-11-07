@@ -180,18 +180,22 @@ export async function listVaultRoutes({
   const handwritten = await readHandwrittenRouteOwners(projectRoot, new Set());
   const routes = new Map(notes.map((note) => [
     collectionEntryUrl(note.route, note.identity.slug),
-    note.previewOnly,
+    { collection: note.identity.collectionId, previewOnly: note.previewOnly },
   ]));
+  const definitions = [...registry.values()]
+    .filter(({ route }) => route !== "/")
+    .sort((a, b) => b.route.length - a.route.length);
   for (const { url, owner } of handwritten) {
     if (owner.startsWith("static file ") && url !== "/" && !url.endsWith(".html")) continue;
-    routes.set(url, false);
+    routes.set(url, {
+      collection: definitions.find(({ route }) => url === route || url.startsWith(`${route}/`))?.id ?? null,
+      previewOnly: false,
+    });
   }
 
-  const definitions = [...registry.values()].sort((a, b) => b.route.length - a.route.length);
-  return [...routes].map(([url, previewOnly]) => ({
+  return [...routes].map(([url, metadata]) => ({
     url,
-    previewOnly,
-    collection: definitions.find(({ route }) => url === route || url.startsWith(`${route}/`))?.id ?? null,
+    ...metadata,
   })).sort((a, b) => {
     if (a.collection !== b.collection) {
       if (a.collection === null) return 1;
@@ -227,7 +231,7 @@ async function selectVaultEntries({ vaultPath, projectRoot, preview, registry })
     activeCollections,
     preview,
   );
-  await validateUrlOwnership(notes, activeCollections, projectRoot);
+  await validateUrlOwnership(notes, activeCollections, projectRoot, registry);
   validateUniqueIdentities(notes);
 
   return { root, discovery, activeCollections, notes };
@@ -270,6 +274,17 @@ async function discoverVault(
       Array.isArray(document.metadata)
     ) {
       throw new Error(`${markerPath}: marker frontmatter must be a YAML mapping`);
+    }
+
+    const markerDefinition = Object.hasOwn(document.metadata, "collection")
+      ? registry.get(document.metadata.collection)
+      : owner?.definition;
+    if (markerDefinition?.supportsDirectories === false) {
+      for (const property of ["directory", "sortBy"]) {
+        if (Object.hasOwn(document.metadata, property)) {
+          throw new Error(`${markerPath}: collection ${markerDefinition.id} does not support ${property}`);
+        }
+      }
     }
 
     for (const property of ["sidebar", "sidebarTitle", "sidebarSlug"]) {
@@ -761,7 +776,7 @@ function generatedEntryPath({ collectionId, slug }) {
  * URLs are reserved for selected notes. Ownership descriptions retain source
  * paths so a collision identifies the declarations the author needs to change.
  */
-async function validateUrlOwnership(notes, activeCollections, projectRoot) {
+async function validateUrlOwnership(notes, activeCollections, projectRoot, registry) {
   const generatedOwners = [];
 
   for (const collection of activeCollections.values()) {
@@ -774,6 +789,23 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot) {
   }
 
   for (const note of notes) {
+    // Root-relative pages cannot overlap another collection's namespace, even
+    // when that collection has no selected entries in the current vault.
+    if (note.route === "/") {
+      const firstSegment = note.identity.slug.split("/")[0];
+      const reservedCollection = [...registry.values()].find((definition) =>
+        definition.id !== note.identity.collectionId && (
+          definition.id === firstSegment ||
+          (definition.route !== "/" && definition.route.split("/")[1] === firstSegment)
+        ),
+      );
+      if (reservedCollection) {
+        throw new Error(
+          `${note.file}: slug ${note.identity.slug} uses the reserved namespace of collection ${reservedCollection.id}`,
+        );
+      }
+    }
+
     generatedOwners.push({
       url: collectionEntryUrl(note.route, note.identity.slug),
       owner: `entry ${note.identity.collectionId}/${note.identity.slug} from ${note.file}`,
@@ -792,7 +824,9 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot) {
   }
 
   const collectionRoutes = new Set(
-    Array.from(activeCollections.values(), ({ route }) => route),
+    Array.from(activeCollections.values())
+      .filter(({ definition }) => definition.indexSchema)
+      .map(({ route }) => route),
   );
   const handwrittenOwners = await readHandwrittenRouteOwners(
     projectRoot,
@@ -813,8 +847,9 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot) {
 
 /**
  * Inventory concrete URLs from src/pages and public without executing Astro.
- * Registered collection roots are implemented by their matching page folders,
- * so those exact page URLs are expected rather than conflicting ownership.
+ * Registered collection indexes are implemented by their matching page folders,
+ * so those exact page URLs are expected rather than conflicting ownership. A
+ * root-relative collection without an index does not claim the homepage.
  * Dynamic page segments are skipped because their concrete URLs cannot be
  * inferred from filenames. Generated _vault assets are excluded.
  */
@@ -848,6 +883,14 @@ async function readHandwrittenRouteOwners(projectRoot, collectionRoutes) {
       url: relative === "index.html" ? "/" : `/${relative}`,
       owner: `static file from public/${relative}`,
     });
+    // Astro emits /about to about/index.html; that public file would overwrite
+    // the same output even though its literal file URL differs from /about.
+    if (relative.endsWith("/index.html")) {
+      owners.push({
+        url: `/${relative.slice(0, -"/index.html".length)}`,
+        owner: `static file from public/${relative}`,
+      });
+    }
   }
 
   return owners;
