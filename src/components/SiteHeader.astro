@@ -9,5 +9,42 @@ import { notesCollectionDefinition } from "../collections/notes/definition.mjs";
     <a class="nav-work" href="/#work">Work</a>
     <a class="nav-blog" href={blogCollectionDefinition.route}>Blog</a>
     <a class="nav-notes" href={notesCollectionDefinition.route}>Notes</a>
+    <details class="nav-more">
+      <summary class="nav-more-toggle" aria-label="More links">
+        <span aria-hidden="true">...</span>
+        <svg class="nav-more-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="m4 6 4 4 4-4"></path>
+        </svg>
+      </summary>
+      <div class="nav-more-links">
+        <a class="nav-library" href="/library">Library</a>
+      </div>
+    </details>
   </nav>
 </header>
+
+<script>
+  document.querySelectorAll<HTMLDetailsElement>(".nav-more").forEach((menu) => {
+    const toggle = menu.querySelector("summary");
+
+    document.addEventListener("click", (event) => {
+      if (event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    });
+
+    menu.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !menu.open) return;
+
+      event.preventDefault();
+      menu.open = false;
+      toggle?.focus();
+    });
+
+    menu.addEventListener("focusout", (event) => {
+      if (!(event.relatedTarget instanceof Node) || !menu.contains(event.relatedTarget)) {
+        menu.open = false;
+      }
+    });
+  });
+</script>

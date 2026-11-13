@@ -1,0 +1,232 @@
+---
+import filmRolls from "../assets/library/movies.svg?raw";
+import bibliophileBooks from "../assets/library/books.svg?raw";
+
+interface Props {
+  title: string;
+  itemCount: number;
+  kind?: "movies" | "books";
+}
+
+const { title, itemCount, kind = "movies" } = Astro.props;
+const illustration = kind === "books" ? bibliophileBooks : filmRolls;
+---
+
+<illustrated-card-controller>
+  <article class="illustrated-card" data-illustration={kind}>
+    <div class="card-illustration" set:html={illustration} />
+    <div class="card-copy">
+      <h3>{title}</h3>
+      <p>
+        {itemCount} {itemCount === 1 ? "item" : "items"}
+      </p>
+    </div>
+  </article>
+</illustrated-card-controller>
+
+<script>
+  class IllustratedCardController extends HTMLElement {
+    private visibilityObserver?: IntersectionObserver;
+
+    connectedCallback() {
+      const card = this.querySelector<HTMLElement>(".illustrated-card");
+      if (!card) return;
+
+      this.visibilityObserver = new IntersectionObserver(
+        ([entry]) => {
+          const visible =
+            entry.isIntersecting && entry.intersectionRatio >= 0.2;
+          card.toggleAttribute("data-in-view", visible);
+
+          // Retain this flag after leaving view so scrolling back resumes the
+          // same single animation rather than starting another cycle.
+          if (visible && window.matchMedia("(hover: none)").matches) {
+            card.setAttribute("data-mobile-started", "");
+          }
+        },
+        { threshold: 0.2 },
+      );
+      this.visibilityObserver.observe(card);
+    }
+
+    disconnectedCallback() {
+      this.visibilityObserver?.disconnect();
+      this.visibilityObserver = undefined;
+      this.querySelector(".illustrated-card")?.removeAttribute("data-in-view");
+    }
+  }
+
+  if (!customElements.get("illustrated-card-controller")) {
+    customElements.define(
+      "illustrated-card-controller",
+      IllustratedCardController,
+    );
+  }
+</script>
+
+<style>
+  illustrated-card-controller {
+    display: contents;
+  }
+
+  .illustrated-card {
+    --illustration-animation: reel-turn;
+    --illustration-duration: 8s;
+    --illustration-timing: linear;
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: min(100%, 15rem);
+    min-height: 5.5rem;
+    overflow: hidden;
+    border: 2px solid var(--ink);
+    background: var(--paper-high);
+    box-shadow: 5px 5px 0 var(--blue);
+    cursor: pointer;
+  }
+
+  .card-illustration {
+    position: absolute;
+    top: 50%;
+    right: -1rem;
+    width: 14rem;
+    transform: translateY(-50%);
+    opacity: 0.26;
+    pointer-events: none;
+    /* Keep the artwork quiet behind the text and clearer toward the right. */
+    -webkit-mask-image: linear-gradient(to right, rgb(0 0 0 / 25%), #000 85%);
+    mask-image: linear-gradient(to right, rgb(0 0 0 / 25%), #000 85%);
+  }
+
+  .card-illustration :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .card-illustration :global(.reel-rotor) {
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
+
+  .illustrated-card[data-illustration="books"] {
+    --illustration-animation: book-breeze;
+    --illustration-duration: 3.2s;
+    --illustration-timing: ease-in-out;
+  }
+
+  .card-illustration :global(.breeze-book) {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .illustrated-card {
+      transition: transform 250ms ease;
+    }
+
+    .illustrated-card:hover {
+      transform: translateY(-0.15rem);
+    }
+
+    .illustrated-card:hover :global(:is(.reel-rotor, .breeze-book)) {
+      animation: var(--illustration-animation) var(--illustration-duration)
+        var(--illustration-timing) var(--breeze-delay, 0s) infinite;
+    }
+  }
+
+  @media (hover: none) and (prefers-reduced-motion: no-preference) {
+    .illustrated-card[data-mobile-started]
+      :global(:is(.reel-rotor, .breeze-book)) {
+      animation: var(--illustration-animation) var(--illustration-duration)
+        var(--illustration-timing) var(--breeze-delay, 0s) 1 forwards;
+      animation-play-state: paused;
+    }
+
+    .illustrated-card[data-mobile-started][data-in-view]
+      :global(:is(.reel-rotor, .breeze-book)) {
+      animation-play-state: running;
+    }
+  }
+
+  @keyframes reel-turn {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes book-breeze {
+    0%,
+    100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+
+    35% {
+      transform: translate(var(--drift-x), var(--drift-y))
+        rotate(var(--book-tilt));
+    }
+
+    70% {
+      transform: translate(
+          calc(var(--drift-x) * 0.4),
+          calc(var(--drift-y) * 0.3)
+        )
+        rotate(calc(var(--book-tilt) * -0.3));
+    }
+  }
+
+  .card-copy {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  .card-copy h3 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+
+  .illustrated-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 65% 65% at 50% 105%,
+      color-mix(in srgb, var(--orange) 28%, transparent) 0%,
+      color-mix(in srgb, var(--orange) 18%, transparent) 30%,
+      color-mix(in srgb, var(--orange) 7%, transparent) 65%,
+      transparent 100%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 500ms ease,
+      transform 500ms ease;
+  }
+
+  .illustrated-card:is(:hover, :focus-within)::before {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .illustrated-card::before {
+      transform: none;
+      transition: none;
+    }
+  }
+
+  .card-copy p {
+    margin: 0.5rem 0 0;
+    color: var(--muted);
+    font-family: "Space Mono", monospace;
+    font-size: 0.8rem;
+  }
+</style>
