@@ -90,13 +90,11 @@ to ownership, entry points, or the rules described here.
   collision checks, and vault links to category markers and selected collection
   files. `scripts/library.mjs` discovers H2 records, separates the first fenced YAML
   block from notes, and validates selected records before output synchronization.
-  It projects only title, category, creator, optional year/rating/link, and reads.
+  It projects only title, category, creator, and optional year/rating/link.
   Books require author; Film and TV require year and allow director; Music requires
   artist. Other category slugs use optional creator/year. Ratings require numeric
-  YAML values from 0–5 in half steps; quoted ratings are rejected. Reads accept
-  YYYY, YYYY-MM, YYYY-MM-DD, and non-reversed ranges joined with `..`, preserving
-  precision; bare numeric years are normalized to strings. Dates are validated
-  including leap days. YAML tabs and invalid selected records fail preparation;
+  YAML values from 0–5 in half steps; quoted ratings are rejected.
+  YAML tabs and invalid selected records fail preparation;
   no records are silently skipped. Unknown source metadata stays private.
   `.generated/_library/` holds importer-owned card Markdown under category/file-hash
   and ordinal IDs. Astro's separate `libraryItems` collection uses the shared
@@ -104,8 +102,7 @@ to ownership, entry points, or the rules described here.
   and `LibraryContentGrid.astro`, sorted by natural title A–Z with ID tie-breaking.
   Notes reuse the vault Markdown/link/media pipeline; selected `_collection` files
   link to category URLs, and unavailable detail notes retain their labels.
-  `src/utils/libraryReads.ts` formats dates without adding precision. Card title
-  links use optional HTTP(S) metadata. Detail-note pages remain unsupported;
+  Card title links use optional HTTP(S) metadata. Detail-note pages remain unsupported;
   Library media records have no individual routes or ordinary entry collection.
 
 ### 2. Vault selection, transformation, and generated output
@@ -258,20 +255,27 @@ to ownership, entry points, or the rules described here.
   five outlined SVG stars with explicit 16px dimensions and a dedicated left-half
   path for half stars, without text gradients or SVG clipping, and an
   accessible numeric rating label. Compact cards start notes immediately without
-  a label, then show reads below. A combined body previews only one line total
+  a label. Cards with notes have a 12rem minimum height; cards without notes use
+  8rem. All cards keep rating/year beside the title and creator.
+  The notes body previews three lines
   with a downward fade. Clicking a collapsed card expands it, preserving links,
   other controls, and text selection. A bottom-centered line button toggles expansion using
-  a 280ms grid-row transition; hovering or focusing does not expand cards.
+  a 500ms grid-row transition; hovering or focusing does not expand cards.
   The line sits in a full-width button positioned absolutely in shared bottom
   padding, making the entire bottom strip clickable without adding card height.
-  The line has no hover styling; a visible keyboard-focus outline remains.
-  Reads-only cards show their complete reading history without a fade or expansion control.
+  The line has no hover styling or keyboard-focus outline.
+  It rotates 180 degrees over 500ms on expansion and reverses on collapse;
+  reduced motion disables the rotation transition.
   Reduced motion disables expansion transitions. There are no nested
   disclosure boxes or media-type
   badges inside cards. `src/components/LibraryContentGrid.astro` owns controls and
   responsive grids for Library category
   pages. Its six-option year/title/creator dropdown defaults to title A–Z without
-  option groups and with an inset chevron. Creator labels are Author for Books,
+  option groups and with an inset chevron. Its accessible Sort by label is visually
+  hidden; category pages place controls close beneath the header divider.
+  A search field filters titles and creators by case-insensitive substring,
+  combining with the Has notes filter and retaining the chosen sort order.
+  Creator labels are Author for Books,
   Director for Film and TV, Artist for Music, and Creator for other slugs. A Has
   notes toggle uses purple background and aria-pressed when active. Slotted
   `.library-item` wrappers supply data-title, data-creator, data-year, and
@@ -279,8 +283,10 @@ to ownership, entry points, or the rules described here.
   titles and missing metadata stays last in either direction. Filtering hides
   entries without notes. Empty grids show an empty state. The custom element
   aborts its control listeners on removal. Production grids use imported media.
-  Grids use two columns above
-  640px and one column below; expanded cards keep their neighbors' heights natural.
+  Grids use a Windows-style tile arrangement with 0.75rem gaps and nearly equal
+  columns (1.05:1) above 640px; mobile uses one column for every card.
+  Height differences give books with notes more space without narrowing other cards.
+  Tiles preserve sort order; expanded cards keep their neighbors' heights natural.
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
   Its Intro uses the named `intro` slot and optional `homepage` mode on
   `BaseLayout.astro`, which owns the homepage's main landmark and groups the

@@ -16,10 +16,8 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
 
 <library-content-grid>
   <div class="library-controls">
-    <label class="sort-label">
-      Sort by
-      <span class="sort-select">
-        <select data-sort>
+    <span class="sort-select">
+        <select data-sort aria-label="Sort by">
           <option value="year-desc">Year · newest first</option>
           <option value="year-asc">Year · oldest first</option>
           <option value="title-asc" selected>Title · A–Z</option>
@@ -27,9 +25,9 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
           <option value="creator-asc">{creatorLabel} · A–Z</option>
           <option value="creator-desc">{creatorLabel} · Z–A</option>
         </select>
-      </span>
-    </label>
+    </span>
     <button class="notes-filter" type="button" data-notes-filter aria-pressed="false">Has notes</button>
+    <input class="library-search" type="search" data-search aria-label={`Search by title or ${creatorLabel.toLowerCase()}`} placeholder={`Search title or ${creatorLabel.toLowerCase()}…`} />
   </div>
   <!-- Slotted .library-item wrappers supply data-title, data-creator, data-year,
        and data-has-notes. Moving wrappers preserves each card's expansion state. -->
@@ -43,6 +41,7 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
 
     connectedCallback() {
       const sort = this.querySelector<HTMLSelectElement>("[data-sort]")!;
+      const search = this.querySelector<HTMLInputElement>("[data-search]")!;
       const notesFilter = this.querySelector<HTMLButtonElement>("[data-notes-filter]")!;
       const grid = this.querySelector<HTMLElement>(".content-grid")!;
       const entries = [...grid.querySelectorAll<HTMLElement>(":scope > .library-item")];
@@ -53,6 +52,7 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
       const apply = () => {
         const [field, direction] = sort.value.split("-");
         const notesOnly = notesFilter.getAttribute("aria-pressed") === "true";
+        const query = search.value.trim().toLocaleLowerCase("en");
         entries.sort((a, b) => {
           const aValue = a.dataset[field] ?? "";
           const bValue = b.dataset[field] ?? "";
@@ -66,14 +66,18 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
           return collator.compare(a.dataset.title ?? "", b.dataset.title ?? "");
         });
         entries.forEach((entry) => {
-          entry.hidden = notesOnly && entry.dataset.hasNotes !== "true";
+          const matchesSearch = [entry.dataset.title, entry.dataset.creator]
+            .some((value) => (value ?? "").toLocaleLowerCase("en").includes(query));
+          entry.hidden = !matchesSearch || (notesOnly && entry.dataset.hasNotes !== "true");
           grid.append(entry);
         });
         empty.hidden = entries.some((entry) => !entry.hidden);
-        empty.textContent = notesOnly ? "No items with notes." : "No items yet.";
+        if (query) empty.textContent = "No items match your search.";
+        else empty.textContent = notesOnly ? "No items with notes." : "No items yet.";
       };
 
       sort.addEventListener("change", apply, { signal: this.events.signal });
+      search.addEventListener("input", apply, { signal: this.events.signal });
       notesFilter.addEventListener("click", () => {
         notesFilter.setAttribute("aria-pressed", String(notesFilter.getAttribute("aria-pressed") !== "true"));
         apply();
@@ -95,13 +99,12 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
   library-content-grid { display: block; }
   .library-controls {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 1.25rem;
     font: 700 0.75rem "Space Mono", monospace;
   }
-  .sort-label { display: grid; gap: 0.3rem; }
   .sort-select { position: relative; }
   .sort-select::after {
     content: "";
@@ -116,11 +119,19 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
     pointer-events: none;
   }
   select,
-  button {
+  button,
+  input {
+    box-sizing: border-box;
+    min-height: 2.25rem;
     border: 2px solid var(--ink);
     background: var(--paper-high);
     color: var(--ink);
     font: inherit;
+  }
+  .library-search {
+    flex: 1 1 15rem;
+    min-width: 0;
+    padding: 0.45rem 0.65rem;
   }
   select {
     appearance: none;
@@ -129,18 +140,20 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
   }
   button { min-height: 2.25rem; padding: 0.45rem 0.75rem; cursor: pointer; }
   button[aria-pressed="true"] { background: var(--purple-soft); }
-  :is(select, button):focus { outline: none; }
-  :is(select, button):focus-visible { box-shadow: inset 0 0 0 1px var(--ink); }
+  :is(select, button, input):focus { outline: none; }
+  :is(select, button, input):focus-visible { box-shadow: inset 0 0 0 1px var(--ink); }
   @media (hover: hover) {
     button[aria-pressed="false"]:hover { background: var(--paper-low); }
   }
   .content-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
     align-items: start;
-    gap: 1.5rem;
+    gap: 0.75rem;
   }
-  .content-grid > :global(.library-item) { min-width: 0; }
+  .content-grid > :global(.library-item) {
+    min-width: 0;
+  }
   .empty-state { color: var(--muted); }
   @media (max-width: 640px) {
     .content-grid { grid-template-columns: 1fr; }

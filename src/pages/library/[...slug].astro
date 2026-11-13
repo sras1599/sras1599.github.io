@@ -3,7 +3,6 @@ import { getCollection, getEntry, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import LibraryContentGrid from "../../components/LibraryContentGrid.astro";
 import LibraryContentCard from "../../components/LibraryContentCard.astro";
-import { formatLibraryRead } from "../../utils/libraryReads";
 
 interface Props {
   category: { title: string; slug: string };
@@ -41,7 +40,6 @@ const cards = await Promise.all(items.map(async (item) => {
               year={item.data.year}
               link={item.data.link}
               rating={item.data.rating}
-              reads={item.data.reads.map(formatLibraryRead)}
             >
               <Content />
             </LibraryContentCard>
@@ -51,3 +49,9 @@ const cards = await Promise.all(items.map(async (item) => {
     </article>
   </main>
 </BaseLayout>
+
+<style>
+  .article-header {
+    margin-bottom: 0.75rem;
+  }
+</style>

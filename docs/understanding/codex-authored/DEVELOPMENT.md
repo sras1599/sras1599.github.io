@@ -216,9 +216,6 @@ one category grid. Standalone detail-note files do not become media cards.
 author: Paul Kalanithi
 rating: 4.5
 link: https://www.goodreads.com/en/book/show/25899336-when-breath-becomes-air
-reads:
-  - 2026-09
-  - "2025..2026-02"
 ```
 
 Optional notes go here, with ordinary **Markdown** formatting.
@@ -236,22 +233,7 @@ or `4.5`. Numeric whole values are accepted; quoted numbers, descriptive strings
 null, booleans, nonfinite numbers, and other increments are rejected. Omit the
 rating property to leave an item unrated.
 
-Reads are an optional list of years, months, full dates, or ranges joined by `..`:
-
-```yaml
-reads:
-  - 2024
-  - 2025-09
-  - 2026-01-12
-  - "2024..2025"
-  - "2026-09..2026-10"
-  - "2026-11-01..2026-11-12"
-```
-
-Partial range endpoints may use different precision. The end of a partial period
-means its last day for range ordering; invalid calendar dates and reversed ranges
-are rejected. Precision is retained in display: `2024`, `Sep 2025`, or
-`1 Nov 2026 – 12 Nov 2026`. Use spaces, never tabs, for YAML indentation.
+Use spaces, never tabs, for YAML indentation.
 
 Records inherit their category's publishing selection. Strict record validation
 happens only for selected categories during import; route listing and category

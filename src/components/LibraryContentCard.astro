@@ -5,58 +5,73 @@ interface Props {
   year?: number;
   link?: string;
   rating?: number;
-  reads?: string[];
 }
 
-const { title, creator, year, link, rating, reads = [] } = Astro.props;
+const { title, creator, year, link, rating } = Astro.props;
 const notes = await Astro.slots.render("default");
 const hasNotes = Boolean(notes?.replace(/<!--[\s\S]*?-->/g, "").trim());
-const starPath = "M12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
+const starPath =
+  "M12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
 // The half-star follows the left outline and closes on the exact centerline.
 const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
 ---
 
 <article class="content-card" data-has-notes={hasNotes ? "" : undefined}>
-  <header style="display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: var(--card-header-gap, 0.75rem);">
+  <header class="card-header">
     <div>
       <h3>{link ? <a href={link}>{title}</a> : title}</h3>
       {creator && <p class="creator">{creator}</p>}
     </div>
-    <div style="display: flex; flex-direction: column; align-items: flex-end; text-align: right;">
+    <div class="card-meta">
       {year !== undefined && <span class="year">({year})</span>}
-  {rating !== undefined && (
-    <div class="rating" role="img" aria-label={`Rated ${rating} out of 5`}>
-      <span style="display: flex; gap: 0.15rem;" aria-hidden="true">
-        {Array.from({ length: 5 }, (_, index) => (
-          <svg width="16" height="16" viewBox="0 0 24 24" style="display: block; flex-shrink: 0;" focusable="false">
-            <path d={starPath} fill={rating - index >= 1 ? "var(--ink)" : "var(--paper)"} />
-            {rating - index > 0 && rating - index < 1 && <path d={halfStarPath} fill="var(--ink)" />}
-            <path d={starPath} fill="none" stroke="var(--ink)" stroke-width="1.3" stroke-linejoin="round" />
-          </svg>
-        ))}
-      </span>
-    </div>
-  )}
+      {rating !== undefined && (
+        <div class="rating" role="img" aria-label={`Rated ${rating} out of 5`}>
+          <span style="display: flex; gap: 0.15rem;" aria-hidden="true">
+            {Array.from({ length: 5 }, (_, index) => (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                style="display: block; flex-shrink: 0;"
+                focusable="false"
+              >
+                <path
+                  d={starPath}
+                  fill={rating - index >= 1 ? "var(--ink)" : "var(--paper)"}
+                />
+                {rating - index > 0 && rating - index < 1 && (
+                  <path d={halfStarPath} fill="var(--ink)" />
+                )}
+                <path
+                  d={starPath}
+                  fill="none"
+                  stroke="var(--ink)"
+                  stroke-width="1.3"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            ))}
+          </span>
+        </div>
+      )}
     </div>
   </header>
 
-  {(hasNotes || reads.length > 0) && (
+  {hasNotes && (
     <div class="card-body">
       <div class="card-preview">
         <div class="preview-inner">
-      {hasNotes && (
-        <div class="notes" set:html={notes} />
-      )}
-      {reads.length > 0 && (
-        <p class="reads"><span class="reads-label">Reads:</span> {reads.join(" · ")}</p>
-      )}
+          <div class="notes" set:html={notes} />
         </div>
       </div>
-      {hasNotes && (
-        <button class="card-expand" type="button" aria-expanded="false" aria-label={`Show more about ${title}`}>
+      <button
+          class="card-expand"
+          type="button"
+          aria-expanded="false"
+          aria-label={`Show more about ${title}`}
+        >
           <span class="indicator-line" aria-hidden="true" />
-        </button>
-      )}
+      </button>
     </div>
   )}
 </article>
@@ -69,11 +84,20 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     button.addEventListener("click", () => {
       const expanded = card.toggleAttribute("data-expanded");
       button.setAttribute("aria-expanded", String(expanded));
-      button.setAttribute("aria-label", `${expanded ? "Show less" : "Show more"} about ${title}`);
+      button.setAttribute(
+        "aria-label",
+        `${expanded ? "Show less" : "Show more"} about ${title}`,
+      );
     });
     card.addEventListener("click", (event) => {
       if (event.defaultPrevented || card.hasAttribute("data-expanded")) return;
-      if (event.target instanceof Element && event.target.closest("a, button, input, select, textarea, [contenteditable]")) return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest(
+          "a, button, input, select, textarea, [contenteditable]",
+        )
+      )
+        return;
       if (window.getSelection()?.toString()) return;
       button.click();
     });
@@ -83,7 +107,9 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
 <style>
   .content-card {
     position: relative;
+    box-sizing: border-box;
     min-width: 0;
+    min-height: 8rem;
     padding: 1rem 1rem 1.75rem;
     border: 2px solid var(--ink);
     background: var(--paper-high);
@@ -92,6 +118,24 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
 
   .content-card[data-has-notes]:not([data-expanded]) {
     cursor: pointer;
+  }
+
+  .content-card[data-has-notes] {
+    min-height: 12rem;
+  }
+
+  .card-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
   }
 
   h3 {
@@ -104,7 +148,9 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
   .year {
     flex-shrink: 0;
     color: var(--muted);
-    font: 700 0.85rem "Space Mono", monospace;
+    font:
+      700 0.85rem "Space Mono",
+      monospace;
   }
 
   .creator {
@@ -119,7 +165,9 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     align-items: center;
     gap: 0.75rem;
     margin-top: 0.5rem;
-    font: 700 0.8rem "Space Mono", monospace;
+    font:
+      700 0.8rem "Space Mono",
+      monospace;
   }
 
   .card-body {
@@ -141,7 +189,7 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
   }
 
   .preview-inner {
-    min-height: 1.55em;
+    min-height: 4.65em;
     overflow: hidden;
   }
 
@@ -189,21 +237,6 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     text-underline-offset: 3px;
   }
 
-  .reads {
-    margin: 0.35rem 0 0;
-    color: var(--muted);
-    font-family: "Space Mono", monospace;
-    font-size: 0.72rem;
-  }
-
-  .reads:first-child {
-    margin-top: 0;
-  }
-
-  .reads-label {
-    font-weight: 700;
-  }
-
   .card-expand {
     position: absolute;
     bottom: 0;
@@ -218,29 +251,36 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     border: 0;
     background: none;
     color: var(--muted);
-    font: 700 0.85rem / 1.55 "Space Mono", monospace;
+    font:
+      700 0.85rem / 1.55 "Space Mono",
+      monospace;
     cursor: pointer;
   }
 
   .indicator-line {
     width: 2.25rem;
     border-top: 2px solid currentColor;
+    transition: transform 500ms ease;
+  }
+
+  .content-card[data-expanded] .indicator-line {
+    transform: rotate(180deg);
   }
 
   .card-expand:focus-visible {
-    outline: 2px solid var(--purple);
-    outline-offset: 3px;
+    outline: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card-preview {
+    .card-preview,
+    .indicator-line {
       transition: none;
     }
   }
 
   @media (max-width: 520px) {
-    .content-card {
-      --card-header-gap: 0.5rem;
+    .card-header {
+      gap: 0.5rem;
     }
   }
 </style>

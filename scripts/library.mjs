@@ -85,7 +85,6 @@ export function prepareLibraryRecord(record, category) {
       ...(data.year === undefined ? {} : { year: data.year }),
       ...(data.rating === undefined ? {} : { rating: data.rating }),
       ...(data.link === undefined ? {} : { link: data.link }),
-      reads: data.reads,
     },
   };
 }
