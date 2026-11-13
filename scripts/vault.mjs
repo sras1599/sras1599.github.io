@@ -48,6 +48,8 @@ import {
 } from "../src/collections/definition.mjs";
 import { CollectionRegistry } from "../src/collections/registry.mjs";
 import { withDirectoryProperties } from "../src/collections/sidebar.mjs";
+import { libraryCategoryMarkerSchema } from "../src/collections/library/schema.mjs";
+import { readLibraryRecords, prepareLibraryRecord } from "./library.mjs";
 
 const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkStringify);
 const rasterImagePattern = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
@@ -68,6 +70,11 @@ export async function importVault({
   const { root, discovery, activeCollections, notes } = await selectVaultEntries({
     vaultPath, projectRoot, preview, registry,
   });
+  const libraryItems = [...activeCollections.values()].flatMap((collection) =>
+    (collection.libraryCategories ?? []).flatMap((category) =>
+      category.records.map((record) => prepareLibraryRecord(record, category.slug)),
+    ),
+  );
 
   // All discovered files distinguish unavailable notes from missing references;
   // only selected entries and active index markers have public destinations.
@@ -83,6 +90,12 @@ export async function importVault({
     }
   }
   for (const collection of activeCollections.values()) {
+    for (const category of collection.libraryCategories ?? []) {
+      publicTargetsByFile.set(category.file, collectionEntryUrl(collection.route, category.slug));
+      for (const record of category.records) {
+        publicTargetsByFile.set(record.file, collectionEntryUrl(collection.route, category.slug));
+      }
+    }
     if (!collection.index) continue;
     publicTargetsByFile.set(collection.index.file, collection.route);
   }
@@ -154,21 +167,30 @@ export async function importVault({
     }
   }
 
+  // Media records are card documents, not individually addressable vault notes.
+  // Reuse link/media preparation while keeping their YAML and bodies separate.
+  for (const item of libraryItems) {
+    const prepared = await prepareMarkdownDocument(item, vault);
+    output.set(path.posix.join("_library", `${item.id}.md`), prepared.contents);
+    for (const [name, bytes] of prepared.assets) assets.set(name, bytes);
+  }
+
   await syncGeneratedFiles(path.join(projectRoot, "public/_vault"), assets);
   await syncGeneratedFiles(path.join(projectRoot, ".generated"), output, {
     // Collection IDs cannot contain underscores, so this internal directory
     // cannot collide with a future registered collection's entry directory.
-    directories: [...registry.keys(), "_indexes", "_directories"],
+    directories: [...registry.keys(), "_indexes", "_directories", "_library"],
   });
 
-  return { entries: notes.length, assets: assets.size };
+  return { entries: notes.length + libraryItems.length, assets: assets.size };
 }
 
 /**
  * Read selected entry identities and concrete website pages without preparing
  * Markdown, reading embedded media, or writing generated output. Collection
  * indexes come from actual page files: an index schema alone creates no route.
- * Dynamic routes outside the vault collections cannot be inferred here.
+ * Selected Library categories also supply concrete routes. Other dynamic routes
+ * outside the vault collections cannot be inferred here.
  */
 export async function listVaultRoutes({
   vaultPath,
@@ -176,12 +198,20 @@ export async function listVaultRoutes({
   preview = false,
   registry = CollectionRegistry,
 }) {
-  const { notes } = await selectVaultEntries({ vaultPath, projectRoot, preview, registry });
+  const { notes, activeCollections } = await selectVaultEntries({ vaultPath, projectRoot, preview, registry });
   const handwritten = await readHandwrittenRouteOwners(projectRoot, new Set());
   const routes = new Map(notes.map((note) => [
     collectionEntryUrl(note.route, note.identity.slug),
     { collection: note.identity.collectionId, previewOnly: note.previewOnly },
   ]));
+  for (const collection of activeCollections.values()) {
+    for (const category of collection.libraryCategories ?? []) {
+      routes.set(collectionEntryUrl(collection.route, category.slug), {
+        collection: collection.definition.id,
+        previewOnly: category.preview === true,
+      });
+    }
+  }
   const definitions = [...registry.values()]
     .filter(({ route }) => route !== "/")
     .sort((a, b) => b.route.length - a.route.length);
@@ -224,7 +254,7 @@ async function selectVaultEntries({ vaultPath, projectRoot, preview, registry })
     throw new Error(`Cannot read VAULT_PATH (${root}): ${error.message}`);
   }
 
-  const activeCollections = resolveActiveCollections(discovery.boundaries);
+  const activeCollections = resolveActiveCollections(discovery.boundaries, preview);
   const notes = await readSelectedNotes(
     root,
     discovery.ownedMarkdown,
@@ -319,6 +349,7 @@ async function discoverVault(
         owner.sidebar = inheritedSidebar;
         owner.sortBy = inheritedSortBy;
         if (collectionId === "library") {
+          owner.libraryCategories = [];
           if (document.body.trim()) {
             throw new Error(`${markerPath}: put the Library introduction in _index.md`);
           }
@@ -330,8 +361,8 @@ async function discoverVault(
           const indexDocument = parseMarkdownDocument(indexSource, { file: indexPath });
           owner.indexCandidate = {
             file: indexPath,
-            // This drafting placeholder has no rendered content until cards are implemented.
-            body: indexDocument.body.replace(/^\{\{The Illustrated cards come here\}\}[ \t]*\r?$/gm, ""),
+            // The page renders category cards after the authored introduction.
+            body: indexDocument.body,
             metadata: owner.indexCandidate?.metadata ?? {},
           };
         }
@@ -341,6 +372,25 @@ async function discoverVault(
           `Vault: unknown collection ${collectionId} at ${markerPath}; skipping its entries.`,
         );
       }
+    } else if (owner?.registered && owner.collectionId === "library") {
+      const category = parseSchema(libraryCategoryMarkerSchema, document.metadata, markerPath, {
+        unknownKeyLabel: "category marker property",
+      });
+      if (document.body.trim()) {
+        throw new Error(`${markerPath}: Library category markers accept metadata only`);
+      }
+      const existing = owner.libraryCategories.find((candidate) => candidate.slug === category.slug);
+      if (existing) {
+        throw new Error(`${markerPath}: duplicate Library category slug ${category.slug}; also declared by ${existing.file}`);
+      }
+      const records = await readLibraryRecords(root, dir, entries, markdown);
+      owner.libraryCategories.push({
+        ...owner.effectiveFolderDefaults,
+        ...category,
+        itemCount: records.length,
+        records,
+        file: markerPath,
+      });
     } else if (declaresDirectory || owner?.sidebar || Object.hasOwn(document.metadata, "sortBy")) {
       if (!owner?.registered) {
         throw new Error(`${markerPath}: directory configuration requires a registered collection`);
@@ -508,7 +558,7 @@ function parseFolderDefaults(definition, metadata, file) {
  * declare the same collection. A collection is active even if its boundaries
  * contain no selected notes.
  */
-function resolveActiveCollections(collectionBoundaries) {
+function resolveActiveCollections(collectionBoundaries, preview) {
   const boundariesByCollection = new Map();
 
   for (const boundary of collectionBoundaries) {
@@ -524,10 +574,22 @@ function resolveActiveCollections(collectionBoundaries) {
       throw new Error(`Collection library requires exactly one root _website.md; found: ${boundaries.map(({ markerPath }) => markerPath).join(", ")}`);
     }
     const index = resolveCollectionIndex(definition, boundaries);
+    let libraryCategories;
+    if (collectionId === "library") {
+      libraryCategories = boundaries[0].libraryCategories
+        .filter((category) => category.preview === true
+          ? preview
+          : category.publish === true);
+      // Selection flags and source paths stay private; only card data leaves the vault.
+      index.metadata.categories = libraryCategories
+        .map(({ title, slug, itemCount }) => ({ title, slug, itemCount }))
+        .sort((a, b) => a.title.localeCompare(b.title, "en", { numeric: true }) || a.slug.localeCompare(b.slug, "en"));
+    }
     activeCollections.set(collectionId, {
       definition,
       route: definition.route,
       index,
+      ...(libraryCategories === undefined ? {} : { libraryCategories }),
     });
   }
 
@@ -807,6 +869,12 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot, regis
       generatedOwners.push({
         url: collection.route,
         owner: `collection ${collection.definition.id} index from ${collection.index.file}`,
+      });
+    }
+    for (const category of collection.libraryCategories ?? []) {
+      generatedOwners.push({
+        url: collectionEntryUrl(collection.route, category.slug),
+        owner: `Library category from ${category.file}`,
       });
     }
   }

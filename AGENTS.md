@@ -16,7 +16,7 @@ to ownership, entry points, or the rules described here.
 ### 1. Collection contracts and metadata
 
 - Start with [registry.mjs](src/collections/registry.mjs), the authoritative set of
-  production collection IDs: `blog`, `notes`, `people`, and `pages`. These are content types
+  production collection IDs: `blog`, `notes`, `people`, `pages`, and `library`. These are content types
   within the publishing system, not independent publishing pipelines.
 - [definition.mjs](src/collections/definition.mjs) owns collection definitions,
   canonical routes, slug validation, and `collectionEntryUrl`.
@@ -52,6 +52,61 @@ to ownership, entry points, or the rules described here.
   from note defaults and public note properties.
 - Adding a collection also requires Astro registration and page templates; changing
   the registry alone does not create a rendered route.
+- Library publishes `/library` and selected category URLs beneath it. Its definition lives in
+  `src/collections/library/definition.mjs`; exactly one `_website.md` declaring
+  `collection: library` identifies its root. The sibling `_index.md` supplies the
+  introduction, loaded through `collectionIndexes`, with website defaults for title
+  and metaDescription and optional overrides on the marker. Marker body content,
+  directory configuration, and sorting are unsupported. The importer omits the
+  standalone `{{The Illustrated cards come here}}` drafting placeholder.
+  `src/pages/library/index.astro` renders the introduction with BaseLayout and
+  article typography, followed by dynamically discovered category cards.
+  Descendant `_website.md` markers without `collection` declare categories using
+  required title/slug and optional publish/preview flags, validated by
+  `src/collections/library/schema.mjs`. The Library root accepts publish/preview
+  defaults for categories; category values override root defaults. These flags do
+  not hide the Library index, matching other collection index behavior.
+  Categories follow ordinary selection rules,
+  sort by title then slug, and require unique slugs. Their public title/slug/count metadata
+  travel in the generated Library index's `categories` metadata. Marker bodies
+  are unsupported, and a different collection boundary ends category discovery.
+  `src/components/LibraryCategoryLayout.astro` owns the centered, two-column
+  pinboard arrangement used by `/library`, with small rotations and staggered
+  offsets. Each third card spans a separate grid row; row gaps accommodate offsets,
+  rotation, shadows, and floating without overlaps. Cards float gently by
+  6px on staggered five-second cycles instead of lifting on hover. Floating uses
+  individual CSS translate to preserve pinboard transforms; reduced motion disables
+  floating. The layout retains two columns below
+  640px, with compact cards, typography, and artwork, plus smaller pinboard offsets.
+  Card artwork is loaded from the website-owned `src/assets/library/<slug>.svg`
+  matching the category slug, leaving blank artwork space when absent. Counts sum
+  top-level H2 headings in `_collection.md` and `_collection.*.md` files directly
+  in each category folder, using the Markdown parser to exclude code examples
+  and nested headings. Detail notes and subfolder files do not contribute.
+  Categories with no records show zero items. Category cards link to
+  `/library/<slug>`; `src/pages/library/[...slug].astro` generates category pages
+  from the same selected categories in the Library index, preserving nested slugs.
+  Category URLs participate in route listings (including preview labels), URL
+  collision checks, and vault links to category markers and selected collection
+  files. `scripts/library.mjs` discovers H2 records, separates the first fenced YAML
+  block from notes, and validates selected records before output synchronization.
+  It projects only title, category, creator, optional year/rating/link, and reads.
+  Books require author; Film and TV require year and allow director; Music requires
+  artist. Other category slugs use optional creator/year. Ratings require numeric
+  YAML values from 0–5 in half steps; quoted ratings are rejected. Reads accept
+  YYYY, YYYY-MM, YYYY-MM-DD, and non-reversed ranges joined with `..`, preserving
+  precision; bare numeric years are normalized to strings. Dates are validated
+  including leap days. YAML tabs and invalid selected records fail preparation;
+  no records are silently skipped. Unknown source metadata stays private.
+  `.generated/_library/` holds importer-owned card Markdown under category/file-hash
+  and ordinal IDs. Astro's separate `libraryItems` collection uses the shared
+  loader/renderer. Category pages render these through `LibraryContentCard.astro`
+  and `LibraryContentGrid.astro`, sorted by natural title A–Z with ID tie-breaking.
+  Notes reuse the vault Markdown/link/media pipeline; selected `_collection` files
+  link to category URLs, and unavailable detail notes retain their labels.
+  `src/utils/libraryReads.ts` formats dates without adding precision. Card title
+  links use optional HTTP(S) metadata. Detail-note pages remain unsupported;
+  Library media records have no individual routes or ordinary entry collection.
 
 ### 2. Vault selection, transformation, and generated output
 
@@ -109,7 +164,7 @@ to ownership, entry points, or the rules described here.
   in addressable documents. Private bodies are never indexed for block validation.
   Note transclusion and plugin execution are unsupported.
 - The vault is read-only. `.generated/{collection}/`, `.generated/_indexes/`,
-  `.generated/_directories/`, and `public/_vault/` are disposable importer-owned
+  `.generated/_directories/`, `.generated/_library/`, and `public/_vault/` are disposable importer-owned
   outputs; never edit them directly. Directory card bodies are keyed by collection
   and slug and exported only for selected root overviews, which receive the
   importer-owned `directoryCard` reference. Marker-relative references reuse the
@@ -133,7 +188,7 @@ to ownership, entry points, or the rules described here.
 
 - Start with [content.config.ts](src/content.config.ts) and
   [loader.ts](src/collections/loader.ts). Astro registers `blog`, `notes`, `people`, `pages`,
-  and the separate `collectionIndexes` and `directoryCards` collections explicitly.
+  and the separate `collectionIndexes`, `directoryCards`, and `libraryItems` collections explicitly.
   Both use the shared generated-Markdown loader and renderer; card documents
   create no routes and do not enter normal entry queries.
 - The loader reads generated Markdown recursively, derives entry IDs from relative
@@ -160,6 +215,72 @@ to ownership, entry points, or the rules described here.
 
 ### 4. Pages, navigation, and visual presentation
 
+- [IllustratedCard.astro](src/components/IllustratedCard.astro) renders a standalone
+  compact horizontal square-edged card with a title, item count, and `movies`
+  illustration loaded from `src/assets/library/<slug>.svg` using its required
+  category `slug` prop and a raw SVG glob import. Missing artwork leaves blank
+  space while preserving the card's title and dimensions.
+  Optional `href` renders the card as a native link; without it, the component
+  renders an article. Category card links opt out of note previews.
+  A faint glow matching the card's offset shadow accent, centered along
+  the bottom edge fades softly upward and sideways on hover-capable devices,
+  respecting reduced motion. Focus alone does not trigger the glow, avoiding
+  lingering glow after click/touch navigation and history restoration. Native
+  focus outlines are replaced by a purple border and offset shadow for keyboard
+  focus via `:focus-visible`. Cards also lift 1px on hover when reduced motion is off. Inline SVG artwork sits behind the text
+  at low opacity, fading toward the left with a CSS mask. Movie reel faces spin clockwise
+  while preserving perspective and keeping the film strip stationary. Books use
+  the character-free `src/assets/library/books.svg` illustration; Movies use
+  `src/assets/library/film-and-tv.svg`. Music uses `src/assets/library/music.svg`,
+  rendered at 45% opacity (other artwork uses 26%) to give its thin strokes more
+  presence. Its cropped, vertically offset square viewBox enlarges and centers the orange
+  musical staff artwork within the shared card placement. Its six `.flow-note`
+  paths move forward with staggered timing, fading at loop boundaries on hover
+  and remaining visible after one forward pass on touch devices. The orange,
+  slightly thicker staff stays still; the artwork tilts clockwise around its
+  right edge to raise the left side. Mobile playback lasts three seconds.
+  The Books illustration's central book and four smaller
+  books drift and tilt independently with staggered timing;
+  clouds stay still. Animation settings belong directly to the SVG's `.breeze-book`,
+  `.flow-note`, and `.reel-rotor` elements so books and notes never inherit reel rotation.
+  Cards retain ink borders. Thick offset shadows use purple for Books, yellow for
+  Film and TV, and red for Music; other category slugs use the default blue shadow.
+  Hover-capable devices loop the animation while hovered. Devices without hover
+  play one three-second animation cycle per card per page visit, including book
+  stagger delays, starting at 20% visibility and pausing
+  offscreen without restarting on reentry. The component-owned IntersectionObserver
+  disconnects when removed. Reduced motion disables animations; cards use a
+  pointer cursor. [Showcase.astro](src/dev-admin/Showcase.astro), at the development-only
+  `/showcase` route linked from `/admin`, is an empty page retained for future use.
+  Completed prototypes, sample fixtures, and the showcase carousel have been removed.
+- `src/components/LibraryContentCard.astro` renders imported media on category pages.
+  Cards use paper backgrounds with ink borders and no offset shadows, title/year rows, creator text,
+  five outlined SVG stars with explicit 16px dimensions and a dedicated left-half
+  path for half stars, without text gradients or SVG clipping, and an
+  accessible numeric rating label. Compact cards start notes immediately without
+  a label, then show reads below. A combined body previews only one line total
+  with a downward fade. Clicking a collapsed card expands it, preserving links,
+  other controls, and text selection. A bottom-centered line button toggles expansion using
+  a 280ms grid-row transition; hovering or focusing does not expand cards.
+  The line sits in a full-width button positioned absolutely in shared bottom
+  padding, making the entire bottom strip clickable without adding card height.
+  The line has no hover styling; a visible keyboard-focus outline remains.
+  Reads-only cards show their complete reading history without a fade or expansion control.
+  Reduced motion disables expansion transitions. There are no nested
+  disclosure boxes or media-type
+  badges inside cards. `src/components/LibraryContentGrid.astro` owns controls and
+  responsive grids for Library category
+  pages. Its six-option year/title/creator dropdown defaults to title A–Z without
+  option groups and with an inset chevron. Creator labels are Author for Books,
+  Director for Film and TV, Artist for Music, and Creator for other slugs. A Has
+  notes toggle uses purple background and aria-pressed when active. Slotted
+  `.library-item` wrappers supply data-title, data-creator, data-year, and
+  data-has-notes. Sorting retains card expansion state; ties use ascending natural
+  titles and missing metadata stays last in either direction. Filtering hides
+  entries without notes. Empty grids show an empty state. The custom element
+  aborts its control listeners on removal. Production grids use imported media.
+  Grids use two columns above
+  640px and one column below; expanded cards keep their neighbors' heights natural.
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
   Its Intro uses the named `intro` slot and optional `homepage` mode on
   `BaseLayout.astro`, which owns the homepage's main landmark and groups the
@@ -168,7 +289,22 @@ to ownership, entry points, or the rules described here.
   at the top, and center the Intro in the remaining space. Taller content grows
   naturally; subsequent sections retain their content-driven heights and normal
   scrolling. [SiteHeader.astro](src/components/SiteHeader.astro) owns the shared
-  header markup used by both layout modes, with Work, Blog, and Notes links.
+  header markup used by both layout modes, with Work, Blog, and Notes links and
+  a native “...” disclosure for additional links, currently Library at `/library`.
+  The disclosure closes on Escape, outside clicks, and focus leaving the menu;
+  Escape restores focus to its toggle. Shared header styles live in `global.css`.
+  The white toggle's down chevron turns upward when open. On desktop the submenu
+  starts at the toggle's left edge as a vertical stack, at least as wide as the toggle.
+  On mobile the submenu forms a centered second row of links below the main row,
+  fading in without movement when opened. Navigation links and the toggle disable
+  text selection.
+  Its pastel buttons share the primary links' padding, borders, shadows, typography,
+  and hover treatment. Header hover press effects apply only on hover-capable devices
+  to avoid sticky pressed states after touch taps.
+  The disclosure toggle stays depressed while its menu is open on every device.
+  Toggle keyboard focus uses the pressed style instead of an outer outline.
+  On desktop it fades and slides downward when opened; reduced motion
+  disables the reveal animation and chevron/button transitions.
   [SiteFooter.astro](src/components/SiteFooter.astro) owns the shared footer,
   rendered by `BaseLayout.astro` after page content outside the main landmark.
   The site shell fills at least the viewport height; a growing content wrapper

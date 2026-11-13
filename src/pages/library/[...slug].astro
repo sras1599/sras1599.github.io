@@ -1,0 +1,53 @@
+---
+import { getCollection, getEntry, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import LibraryContentGrid from "../../components/LibraryContentGrid.astro";
+import LibraryContentCard from "../../components/LibraryContentCard.astro";
+import { formatLibraryRead } from "../../utils/libraryReads";
+
+interface Props {
+  category: { title: string; slug: string };
+}
+
+export async function getStaticPaths() {
+  const index = await getEntry("collectionIndexes", "library");
+  return (index?.data.categories ?? []).map((category) => ({
+    params: { slug: category.slug },
+    props: { category },
+  }));
+}
+
+const { category } = Astro.props;
+const items = await getCollection("libraryItems", (item) => item.data.category === category.slug);
+items.sort((a, b) => a.data.title.localeCompare(b.data.title, "en", { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id, "en"));
+const cards = await Promise.all(items.map(async (item) => {
+  const { Content } = await render(item);
+  return { item, Content };
+}));
+---
+
+<BaseLayout title={category.title}>
+  <main>
+    <article class="article">
+      <header class="article-header">
+        <h1>{category.title}</h1>
+      </header>
+      <LibraryContentGrid category={category.slug}>
+        {cards.map(({ item, Content }) => (
+          <div class="library-item" data-title={item.data.title} data-creator={item.data.creator} data-year={item.data.year} data-has-notes={String(Boolean(item.body?.trim()))}>
+            <LibraryContentCard
+              title={item.data.title}
+              creator={item.data.creator}
+              year={item.data.year}
+              link={item.data.link}
+              rating={item.data.rating}
+              reads={item.data.reads.map(formatLibraryRead)}
+            >
+              <Content />
+            </LibraryContentCard>
+          </div>
+        ))}
+      </LibraryContentGrid>
+    </article>
+  </main>
+</BaseLayout>

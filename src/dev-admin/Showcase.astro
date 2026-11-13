@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import IllustratedCard from "../components/IllustratedCard.astro";
 ---
 
 <!doctype html>
@@ -12,34 +11,9 @@ import IllustratedCard from "../components/IllustratedCard.astro";
     <title>Component showcase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <main aria-label="Illustrated cards showcase">
-      <div class="showcase-cards">
-        <IllustratedCard title="Movies" itemCount={121} />
-        <IllustratedCard title="Books" itemCount={121} kind="books" />
-      </div>
-    </main>
+    <main aria-label="Component showcase"></main>
   </body>
 </html>
-
-<style>
-  main {
-    display: grid;
-    min-height: 100svh;
-    padding: 2rem 1rem;
-    place-items: center;
-  }
-
-  .showcase-cards {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 2rem;
-    width: 100%;
-  }
-</style>

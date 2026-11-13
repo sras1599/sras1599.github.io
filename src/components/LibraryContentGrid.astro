@@ -1,0 +1,148 @@
+---
+interface Props {
+  category: string;
+}
+
+const { category } = Astro.props;
+const creatorLabels: Record<string, string> = {
+  books: "Author",
+  "film-and-tv": "Director",
+  music: "Artist",
+};
+const creatorLabel = creatorLabels[category] ?? "Creator";
+const items = await Astro.slots.render("default");
+const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
+---
+
+<library-content-grid>
+  <div class="library-controls">
+    <label class="sort-label">
+      Sort by
+      <span class="sort-select">
+        <select data-sort>
+          <option value="year-desc">Year · newest first</option>
+          <option value="year-asc">Year · oldest first</option>
+          <option value="title-asc" selected>Title · A–Z</option>
+          <option value="title-desc">Title · Z–A</option>
+          <option value="creator-asc">{creatorLabel} · A–Z</option>
+          <option value="creator-desc">{creatorLabel} · Z–A</option>
+        </select>
+      </span>
+    </label>
+    <button class="notes-filter" type="button" data-notes-filter aria-pressed="false">Has notes</button>
+  </div>
+  <!-- Slotted .library-item wrappers supply data-title, data-creator, data-year,
+       and data-has-notes. Moving wrappers preserves each card's expansion state. -->
+  <div class="content-grid" set:html={items} />
+  <p class="empty-state" data-empty hidden={hasItems} aria-live="polite">No items yet.</p>
+</library-content-grid>
+
+<script>
+  class LibraryContentGrid extends HTMLElement {
+    private events?: AbortController;
+
+    connectedCallback() {
+      const sort = this.querySelector<HTMLSelectElement>("[data-sort]")!;
+      const notesFilter = this.querySelector<HTMLButtonElement>("[data-notes-filter]")!;
+      const grid = this.querySelector<HTMLElement>(".content-grid")!;
+      const entries = [...grid.querySelectorAll<HTMLElement>(":scope > .library-item")];
+      const empty = this.querySelector<HTMLElement>("[data-empty]")!;
+      const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+      this.events = new AbortController();
+
+      const apply = () => {
+        const [field, direction] = sort.value.split("-");
+        const notesOnly = notesFilter.getAttribute("aria-pressed") === "true";
+        entries.sort((a, b) => {
+          const aValue = a.dataset[field] ?? "";
+          const bValue = b.dataset[field] ?? "";
+          // Missing metadata stays last in either direction.
+          if (!aValue && bValue) return 1;
+          if (aValue && !bValue) return -1;
+          const order = field === "year"
+            ? Number(aValue) - Number(bValue)
+            : collator.compare(aValue, bValue);
+          if (order !== 0) return direction === "desc" ? -order : order;
+          return collator.compare(a.dataset.title ?? "", b.dataset.title ?? "");
+        });
+        entries.forEach((entry) => {
+          entry.hidden = notesOnly && entry.dataset.hasNotes !== "true";
+          grid.append(entry);
+        });
+        empty.hidden = entries.some((entry) => !entry.hidden);
+        empty.textContent = notesOnly ? "No items with notes." : "No items yet.";
+      };
+
+      sort.addEventListener("change", apply, { signal: this.events.signal });
+      notesFilter.addEventListener("click", () => {
+        notesFilter.setAttribute("aria-pressed", String(notesFilter.getAttribute("aria-pressed") !== "true"));
+        apply();
+      }, { signal: this.events.signal });
+      apply();
+    }
+
+    disconnectedCallback() {
+      this.events?.abort();
+    }
+  }
+
+  if (!customElements.get("library-content-grid")) {
+    customElements.define("library-content-grid", LibraryContentGrid);
+  }
+</script>
+
+<style>
+  library-content-grid { display: block; }
+  .library-controls {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    font: 700 0.75rem "Space Mono", monospace;
+  }
+  .sort-label { display: grid; gap: 0.3rem; }
+  .sort-select { position: relative; }
+  .sort-select::after {
+    content: "";
+    position: absolute;
+    right: 0.9rem;
+    top: 50%;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+  select,
+  button {
+    border: 2px solid var(--ink);
+    background: var(--paper-high);
+    color: var(--ink);
+    font: inherit;
+  }
+  select {
+    appearance: none;
+    max-width: 100%;
+    padding: 0.45rem 2.25rem 0.45rem 0.65rem;
+  }
+  button { min-height: 2.25rem; padding: 0.45rem 0.75rem; cursor: pointer; }
+  button[aria-pressed="true"] { background: var(--purple-soft); }
+  :is(select, button):focus { outline: none; }
+  :is(select, button):focus-visible { box-shadow: inset 0 0 0 1px var(--ink); }
+  @media (hover: hover) {
+    button[aria-pressed="false"]:hover { background: var(--paper-low); }
+  }
+  .content-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 1.5rem;
+  }
+  .content-grid > :global(.library-item) { min-width: 0; }
+  .empty-state { color: var(--muted); }
+  @media (max-width: 640px) {
+    .content-grid { grid-template-columns: 1fr; }
+  }
+</style>

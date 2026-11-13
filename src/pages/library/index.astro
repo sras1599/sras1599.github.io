@@ -1,6 +1,9 @@
 ---
 import { getEntry, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import LibraryCategoryLayout from "../../components/LibraryCategoryLayout.astro";
+import { libraryCollectionDefinition } from "../../collections/library/definition.mjs";
+import { collectionEntryUrl } from "../../collections/definition.mjs";
 
 const index = await getEntry("collectionIndexes", "library");
 if (!index) {
@@ -8,6 +11,7 @@ if (!index) {
 }
 
 const { Content } = await render(index);
+const categories = index.data.categories ?? [];
 ---
 
 <BaseLayout title={index.data.title} description={index.data.metaDescription}>
@@ -19,6 +23,20 @@ const { Content } = await render(index);
       <div class="article-body">
         <Content />
       </div>
+      {categories.length > 0 && (
+        <section class="library-categories" aria-label="Library categories">
+          <LibraryCategoryLayout categories={categories.map((category) => ({
+            ...category,
+            href: collectionEntryUrl(libraryCollectionDefinition.route, category.slug),
+          }))} />
+        </section>
+      )}
     </article>
   </main>
 </BaseLayout>
+
+<style>
+  .library-categories {
+    margin-top: 2rem;
+  }
+</style>

@@ -1,0 +1,115 @@
+---
+import IllustratedCard from "./IllustratedCard.astro";
+
+interface Props {
+  categories: {
+    title: string;
+    slug: string;
+    itemCount: number;
+    href?: string;
+  }[];
+}
+
+const { categories } = Astro.props;
+---
+
+<div class="category-layout pinboard">
+  {categories.map((category) => (
+    <div class="category-card">
+      <IllustratedCard {...category} />
+    </div>
+  ))}
+</div>
+
+<style>
+  .category-layout {
+    --column-gap: 2rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: center;
+    align-items: start;
+    gap: 2rem var(--column-gap);
+    width: min(100%, 36rem);
+    margin-inline: auto;
+    padding-block: 1rem;
+  }
+
+  .category-card {
+    width: min(100%, 15rem);
+    min-width: 0;
+  }
+
+  .category-card :global(.illustrated-card) {
+    width: 100%;
+  }
+
+  .pinboard .category-card:nth-child(3n + 1) { transform: rotate(-2deg); }
+  .pinboard .category-card:nth-child(3n + 2) { transform: translateY(3rem) rotate(2deg); }
+  .pinboard .category-card:nth-child(3n) {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: min(15rem, calc((100% - var(--column-gap)) / 2));
+    transform: translateX(4rem) rotate(-1deg);
+  }
+
+  .pinboard {
+    row-gap: 4.5rem;
+  }
+
+  .category-card :global(.illustrated-card:hover) {
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .category-card {
+      animation: card-float 5s ease-in-out infinite;
+    }
+
+    .category-card:nth-child(3n + 2) { animation-delay: -1.6s; }
+    .category-card:nth-child(3n) { animation-delay: -3.3s; }
+  }
+
+  @keyframes card-float {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -6px; }
+  }
+
+  @media (max-width: 640px) {
+    .category-layout {
+      --column-gap: 1.25rem;
+    }
+
+    .pinboard {
+      row-gap: calc(clamp(1rem, 6vw, 2rem) + 1.75rem);
+    }
+
+    .pinboard .category-card:nth-child(3n + 2) {
+      transform: translateY(clamp(1rem, 6vw, 2rem)) rotate(2deg);
+    }
+
+    .pinboard .category-card:nth-child(3n) {
+      transform: translateX(clamp(1.5rem, 8vw, 3rem)) rotate(-1deg);
+    }
+
+    .category-card :global(.illustrated-card) {
+      min-height: 4.5rem;
+    }
+
+    .category-card :global(.card-copy) {
+      padding: 0.625rem 0.5rem;
+    }
+
+    .category-card :global(.card-copy h3) {
+      font-size: clamp(0.85rem, 3.3vw, 1.2rem);
+    }
+
+    .category-card :global(.card-copy p) {
+      margin-top: 0.25rem;
+      font-size: 0.7rem;
+    }
+
+    .category-card :global(.card-illustration) {
+      width: clamp(8rem, 32vw, 12rem);
+    }
+  }
+</style>

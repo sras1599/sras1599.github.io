@@ -139,6 +139,134 @@ or folder. Changing a slug changes the URL; no automatic redirect is created.
 Removing `publish`, setting it to `false`, or deleting a note removes it at the next
 successful import/build. A vault with no selected notes produces an empty blog.
 
+## Library introduction
+
+Exactly one vault folder may contain a `_website.md` declaring `collection: library`.
+Its name and location do not determine the public URL: the website owns `/library`.
+Place the introduction in a sibling `_index.md`. The complete Markdown body is
+public and uses the normal vault link, media, and block-anchor preparation.
+No publish flag is required for the introduction; declaring the root selects it.
+
+The marker may override `title` and `metaDescription`; otherwise the website
+supplies defaults. Optional `publish` and `preview` flags on this root marker
+provide category defaults; each category may override them. These flags do not
+hide the Library introduction, matching other collection indexes.
+Marker body content, directories, and sorting are unsupported.
+The index is generated under `.generated/_indexes/library.md` and rendered through
+the existing Astro `collectionIndexes` collection, without an ordinary Library
+entry collection. The vault remains read-only.
+
+The introduction is followed by category cards. A standalone line
+`{{The Illustrated cards come here}}` is omitted from the public body.
+Declare each category in a descendant folder's `_website.md`, without repeating
+`collection: library`:
+
+```yaml
+---
+title: Books
+slug: books
+preview: true
+---
+```
+
+Category markers require title and slug, accept optional boolean publish/preview
+flags, and have no body content. Categories are discovered recursively until a
+different collection boundary, require unique slugs, and sort alphabetically by
+title with slug tie-breaking. As with notes, use `publish: true` for production;
+`preview: true` takes precedence and shows the category only in `dev:writing`.
+Neither flag defaults to true unless inherited from the root marker.
+Only titles, slugs, and derived item counts enter the generated Library
+index metadata. Selected categories generate `/library/<slug>` pages, including
+nested slugs, with the category title and shared site header/footer. Category
+pages use the same publish/preview selection as the cards. Route listings and
+collision checks include them, and vault links to selected category markers
+resolve to their category URLs.
+
+`IllustratedCard` loads the SVG matching each category slug from
+`src/assets/library/<slug>.svg`, including nested paths for nested slugs. For example,
+`books` uses `books.svg` and `film-and-tv` uses `film-and-tv.svg`. A missing illustration
+leaves the artwork area blank while preserving the card; no mapping in code is
+needed when adding a category. Cards show an item count derived from all top-level
+H2 headings in `_collection.md` and `_collection.*.md` files directly in the category
+folder. Counts combine files such as `_collection.film.md` and `_collection.tv.md`.
+Headings in code blocks or nested Markdown, detail-note files, and files in
+subfolders do not count. No collection files or records means zero items.
+Cards link to their category pages. These pages show their title and shared
+year/title/creator sort controls plus a Has notes toggle. Title A–Z is the default.
+Creator sorts are labeled Author, Director, or Artist for the three current
+categories. Production grids render imported media using `LibraryContentCard.astro`.
+The development-only `/showcase` page remains available as an empty shell for
+future component work; completed Library prototypes and fictional samples are removed.
+Detail-note pages are not implemented. Files beneath the Library root do not
+publish as ordinary entries. A separate nested collection marker still establishes
+its own publishing boundary.
+
+### Media records
+
+Each top-level H2 starts one media item in a category's `_collection.md` or
+`_collection.*.md`. The first block after its title must be a fenced `yaml` (or
+`yml`) mapping. The remainder up to the next H2 is the item's Markdown notes;
+use H3 or deeper headings inside notes. Additional YAML fences in the notes are
+ordinary code examples, not metadata. Multiple collection files combine into
+one category grid. Standalone detail-note files do not become media cards.
+
+````markdown
+## When Breath Becomes Air
+```yaml
+author: Paul Kalanithi
+rating: 4.5
+link: https://www.goodreads.com/en/book/show/25899336-when-breath-becomes-air
+reads:
+  - 2026-09
+  - "2025..2026-02"
+```
+
+Optional notes go here, with ordinary **Markdown** formatting.
+````
+
+Books (`books`) require a nonempty author and allow an optional numeric publication
+year. Film and TV (`film-and-tv`) require a numeric year and allow an optional
+director. Music (`music`) requires an artist and allows an optional year. Other
+category slugs accept optional creator/year metadata. Years must be integers from
+1 through 9999. All categories allow an optional rating and HTTP(S) link; blank or
+null links are omitted. Unknown metadata is not projected into generated content.
+
+Ratings must be YAML numbers from 0 through 5 in half-point steps, such as `4.0`
+or `4.5`. Numeric whole values are accepted; quoted numbers, descriptive strings,
+null, booleans, nonfinite numbers, and other increments are rejected. Omit the
+rating property to leave an item unrated.
+
+Reads are an optional list of years, months, full dates, or ranges joined by `..`:
+
+```yaml
+reads:
+  - 2024
+  - 2025-09
+  - 2026-01-12
+  - "2024..2025"
+  - "2026-09..2026-10"
+  - "2026-11-01..2026-11-12"
+```
+
+Partial range endpoints may use different precision. The end of a partial period
+means its last day for range ordering; invalid calendar dates and reversed ranges
+are rejected. Precision is retained in display: `2024`, `Sep 2025`, or
+`1 Nov 2026 – 12 Nov 2026`. Use spaces, never tabs, for YAML indentation.
+
+Records inherit their category's publishing selection. Strict record validation
+happens only for selected categories during import; route listing and category
+counts use the same H2 discovery without validating fenced record metadata.
+Invalid selected records fail preparation with their file, item title, and line;
+previous generated output is preserved, and the vault is never modified.
+
+Only public card fields and selected notes are exported under the importer-owned
+`.generated/_library/` directory. The separate Astro `libraryItems` collection
+loads and renders these documents; media records have no individual routes.
+Notes reuse the existing Markdown/link/image/audio pipeline. Ordinary reference
+definitions elsewhere in a collection file remain available to its item notes.
+Links to selected collection files lead to their category page, while unavailable
+detail-note links become labels. Category links do not address individual records.
+
 ## Standalone pages
 
 Use the `pages` collection for vault-authored pages relative to the website root.

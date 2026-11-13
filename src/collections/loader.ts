@@ -1,6 +1,6 @@
 /**
  * Load importer-generated Markdown into Astro's content layer. Entry loaders
- * read one collection directory; index and directory-card loaders read separate
+ * read one collection directory; index, directory-card, and Library-item loaders read separate
  * directories. All share recursive synchronization and Markdown rendering.
  */
 import { readdir, readFile } from "node:fs/promises";
@@ -22,6 +22,11 @@ export function collectionIndexLoader(): Loader {
 /** Load directory marker bodies separately from their landing-page articles. */
 export function directoryCardLoader(): Loader {
   return generatedMarkdownLoader("vault-directory-cards", "_directories");
+}
+
+/** Load Library card notes separately from ordinary routed entries. */
+export function libraryItemLoader(): Loader {
+  return generatedMarkdownLoader("vault-library-items", "_library");
 }
 
 /**
