@@ -14,7 +14,7 @@ const items = await Astro.slots.render("default");
 const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
 ---
 
-<library-content-grid>
+<library-content-grid data-category={category}>
   <div class="library-controls">
     <span class="sort-select">
         <select data-sort aria-label="Sort by">
@@ -27,7 +27,9 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
         </select>
     </span>
     <button class="notes-filter" type="button" data-notes-filter aria-pressed="false">Has notes</button>
-    <button class="ratings-filter" type="button" data-ratings-filter aria-pressed="false">Has ratings</button>
+    {category !== "music" && (
+      <button class="ratings-filter" type="button" data-ratings-filter aria-pressed="false">Has ratings</button>
+    )}
     <input class="library-search" type="search" data-search aria-label={`Search by title or ${creatorLabel.toLowerCase()}`} placeholder={`Search title or ${creatorLabel.toLowerCase()}…`} />
   </div>
   <!-- Slotted .library-item wrappers supply data-title, data-creator, data-year,
@@ -44,7 +46,7 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
       const sort = this.querySelector<HTMLSelectElement>("[data-sort]")!;
       const search = this.querySelector<HTMLInputElement>("[data-search]")!;
       const notesFilter = this.querySelector<HTMLButtonElement>("[data-notes-filter]")!;
-      const ratingsFilter = this.querySelector<HTMLButtonElement>("[data-ratings-filter]")!;
+      const ratingsFilter = this.querySelector<HTMLButtonElement>("[data-ratings-filter]");
       const grid = this.querySelector<HTMLElement>(".content-grid")!;
       const entries = [...grid.querySelectorAll<HTMLElement>(".library-item")];
       grid.replaceChildren(...entries);
@@ -61,7 +63,7 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
       const apply = () => {
         const [field, direction] = sort.value.split("-");
         const notesOnly = notesFilter.getAttribute("aria-pressed") === "true";
-        const ratingsOnly = ratingsFilter.getAttribute("aria-pressed") === "true";
+        const ratingsOnly = ratingsFilter?.getAttribute("aria-pressed") === "true";
         const query = search.value.trim().toLocaleLowerCase("en");
         entries.sort((a, b) => {
           const aValue = a.dataset[field] ?? "";
@@ -103,6 +105,7 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
       search.addEventListener("input", apply, { signal: this.events.signal });
       mobile.addEventListener("change", apply, { signal: this.events.signal });
       for (const filter of [notesFilter, ratingsFilter]) {
+        if (!filter) continue;
         filter.addEventListener("click", () => {
           filter.setAttribute("aria-pressed", String(filter.getAttribute("aria-pressed") !== "true"));
           apply();
@@ -195,6 +198,12 @@ const hasItems = Boolean(items?.replace(/<!--[\s\S]*?-->/g, "").trim());
     }
     .sort-select { grid-column: 1 / -1; min-width: 0; }
     .sort-select select { width: 100%; }
+    library-content-grid[data-category="music"] .library-controls {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    library-content-grid[data-category="music"] .sort-select {
+      grid-column: auto;
+    }
     .library-search { grid-column: 1 / -1; }
     .content-grid { grid-template-columns: 1fr; }
   }

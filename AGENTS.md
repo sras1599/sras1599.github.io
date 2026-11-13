@@ -290,7 +290,9 @@ to ownership, entry points, or the rules described here.
   hidden; category pages place controls close beneath the header divider.
   A search field filters titles and creators by case-insensitive substring,
   combining with Has notes and Has ratings using AND and retaining the chosen sort
-  order. A zero rating counts as rated. On mobile, full-width sort and search rows
+  order. Has ratings is omitted for Music. A zero rating counts as rated.
+  Music's mobile sort and Has notes controls share a row above full-width search.
+  For other categories on mobile, full-width sort and search rows
   surround a row of two equal-width filter buttons, with 0.75rem gaps.
   Creator labels are Author for Books,
   Director for Film and TV, Artist for Music, and Creator for other slugs. A Has
