@@ -1,0 +1,24 @@
+---
+import { getEntry, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const index = await getEntry("collectionIndexes", "library");
+if (!index) {
+  throw new Error("Library requires a vault _website.md declaring collection: library and a sibling _index.md");
+}
+
+const { Content } = await render(index);
+---
+
+<BaseLayout title={index.data.title} description={index.data.metaDescription}>
+  <main>
+    <article class="article">
+      <header class="article-header">
+        <h1>{index.data.title}</h1>
+      </header>
+      <div class="article-body">
+        <Content />
+      </div>
+    </article>
+  </main>
+</BaseLayout>

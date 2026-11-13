@@ -93,7 +93,7 @@ export async function importVault({
   const blockDocuments = [
     ...notes,
     ...Array.from(activeCollections.values()).flatMap((collection) =>
-      collection.index && ["blog", "notes"].includes(collection.definition.id)
+      collection.index && ["blog", "notes", "library"].includes(collection.definition.id)
         ? [collection.index]
         : [],
     ),
@@ -318,6 +318,23 @@ async function discoverVault(
       if (owner.registered) {
         owner.sidebar = inheritedSidebar;
         owner.sortBy = inheritedSortBy;
+        if (collectionId === "library") {
+          if (document.body.trim()) {
+            throw new Error(`${markerPath}: put the Library introduction in _index.md`);
+          }
+          const indexPath = path.posix.join(dir, "_index.md");
+          if (!entries.some((entry) => entry.name === "_index.md" && entry.isFile() && !entry.isSymbolicLink())) {
+            throw new Error(`${markerPath}: Library requires _index.md in the same folder`);
+          }
+          const indexSource = await fs.readFile(path.join(root, indexPath), "utf8");
+          const indexDocument = parseMarkdownDocument(indexSource, { file: indexPath });
+          owner.indexCandidate = {
+            file: indexPath,
+            // This drafting placeholder has no rendered content until cards are implemented.
+            body: indexDocument.body.replace(/^\{\{The Illustrated cards come here\}\}[ \t]*\r?$/gm, ""),
+            metadata: owner.indexCandidate?.metadata ?? {},
+          };
+        }
         result.boundaries.push(owner);
       } else {
         console.warn(
@@ -503,6 +520,9 @@ function resolveActiveCollections(collectionBoundaries) {
   const activeCollections = new Map();
   for (const [collectionId, boundaries] of boundariesByCollection) {
     const definition = boundaries[0].definition;
+    if (collectionId === "library" && boundaries.length > 1) {
+      throw new Error(`Collection library requires exactly one root _website.md; found: ${boundaries.map(({ markerPath }) => markerPath).join(", ")}`);
+    }
     const index = resolveCollectionIndex(definition, boundaries);
     activeCollections.set(collectionId, {
       definition,
@@ -569,6 +589,9 @@ async function readSelectedNotes(root, ownedMarkdown, activeCollections, preview
 
   for (const [file, owner] of ownedMarkdown) {
     if (!owner.registered) continue;
+    // Library's _index.md is prepared separately. Category records and detail
+    // notes have no publishing contract yet and must not become ordinary entries.
+    if (owner.collectionId === "library") continue;
 
     const { route } = activeCollections.get(owner.collectionId);
     const text = await fs.readFile(path.join(root, file), "utf8");

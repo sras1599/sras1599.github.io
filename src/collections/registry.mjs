@@ -8,6 +8,7 @@ import { blogCollectionDefinition } from "./blog/definition.mjs";
 import { notesCollectionDefinition } from "./notes/definition.mjs";
 import { peopleCollectionDefinition } from "./people/definition.mjs";
 import { pagesCollectionDefinition } from "./pages/definition.mjs";
+import { libraryCollectionDefinition } from "./library/definition.mjs";
 
 // This is the single authoritative set of production collection IDs.
 const collectionDefinitions = Object.freeze([
@@ -15,6 +16,7 @@ const collectionDefinitions = Object.freeze([
   notesCollectionDefinition,
   peopleCollectionDefinition,
   pagesCollectionDefinition,
+  libraryCollectionDefinition,
 ]);
 
 export const CollectionRegistry = createCollectionRegistry(
