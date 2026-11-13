@@ -4,7 +4,7 @@
  * Markdown; local content images remain fluid within their bordered sections,
  * and abbreviations expose their expansions as paper-and-ink tooltips.
  * Desktop navigation uses a single row, while mobile centers the brand above a
- * tightly grouped row of Work, Blog, and Notes links.
+ * tightly grouped row of Work, Blog, Notes, and the additional links disclosure.
  */
 :root {
   --paper: #faf9f6;
@@ -20,10 +20,19 @@
   --green: #76bc7f;
   --green-soft: #abf4b2;
   --yellow: #ffd966;
+  --yellow-soft: #fff0bf;
   --purple: #9b8cff;
   --purple-soft: #ddd8ff;
+  --teal: #4ab8ad;
   --teal-soft: #c2f1e8;
+  --pink: #e983aa;
   --pink-soft: #ffd6e8;
+  --red: #e26868;
+  --red-soft: #ffd6d6;
+  --cyan: #56b9cf;
+  --cyan-soft: #d0f2f8;
+  --indigo: #7d8cdb;
+  --indigo-soft: #dce1ff;
   --container: 1180px;
   --gutter: clamp(1.25rem, 3vw, 2.5rem);
 }
@@ -76,7 +85,8 @@ hr {
 }
 
 .brand-mark,
-.site-nav a {
+.site-nav a,
+.nav-more-toggle {
   border: 2px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink);
   transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
@@ -100,19 +110,33 @@ hr {
   font-weight: 700;
 }
 
-.site-nav a {
+.site-nav a,
+.nav-more-toggle {
   background: var(--paper-high);
   padding: 0.45rem 0.75rem;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .nav-blog {
   transform: rotate(-1deg);
 }
 
-.site-nav a:hover,
-.brand-mark:hover {
+.site-nav a:focus-visible,
+.nav-more-toggle:focus-visible,
+.nav-more[open] > .nav-more-toggle {
   box-shadow: 1px 1px 0 var(--ink);
   transform: translate(3px, 3px) rotate(0deg);
+}
+
+@media (hover: hover) {
+
+  .site-nav a:hover,
+  .nav-more-toggle:hover,
+  .brand-mark:hover {
+    box-shadow: 1px 1px 0 var(--ink);
+    transform: translate(3px, 3px) rotate(0deg);
+  }
 }
 
 .nav-work {
@@ -125,6 +149,104 @@ hr {
 
 .nav-notes {
   background: var(--orange-soft) !important;
+}
+
+.nav-more {
+  position: relative;
+}
+
+.nav-library {
+  background-color: var(--yellow-soft) !important;
+}
+
+.nav-more-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  list-style: none;
+  cursor: pointer;
+  background: var(--paper-high);
+}
+
+.nav-more-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.nav-more-chevron {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  transition: transform 180ms ease;
+}
+
+.nav-more[open] .nav-more-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-more-toggle:focus-visible {
+  outline: none;
+}
+
+.nav-more-links a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.nav-more-links {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.75rem);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: max-content;
+  min-width: 100%;
+  max-width: calc(100vw - 2.5rem);
+  text-align: center;
+}
+
+.nav-more-links a {
+  display: block;
+}
+
+.nav-more[open] .nav-more-links {
+  animation: nav-more-reveal 180ms ease-out;
+}
+
+@keyframes nav-more-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nav-more-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .nav-more-toggle,
+  .nav-more-chevron,
+  .nav-more-links a {
+    transition: none;
+  }
+
+  .nav-more[open] .nav-more-links {
+    animation: none;
+  }
 }
 
 .hero {
@@ -642,6 +764,7 @@ h3 {
   }
 
   .site-nav {
+    position: relative;
     justify-content: center;
     flex-wrap: nowrap;
     gap: clamp(0.35rem, 2vw, 0.55rem);
@@ -650,9 +773,28 @@ h3 {
     font-size: clamp(0.62rem, 2.8vw, 0.72rem);
   }
 
-  .site-nav a {
+  .site-nav a,
+  .nav-more-toggle {
     padding: 0.38rem clamp(0.42rem, 2.2vw, 0.65rem);
     text-align: center;
+  }
+
+  .nav-more {
+    position: static;
+  }
+
+  .nav-more-links {
+    left: 50%;
+    flex-direction: row;
+    gap: clamp(0.35rem, 2vw, 0.55rem);
+    min-width: 0;
+    translate: -50% 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .nav-more[open] .nav-more-links {
+      animation: nav-more-fade 180ms ease-out;
+    }
   }
 
   .hero {
