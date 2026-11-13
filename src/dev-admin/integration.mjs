@@ -14,6 +14,11 @@ export default function developmentAdmin() {
         if (command !== "dev") return;
 
         injectRoute({
+          pattern: "/showcase",
+          entrypoint: new URL("./Showcase.astro", import.meta.url),
+          prerender: false,
+        });
+        injectRoute({
           pattern: "/admin",
           entrypoint: new URL("./AdminIndex.astro", import.meta.url),
           prerender: false,
