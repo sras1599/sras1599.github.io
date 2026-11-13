@@ -8,5 +8,3 @@ The main page will have some content, which introduces the user to the library a
 
 The illustration cards currently look like this:
 ![[library-illustrations.png]]
-### Rendering
-#### Category discovery
