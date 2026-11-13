@@ -262,10 +262,18 @@ to ownership, entry points, or the rules described here.
   five outlined SVG stars with explicit 16px dimensions and a dedicated left-half
   path for half stars, without text gradients or SVG clipping, and an
   accessible numeric rating label. Compact cards start notes immediately without
-  a label. Cards with notes have a 12rem minimum height; cards without notes use
-  8rem. All cards keep rating/year beside the title and creator.
-  The notes body previews three lines
-  with a downward fade. Clicking a collapsed card expands it, preserving links,
+  a label. Cards use an 8rem minimum height; only notes exceeding three rendered
+  lines enable expansion and a 12rem minimum height. Short notes remain fully
+  visible without a fade, expand button, or reserved three-line space.
+  `library-content-card` observes the natural notes height with ResizeObserver
+  to update overflow after resizing, filtering, or font/media loading, and aborts
+  listeners and disconnects on removal. Without JavaScript notes remain visible.
+  All cards keep rating/year beside the title and creator.
+  Expandable notes preview three lines with a downward fade.
+  Library notes opt into the shared blockquote rules in `global.css` through
+  `library-notes`, retaining Blog's orange border and paper background with compact
+  margin/padding supplied through CSS custom properties.
+  Clicking a collapsed expandable card expands it, preserving links,
   other controls, and text selection. A bottom-centered line button toggles expansion using
   a 500ms grid-row transition; hovering or focusing does not expand cards.
   The line sits in a full-width button positioned absolutely in shared bottom
@@ -281,14 +289,14 @@ to ownership, entry points, or the rules described here.
   option groups and with an inset chevron. Its accessible Sort by label is visually
   hidden; category pages place controls close beneath the header divider.
   A search field filters titles and creators by case-insensitive substring,
-  combining with the Has notes filter and retaining the chosen sort order.
-  On mobile, the sort control grows beside Has notes with a 0.75rem gap,
-  and search occupies its own full-width row.
+  combining with Has notes and Has ratings using AND and retaining the chosen sort
+  order. A zero rating counts as rated. On mobile, full-width sort and search rows
+  surround a row of two equal-width filter buttons, with 0.75rem gaps.
   Creator labels are Author for Books,
   Director for Film and TV, Artist for Music, and Creator for other slugs. A Has
-  notes toggle uses purple background and aria-pressed when active. Slotted
+  notes toggle and Has ratings toggle use purple backgrounds and aria-pressed when active. Slotted
   `.library-item` wrappers supply data-title, data-creator, data-year, and
-  data-has-notes. Sorting retains card expansion state; ties use ascending natural
+  data-has-notes and data-has-rating. Sorting retains card expansion state; ties use ascending natural
   titles and missing metadata stays last in either direction. Filtering hides
   entries without notes. Empty grids show an empty state. The custom element
   aborts its control listeners on removal. Production grids use imported media.

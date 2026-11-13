@@ -606,18 +606,18 @@ h3 {
   margin-top: 0.25rem;
 }
 
-:is(.article-body, .blog-index-body, .notes-index-body) blockquote {
-  margin: 1.5rem 0;
-  padding: 1rem clamp(1rem, 3vw, 1.5rem);
+:is(.article-body, .blog-index-body, .notes-index-body, .library-notes) blockquote {
+  margin: var(--blockquote-margin, 1.5rem 0);
+  padding: var(--blockquote-padding, 1rem clamp(1rem, 3vw, 1.5rem));
   border-inline-start: 4px solid var(--orange);
   background: var(--paper-low);
 }
 
-:is(.article-body, .blog-index-body, .notes-index-body) blockquote> :first-child {
+:is(.article-body, .blog-index-body, .notes-index-body, .library-notes) blockquote> :first-child {
   margin-top: 0;
 }
 
-:is(.article-body, .blog-index-body, .notes-index-body) blockquote> :last-child {
+:is(.article-body, .blog-index-body, .notes-index-body, .library-notes) blockquote> :last-child {
   margin-bottom: 0;
 }
 

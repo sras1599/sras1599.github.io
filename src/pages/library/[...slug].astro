@@ -46,7 +46,7 @@ const cards = await Promise.all(items.map(async (item) => {
       </header>
       <LibraryContentGrid category={category.slug}>
         {cards.map(({ item, Content }) => (
-          <div class="library-item" data-title={item.data.title} data-creator={item.data.creator} data-year={item.data.year} data-has-notes={String(Boolean(item.body?.trim()))}>
+          <div class="library-item" data-title={item.data.title} data-creator={item.data.creator} data-year={item.data.year} data-has-notes={String(Boolean(item.body?.trim()))} data-has-rating={String(item.data.rating !== undefined)}>
             <LibraryContentCard
               title={item.data.title}
               creator={item.data.creator}

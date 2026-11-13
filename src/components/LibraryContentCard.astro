@@ -16,6 +16,7 @@ const starPath =
 const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
 ---
 
+<library-content-card>
 <article class="content-card" data-has-notes={hasNotes ? "" : undefined}>
   <header class="card-header">
     <div>
@@ -61,7 +62,7 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     <div class="card-body">
       <div class="card-preview">
         <div class="preview-inner">
-          <div class="notes" set:html={notes} />
+          <div class="notes library-notes" set:html={notes} />
         </div>
       </div>
       <button
@@ -75,36 +76,73 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     </div>
   )}
 </article>
+</library-content-card>
 
 <script>
-  document.querySelectorAll<HTMLElement>(".content-card").forEach((card) => {
-    const button = card.querySelector<HTMLButtonElement>(".card-expand");
-    if (!button) return;
-    const title = card.querySelector("h3")?.textContent ?? "this item";
-    button.addEventListener("click", () => {
-      const expanded = card.toggleAttribute("data-expanded");
-      button.setAttribute("aria-expanded", String(expanded));
-      button.setAttribute(
-        "aria-label",
-        `${expanded ? "Show less" : "Show more"} about ${title}`,
-      );
-    });
-    card.addEventListener("click", (event) => {
-      if (event.defaultPrevented || card.hasAttribute("data-expanded")) return;
-      if (
-        event.target instanceof Element &&
-        event.target.closest(
-          "a, button, input, select, textarea, [contenteditable]",
-        )
-      )
-        return;
-      if (window.getSelection()?.toString()) return;
-      button.click();
-    });
-  });
+  class LibraryContentCard extends HTMLElement {
+    private events?: AbortController;
+    private notesObserver?: ResizeObserver;
+
+    connectedCallback() {
+      const card = this.querySelector<HTMLElement>(".content-card");
+      const button = this.querySelector<HTMLButtonElement>(".card-expand");
+      const notes = this.querySelector<HTMLElement>(".notes");
+      const preview = this.querySelector<HTMLElement>(".card-preview");
+      if (!card || !button || !notes || !preview) return;
+      const title = card.querySelector("h3")?.textContent ?? "this item";
+      this.events?.abort();
+      this.events = new AbortController();
+
+      const updateButton = () => {
+        const expanded = card.hasAttribute("data-expanded");
+        button.setAttribute("aria-expanded", String(expanded));
+        button.setAttribute("aria-label", `${expanded ? "Show less" : "Show more"} about ${title}`);
+      };
+      const updateOverflow = () => {
+        // Measure the unclipped notes against the three-line preview at this width.
+        // Hidden search results are measured again when they become visible.
+        if (!notes.getClientRects().length) return;
+        const limit = parseFloat(getComputedStyle(preview).lineHeight) * 3;
+        const expandable = notes.getBoundingClientRect().height > limit + 1;
+        card.toggleAttribute("data-expandable", expandable);
+        if (!expandable) card.removeAttribute("data-expanded");
+        updateButton();
+      };
+
+      this.notesObserver?.disconnect();
+      this.notesObserver = new ResizeObserver(updateOverflow);
+      this.notesObserver.observe(notes);
+      updateOverflow();
+      button.addEventListener("click", () => {
+        if (!card.hasAttribute("data-expandable")) return;
+        card.toggleAttribute("data-expanded");
+        updateButton();
+      }, { signal: this.events.signal });
+      card.addEventListener("click", (event) => {
+        if (event.defaultPrevented || !card.hasAttribute("data-expandable") || card.hasAttribute("data-expanded")) return;
+        if (
+          event.target instanceof Element &&
+          event.target.closest("a, button, input, select, textarea, [contenteditable]")
+        ) return;
+        if (window.getSelection()?.toString()) return;
+        button.click();
+      }, { signal: this.events.signal });
+    }
+
+    disconnectedCallback() {
+      this.events?.abort();
+      this.notesObserver?.disconnect();
+    }
+  }
+
+  if (!customElements.get("library-content-card")) {
+    customElements.define("library-content-card", LibraryContentCard);
+  }
 </script>
 
 <style>
+  library-content-card { display: block; }
+
   .content-card {
     position: relative;
     box-sizing: border-box;
@@ -116,11 +154,11 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     overflow-wrap: anywhere;
   }
 
-  .content-card[data-has-notes]:not([data-expanded]) {
+  .content-card[data-expandable]:not([data-expanded]) {
     cursor: pointer;
   }
 
-  .content-card[data-has-notes] {
+  .content-card[data-expandable] {
     min-height: 12rem;
   }
 
@@ -182,21 +220,30 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
     transition: grid-template-rows 280ms ease;
   }
 
-  .content-card[data-has-notes] .card-preview {
+  .content-card[data-expandable] .card-preview {
     grid-template-rows: 0fr;
     -webkit-mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 25%, transparent 100%);
   }
 
   .preview-inner {
-    min-height: 4.65em;
+    min-height: 0;
     overflow: hidden;
+  }
+
+  .content-card[data-expandable] .preview-inner {
+    min-height: 4.65em;
   }
 
   .content-card[data-expanded] .card-preview {
     grid-template-rows: 1fr;
     -webkit-mask-image: none;
     mask-image: none;
+  }
+
+  .notes {
+    --blockquote-margin: 0.5rem 0;
+    --blockquote-padding: 0.65rem 0.85rem;
   }
 
   .notes :global(p) {
@@ -238,11 +285,11 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
   }
 
   .card-expand {
+    display: none;
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    display: flex;
     justify-content: center;
     align-items: center;
     height: 1.625rem;
@@ -255,6 +302,10 @@ const halfStarPath = "M12 2V17.77L5.82 21.02 7 14.14 2 9.27 8.91 8.26Z";
       700 0.85rem / 1.55 "Space Mono",
       monospace;
     cursor: pointer;
+  }
+
+  .content-card[data-expandable] .card-expand {
+    display: flex;
   }
 
   .indicator-line {
