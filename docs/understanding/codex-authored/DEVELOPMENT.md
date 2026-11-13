@@ -161,22 +161,32 @@ The introduction is followed by category cards. A standalone line
 Declare each category in a descendant folder's `_website.md`, without repeating
 `collection: library`:
 
-```yaml
+````markdown
 ---
 title: Books
 slug: books
 preview: true
 ---
-```
+
+Books I've read, with occasional **notes** and recommendations.
+````
 
 Category markers require title and slug, accept optional boolean publish/preview
-flags, and have no body content. Categories are discovered recursively until a
+flags. Their optional Markdown body supplies the introduction beneath the category
+page title and above its header divider on `/library/<slug>`. The `/library`
+illustrated cards do not show this body. The full selected body is public and supports the same vault
+links and media as directory-card bodies; empty bodies add no description.
+Unselected category bodies are not prepared or exported. The Library root marker
+still uses its sibling `_index.md` for the introduction.
+Categories are discovered recursively until a
 different collection boundary, require unique slugs, and sort alphabetically by
 title with slug tie-breaking. As with notes, use `publish: true` for production;
 `preview: true` takes precedence and shows the category only in `dev:writing`.
 Neither flag defaults to true unless inherited from the root marker.
-Only titles, slugs, and derived item counts enter the generated Library
-index metadata. Selected categories generate `/library/<slug>` pages, including
+Only titles, slugs, derived item counts, and importer-owned `directoryCard`
+references enter the generated Library index metadata. Category bodies are stored
+under `.generated/_directories/library/<slug>.md` and rendered through the existing
+`directoryCards` collection by the category page template. Selected categories generate `/library/<slug>` pages, including
 nested slugs, with the category title and shared site header/footer. Category
 pages use the same publish/preview selection as the cards. Route listings and
 collision checks include them, and vault links to selected category markers
@@ -573,7 +583,7 @@ literal; recognized executable plugin blocks are rejected.
 
 `.generated/{collection}` hold generated entries,
 `.generated/_indexes` holds collection indexes, `.generated/_directories` holds
-selected directory marker bodies keyed by collection and slug, and `public/_vault`
+selected directory and Library category marker bodies keyed by collection and slug, and `public/_vault`
 holds referenced images and audio. Root overviews reference their generated card
 body with importer-owned `directoryCard` metadata. Astro registers `directoryCards`
 separately, using the same Markdown loader and renderer without creating routes. They are gitignored and disposable. Never edit them. Astro derives

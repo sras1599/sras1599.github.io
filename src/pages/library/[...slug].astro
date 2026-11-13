@@ -5,7 +5,7 @@ import LibraryContentGrid from "../../components/LibraryContentGrid.astro";
 import LibraryContentCard from "../../components/LibraryContentCard.astro";
 
 interface Props {
-  category: { title: string; slug: string };
+  category: { title: string; slug: string; directoryCard?: string };
 }
 
 export async function getStaticPaths() {
@@ -17,6 +17,14 @@ export async function getStaticPaths() {
 }
 
 const { category } = Astro.props;
+const document = category.directoryCard
+  ? await getEntry("directoryCards", category.directoryCard)
+  : undefined;
+if (category.directoryCard && !document) {
+  throw new Error(`Library category ${category.slug} is missing its generated marker content`);
+}
+const rendered = document?.body?.trim() ? await render(document) : undefined;
+const Description = rendered?.Content;
 const items = await getCollection("libraryItems", (item) => item.data.category === category.slug);
 items.sort((a, b) => a.data.title.localeCompare(b.data.title, "en", { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id, "en"));
 const cards = await Promise.all(items.map(async (item) => {
@@ -30,6 +38,11 @@ const cards = await Promise.all(items.map(async (item) => {
     <article class="article">
       <header class="article-header">
         <h1>{category.title}</h1>
+        {Description && (
+          <div class="article-body category-description">
+            <Description />
+          </div>
+        )}
       </header>
       <LibraryContentGrid category={category.slug}>
         {cards.map(({ item, Content }) => (
@@ -54,4 +67,27 @@ const cards = await Promise.all(items.map(async (item) => {
   .article-header {
     margin-bottom: 0.75rem;
   }
+
+  .category-description {
+    margin-top: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .category-description > :global(:first-child) { margin-top: 0; }
+  .category-description > :global(:last-child) { margin-bottom: 0; }
+  .category-description :global(:is(ul, ol)) {
+    display: block;
+    padding-left: 1.5rem;
+  }
+  .category-description :global(ul) { list-style: disc; }
+  .category-description :global(ol) { list-style: decimal; }
+  .category-description :global(li) {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+  }
+  .category-description :global(:is(img, audio, video)) { max-width: 100%; }
+  .category-description :global(img) { height: auto; }
+  .category-description :global(pre) { overflow-x: auto; }
 </style>

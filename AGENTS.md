@@ -68,8 +68,15 @@ to ownership, entry points, or the rules described here.
   not hide the Library index, matching other collection index behavior.
   Categories follow ordinary selection rules,
   sort by title then slug, and require unique slugs. Their public title/slug/count metadata
-  travel in the generated Library index's `categories` metadata. Marker bodies
-  are unsupported, and a different collection boundary ends category discovery.
+  travel in the generated Library index's `categories` metadata alongside an
+  importer-owned `directoryCard` reference. Selected category marker bodies publish
+  in full as introductions beneath the category page title and above its header
+  divider, using the existing
+  `directoryCards` collection and `.generated/_directories/library/<slug>.md`.
+  Their Markdown, links, media, and block-reference behavior match directory-card
+  bodies; unselected category bodies are not prepared or exported. Empty bodies
+  render no description. Root marker bodies remain unsupported, and a different
+  collection boundary ends category discovery.
   `src/components/LibraryCategoryLayout.astro` owns the centered, two-column
   pinboard arrangement used by `/library`, with small rotations and staggered
   offsets. Each third card spans a separate grid row; row gaps accommodate offsets,
@@ -275,6 +282,8 @@ to ownership, entry points, or the rules described here.
   hidden; category pages place controls close beneath the header divider.
   A search field filters titles and creators by case-insensitive substring,
   combining with the Has notes filter and retaining the chosen sort order.
+  On mobile, the sort control grows beside Has notes with a 0.75rem gap,
+  and search occupies its own full-width row.
   Creator labels are Author for Books,
   Director for Film and TV, Artist for Music, and Creator for other slugs. A Has
   notes toggle uses purple background and aria-pressed when active. Slotted
@@ -286,7 +295,11 @@ to ownership, entry points, or the rules described here.
   Grids use a Windows-style tile arrangement with 0.75rem gaps and nearly equal
   columns (1.05:1) above 640px; mobile uses one column for every card.
   Height differences give books with notes more space without narrowing other cards.
-  Tiles preserve sort order; expanded cards keep their neighbors' heights natural.
+  On desktop, sorted visible entries alternate between independent left/right
+  stacks with a 0.75rem vertical gap, so expansion shifts only cards in that column.
+  Filtering reassigns visible entries alternately; desktop DOM and keyboard order
+  follow each column top-to-bottom. Mobile restores one stack in the selected sort
+  order. The responsive change listener uses the control listener abort lifecycle.
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
   Its Intro uses the named `intro` slot and optional `homepage` mode on
   `BaseLayout.astro`, which owns the homepage's main landmark and groups the

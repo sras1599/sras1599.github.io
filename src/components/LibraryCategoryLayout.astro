@@ -11,12 +11,14 @@ interface Props {
 }
 
 const { categories } = Astro.props;
+
 ---
 
 <div class="category-layout pinboard">
   {categories.map((category) => (
     <div class="category-card">
       <IllustratedCard {...category} />
+
     </div>
   ))}
 </div>

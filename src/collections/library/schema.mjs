@@ -12,6 +12,7 @@ export const libraryCategoryMarkerSchema = selectionSchema.partial()
 
 export const libraryCategoryContentSchema = libraryCategorySchema.extend({
   itemCount: z.number().int().nonnegative(),
+  directoryCard: slugSchema.optional(),
 });
 
 const ratingSchema = z.number({ error: "must be a numeric rating, not a string" })

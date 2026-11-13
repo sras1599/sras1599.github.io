@@ -154,6 +154,20 @@ export async function importVault({
   // Index documents share the entry transformation pipeline but use distinct
   // storage and metadata so Astro entry queries can never return them.
   for (const collection of activeCollections.values()) {
+    // Selected Library category bodies reuse marker-card storage and preparation.
+    for (const category of collection.libraryCategories ?? []) {
+      const card = await prepareMarkdownDocument({
+        file: category.file,
+        body: category.body,
+        metadata: {
+          collection: collection.definition.id,
+          title: category.title,
+          slug: category.slug,
+        },
+      }, vault);
+      output.set(path.posix.join("_directories", `library/${category.slug}.md`), card.contents);
+      for (const [name, bytes] of card.assets) assets.set(name, bytes);
+    }
     if (!collection.index) continue;
 
     const prepared = await prepareMarkdownDocument(collection.index, vault, treesByFile.get(collection.index.file));
@@ -376,9 +390,6 @@ async function discoverVault(
       const category = parseSchema(libraryCategoryMarkerSchema, document.metadata, markerPath, {
         unknownKeyLabel: "category marker property",
       });
-      if (document.body.trim()) {
-        throw new Error(`${markerPath}: Library category markers accept metadata only`);
-      }
       const existing = owner.libraryCategories.find((candidate) => candidate.slug === category.slug);
       if (existing) {
         throw new Error(`${markerPath}: duplicate Library category slug ${category.slug}; also declared by ${existing.file}`);
@@ -390,6 +401,7 @@ async function discoverVault(
         itemCount: records.length,
         records,
         file: markerPath,
+        body: document.body,
       });
     } else if (declaresDirectory || owner?.sidebar || Object.hasOwn(document.metadata, "sortBy")) {
       if (!owner?.registered) {
@@ -582,7 +594,7 @@ function resolveActiveCollections(collectionBoundaries, preview) {
           : category.publish === true);
       // Selection flags and source paths stay private; only card data leaves the vault.
       index.metadata.categories = libraryCategories
-        .map(({ title, slug, itemCount }) => ({ title, slug, itemCount }))
+        .map(({ title, slug, itemCount }) => ({ title, slug, itemCount, directoryCard: `library/${slug}` }))
         .sort((a, b) => a.title.localeCompare(b.title, "en", { numeric: true }) || a.slug.localeCompare(b.slug, "en"));
     }
     activeCollections.set(collectionId, {
