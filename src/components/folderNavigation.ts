@@ -16,6 +16,7 @@ export type NavigationNode = {
   folderName?: string;
   href?: string;
   folder: boolean;
+  sortBy?: SortBy;
   children: NavigationNode[];
 };
 
@@ -67,6 +68,7 @@ export function buildFolderNavigation(
 
   const sort = (node: NavigationNode, folders: string[], inheritedSortBy: SortBy) => {
     const sortBy = sortRules.get(folders.join("/")) ?? inheritedSortBy;
+    node.sortBy = sortBy;
     const direction = sortBy.startsWith("-") ? -1 : 1;
     node.children.sort((left, right) => {
       if (left.folder !== right.folder) return Number(right.folder) - Number(left.folder);
@@ -106,12 +108,14 @@ export function containsCurrentPage(node: NavigationNode, currentUrl: string): b
   return node.href === currentUrl || node.children.some((child) => containsCurrentPage(child, currentUrl));
 }
 
-/** Adjacent pages stay among direct notes; folder overviews only lead forward. */
+/** Date-sorted folders link chronologically; other folders follow their list order. */
 export function getFolderPageLinks(
   tree: NavigationNode,
   currentUrl: string,
 ): { previous?: NavigationNode; next?: NavigationNode } {
   const notes = tree.children.filter((child) => !child.folder);
+  const chronological = tree.sortBy === "publishDate" || tree.sortBy === "-publishDate";
+  if (tree.sortBy === "-publishDate") notes.reverse();
   if (tree.href === currentUrl) {
     return { next: notes[0] };
   }
@@ -119,7 +123,7 @@ export function getFolderPageLinks(
   const index = notes.findIndex((note) => note.href === currentUrl);
   if (index !== -1) {
     let previous = notes[index - 1];
-    if (index === 0 && tree.href) {
+    if (index === 0 && tree.href && !chronological) {
       previous = tree;
     }
     return { previous, next: notes[index + 1] };

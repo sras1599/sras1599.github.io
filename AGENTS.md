@@ -397,7 +397,11 @@ to ownership, entry points, or the rules described here.
   use entry IDs. Subfolders remain first and alphabetically ordered. Ancestor rules
   apply even when a folder has no directly selected notes; feeds are unaffected.
   Below directory articles in all three collections, Previous and Next links reuse
-  this sorted tree and stay among direct notes in the same folder. Folder overviews
+  this sorted tree and stay among direct notes in the same folder. Date-sorted
+  folders link chronologically regardless of sidebar direction: Previous leads
+  to older notes and Next to newer notes. The oldest note has only Next and the
+  newest only Previous; a sole note has neither. Their folder overview links Next
+  to the oldest note. Title-sorted folders follow sidebar order: folder overviews
   show only Next to their first direct note; that note links back to the overview
   with Previous when available. Links never wrap or cross into subfolders, and
   empty folders and standalone entries have none. The shared layout groups the
