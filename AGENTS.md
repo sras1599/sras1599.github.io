@@ -255,8 +255,11 @@ to ownership, entry points, or the rules described here.
   offscreen without restarting on reentry. The component-owned IntersectionObserver
   disconnects when removed. Reduced motion disables animations; cards use a
   pointer cursor. [Showcase.astro](src/dev-admin/Showcase.astro), at the development-only
-  `/showcase` route linked from `/admin`, is an empty page retained for future use.
-  Completed prototypes, sample fixtures, and the showcase carousel have been removed.
+  `/showcase` route linked from `/admin`, is the place to display proposed UI
+  changes and interactive feature previews for review. Prefer it over standalone
+  mockups when demonstrating changes to this website, reusing production components
+  where practical. It is currently an empty shell. Keep demos development-only
+  and remove completed experiments when they are no longer useful.
 - `src/components/LibraryContentCard.astro` renders imported media on category pages.
   Cards use paper backgrounds with ink borders and no offset shadows, title/year rows, creator text,
   five outlined SVG stars with explicit 16px dimensions and a dedicated left-half
@@ -465,11 +468,30 @@ to ownership, entry points, or the rules described here.
 
 - Start with [NotePreview.astro](src/components/NotePreview.astro), included by the
   blog, notes, and people entry templates. It owns link highlighting, hover/focus behavior,
-  fetching and caching target page HTML, panel positioning, and keyboard dismissal.
+  fetching and caching target page HTML, panel positioning, keyboard dismissal,
+  and touch-triggered modal bottom sheets.
 - Eligible routes come from non-root collections in the registry; Pages neither
   opens previews nor acts as a preview target. External links, collection
-  roots, same-page links, touch taps, and links bearing `data-no-preview` use normal
+  roots, same-page links, and links bearing `data-no-preview` use normal
   navigation. Preview content does not recursively open further previews.
+- Touch taps on eligible links open a native modal bottom sheet with a visible
+  icon-only close button without a colored background, backdrop dismissal, page
+  scroll locking, and focus restoration. The toolbar reads “Preview · Open page”,
+  with Open page linking to the original destination, including its fragment.
+  Note titles remain plain text without a link or underline;
+  links inside previews navigate normally. Mouse hover and keyboard focus retain
+  floating previews and normal click/Enter navigation. Modified clicks and explicit
+  new-window links navigate normally. Sheet headers stay visible while reading;
+  opening motion respects reduced motion. A downward touch drag beginning at the
+  top of the preview moves the sheet and dismisses it after a sufficient pull;
+  shorter drags snap back. Gestures starting farther down the content retain
+  ordinary scrolling. Controls, links, nested scrollers, selection, and multitouch
+  gestures are excluded; snap-back transitions respect reduced motion.
+  Preview-link hover styling applies only to hover-capable devices to avoid
+  sticky pressed appearances after touch dismissal; keyboard focus remains visible.
+  Following Open page in the same tab dismisses the sheet before navigation.
+  Page exit and restoration from the browser's history cache clear previews so
+  returning with Back resumes the original page with the preview closed.
 - Fetched pages must expose `.article > .article-header` and
   `.article > .article-body`. This markup is a contract with page presentation;
   coordinate selector changes across both. Failed fetches provide a normal link.
