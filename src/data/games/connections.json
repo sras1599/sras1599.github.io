@@ -2675,5 +2675,13 @@
     "date": "2026-11-16",
     "mistakes": 4,
     "solveOrder": []
+  },
+  {
+    "date": "2026-11-17",
+    "mistakes": 4,
+    "solveOrder": [
+      "yellow",
+      "purple"
+    ]
   }
 ]
