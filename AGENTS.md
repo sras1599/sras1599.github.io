@@ -516,6 +516,10 @@ to ownership, entry points, or the rules described here.
 - [.github/workflows/deploy.yml](.github/workflows/deploy.yml) checks out website
   code and private vault `main`, builds with `VAULT_PATH`, and deploys the static
   artifact to Pages. Website pushes to `main` and manual dispatch trigger it.
+- [.github/dependabot.yml](.github/dependabot.yml) checks npm weekly on Mondays,
+  grouping minor/patch version updates and leaving majors separate, and GitHub
+  Actions monthly with individual PRs. Each ecosystem allows three open version
+  PRs; merges are manual. Security alerts and updates require GitHub settings.
 - [rebuild-website.yml](docs/workflows/rebuild-website.yml) is a copy of the trigger
   workflow intended for the separate vault repository, not an active workflow here.
   Deployment setup and credential roles are documented in

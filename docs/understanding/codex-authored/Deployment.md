@@ -44,6 +44,31 @@ enter the site. See [development and metadata](DEVELOPMENT.md). Unpublishing or
 deleting a note removes its URL on the next successful deployment. There is no
 scheduled publishing: `publishDate` is display/sort metadata.
 
+## Dependency updates
+
+Dependabot checks npm dependencies weekly on Mondays, grouping minor and patch
+version updates into one PR while leaving major updates as individual PRs. It
+checks GitHub Actions monthly with individual PRs. Each ecosystem allows up to
+three open version-update PRs. Review and merge updates manually; no automatic
+merging is configured. Security updates are separate from the routine version
+update group and its schedule.
+
+After `.github/dependabot.yml` reaches `main`, open the website repository's
+**Settings → Security → Advanced Security** (or **Code security**, depending on
+the GitHub UI) and enable the dependency graph, Dependabot alerts, and Dependabot
+security updates. The YAML file configures version updates; it does not enable
+all these repository settings. Branch protection is unchanged by this setup.
+
+Astro check and the production build run in the existing deployment workflow
+after changes reach `main`. There is no separate PR check workflow.
+
+To verify the setup on GitHub:
+
+1. In the repository's Dependabot view, confirm npm and GitHub Actions are
+   recognized with weekly and monthly schedules, respectively.
+2. When updates are available, confirm minor/patch npm updates share a PR and
+   major updates have separate PRs.
+
 ## Failures and recovery
 
 - A failed vault trigger usually indicates a missing/expired token or incorrect
@@ -67,3 +92,5 @@ validation is requested.
 - [GitHub workflow dispatch API](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event)
 - [Private repository checkout](https://github.com/actions/checkout#checkout-multiple-repos-private)
 - [Astro content loaders](https://docs.astro.build/en/reference/content-loader-reference/)
+- [Dependabot configuration options](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference)
+- [Configuring Dependabot security updates](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates)
