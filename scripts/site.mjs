@@ -73,8 +73,8 @@ async function runSite() {
 }
 
 /**
- * Import using the caller's publishing mode and report selected entry and image
- * counts. Failures propagate: startup treats them as fatal, while the development
+ * Import using the caller's publishing mode and report separate entry, Library
+ * item, and image counts. Failures propagate: startup treats them as fatal, while the development
  * refresh queue reports them and remains available for subsequent changes.
  */
 async function importAndReport(importOptions) {
@@ -82,7 +82,7 @@ async function importAndReport(importOptions) {
   const previewLabel = importOptions.preview ? " (writing preview)" : "";
 
   console.log(
-    `Vault: ${result.entries} entries, ${result.assets} images${previewLabel}.`,
+    `Vault: ${result.entries} entries, ${result.libraryItems} library items, ${result.assets} images${previewLabel}.`,
   );
 }
 

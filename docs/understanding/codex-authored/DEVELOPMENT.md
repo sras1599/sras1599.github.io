@@ -12,7 +12,9 @@ read local writing. The importer never edits the vault.
 - `npm run build`: import published notes only, run Astro checks, and build `dist`.
 - `npm run preview`: serve the existing production build; it does not import or rebuild.
 - `npm run routes`: list current published routes grouped alphabetically by collection,
-  with natural path ordering within each group and standalone pages last.
+  with natural path ordering within each group and standalone pages last. Group
+  headings show `name: (N published, N preview)`, followed by an overall `Total`
+  summary. Counts include only listed routes, so preview counts are zero by default.
 - `npm run routes -- --preview`: also include entries selected by `preview: true`,
   matching writing mode. Routes with effective `preview: true` have a `(preview)`
   suffix even if `publish: true` is also set; published routes remain unlabeled.
@@ -25,6 +27,11 @@ includes concrete pages from `src/pages` and HTML pages in `public`; assets and 
 development-only admin page are excluded. Dynamic routes outside the registered
 vault collections cannot be inferred. This describes current local sources, not
 the last build or the deployed site.
+
+The development/build `Vault:` log reports imported entries, Library items, and
+images separately. Entries have individual routes; Library items render as cards
+on category pages. The entry count excludes collection indexes, category pages,
+and standalone website pages, so it differs from the route listing's total.
 
 Development commands accept `--port`, `--host`, `--open`, and `--mode`, such as `npm run dev -- --port 4323`.
 

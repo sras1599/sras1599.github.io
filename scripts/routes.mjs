@@ -14,7 +14,7 @@ try {
   });
 
   if (values.help) {
-    console.log("Usage: npm run routes -- [--preview]\n\nList published routes grouped by collection. --preview also includes writing-preview entries, labeled (preview).");
+    console.log("Usage: npm run routes -- [--preview]\n\nList published routes grouped by collection, with published and preview counts per group and overall. --preview also includes writing-preview entries, labeled (preview). Counts include only listed routes.");
   } else {
     const routes = await listVaultRoutes({
       vaultPath: process.env.VAULT_PATH,
@@ -22,15 +22,23 @@ try {
       preview: values.preview,
     });
     console.log(values.preview ? "Published and preview routes" : "Published routes");
-    let previousCollection;
+    const groups = new Map();
     for (const { collection, url, previewOnly } of routes) {
-      if (collection !== previousCollection) {
-        console.log(`\n${collection ?? "Standalone pages"}:`);
-        previousCollection = collection;
+      if (!groups.has(collection)) groups.set(collection, []);
+      groups.get(collection).push({ url, previewOnly });
+    }
+    const formatCounts = (entries) => {
+      const preview = entries.filter(({ previewOnly }) => previewOnly).length;
+      return `(${entries.length - preview} published, ${preview} preview)`;
+    };
+    for (const [collection, entries] of groups) {
+      console.log(`\n${collection ?? "Standalone pages"}: ${formatCounts(entries)}`);
+      for (const { url, previewOnly } of entries) {
+        console.log(`  ${url}${previewOnly ? " (preview)" : ""}`);
       }
-      console.log(`  ${url}${previewOnly ? " (preview)" : ""}`);
     }
     if (routes.length === 0) console.log("No routes found.");
+    console.log(`\nTotal: ${formatCounts(routes)}`);
   }
 } catch (error) {
   console.error(error.message);

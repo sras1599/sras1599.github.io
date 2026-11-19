@@ -58,7 +58,8 @@ const rasterImagePattern = /\.(png|jpe?g|gif|webp|avif|bmp)$/i;
  * Import from vaultPath into projectRoot using the supplied collection registry.
  * Effective preview: true makes a note exclusive to preview mode, overriding
  * publish: true; folder defaults participate in both decisions. Return counts of selected
- * entries and unique generated media assets after both output directories sync.
+ * routed entries, Library items, and unique generated media assets separately
+ * after both output directories sync.
  * Errors reject the call so the CLI can report them or retain its current preview.
  */
 export async function importVault({
@@ -196,7 +197,7 @@ export async function importVault({
     directories: [...registry.keys(), "_indexes", "_directories", "_library"],
   });
 
-  return { entries: notes.length + libraryItems.length, assets: assets.size };
+  return { entries: notes.length, libraryItems: libraryItems.length, assets: assets.size };
 }
 
 /**

@@ -116,6 +116,8 @@ to ownership, entry points, or the rules described here.
 
 - Start with `importVault` in [vault.mjs](scripts/vault.mjs). Its stages are discovery,
   selection and validation, Markdown/link/image preparation, then output synchronization.
+  Import results and the site CLI log count routed entries and Library items
+  separately; collection indexes, category pages, and directory cards are not entries.
   [markdown-document.mjs](scripts/markdown-document.mjs) parses YAML frontmatter and
   body without applying publishing rules; the Astro loader also uses it.
 - A **marker** is an exact `_website.md` file. A marker declaring `collection`
@@ -180,7 +182,9 @@ to ownership, entry points, or the rules described here.
   selection, slug resolution, and collision validation with `importVault`, without
   transforming Markdown or writing output. [routes.mjs](scripts/routes.mjs) exposes
   `npm run routes` and `--preview`, grouping routes by collection and listing
-  standalone pages last. Preview-only entries carry a `(preview)` suffix;
+  standalone pages last. Group headings and a final Total summary count published
+  and preview routes in the listing; excluded preview routes are not counted.
+  Preview-only entries carry a `(preview)` suffix;
   published entries remain unlabeled. Concrete page files and public HTML supplement vault
   entries; imported routes retain collection identity, including root-relative Pages.
   Root collection registration does not exempt the homepage from collision checks;
