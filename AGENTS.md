@@ -318,6 +318,8 @@ to ownership, entry points, or the rules described here.
   follow each column top-to-bottom. Mobile restores one stack in the selected sort
   order. The responsive change listener uses the control listener abort lifecycle.
 - [index.astro](src/pages/index.astro) owns homepage content and sections.
+  The Word-Dash project title includes a WIP badge whose tooltip opens on hover,
+  keyboard focus, or tap, and dismisses on Escape, outside taps, or a second tap.
   Its Intro uses the named `intro` slot and optional `homepage` mode on
   `BaseLayout.astro`, which owns the homepage's main landmark and groups the
   header and Intro into one opening wrapper. Homepage-only styles in

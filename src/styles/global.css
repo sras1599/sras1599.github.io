@@ -430,6 +430,38 @@ h3 {
   font-size: 0.75rem;
 }
 
+.project-title-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.project-wip {
+  display: inline-flex;
+}
+
+.project-wip-label {
+  padding: 0 0.1rem;
+  border: 2px solid var(--ink);
+  background: var(--yellow, #ffd966);
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--ink);
+  font-family: "Space Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.project-wip-label:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
 .project-actions {
   display: flex;
   align-items: center;
@@ -463,7 +495,8 @@ h3 {
   outline-offset: 4px;
 }
 
-.project-hosting-note {
+.project-hosting-note,
+.project-wip-note {
   position: absolute;
   bottom: 100%;
   left: 0;
@@ -477,6 +510,14 @@ h3 {
   box-shadow: 3px 3px 0 var(--ink);
   z-index: 1;
   visibility: hidden;
+}
+
+.project-wip-note {
+  max-width: min(13rem, 100%);
+}
+
+.project-wip[data-open] .project-wip-note {
+  visibility: visible;
 }
 
 .project-unavailable:not([data-dismissed]):hover .project-hosting-note,
