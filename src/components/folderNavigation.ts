@@ -114,28 +114,50 @@ export function containsCurrentPage(node: NavigationNode, currentUrl: string): b
   return node.href === currentUrl || node.children.some((child) => containsCurrentPage(child, currentUrl));
 }
 
-/** Date-sorted folders link chronologically; other folders follow their list order. */
+type FolderPageLink = {
+  href: string;
+  label: string;
+  direction: "Previous" | "Next" | "Older" | "Newer";
+};
+
+function pageLink(
+  target: NavigationNode | undefined,
+  direction: "Previous" | "Next",
+  currentDate?: Date,
+): FolderPageLink | undefined {
+  if (!target?.href) return undefined;
+
+  let linkDirection: FolderPageLink["direction"] = direction;
+  if (currentDate && target.publishDate) {
+    const dateDifference = target.publishDate.getTime() - currentDate.getTime();
+    if (dateDifference < 0) linkDirection = "Older";
+    if (dateDifference > 0) linkDirection = "Newer";
+  }
+  return { href: target.href, label: target.label, direction: linkDirection };
+}
+
+/** Link to adjacent notes in the folder's sidebar order. */
 export function getFolderPageLinks(
   tree: NavigationNode,
   currentUrl: string,
-): { previous?: NavigationNode; next?: NavigationNode } {
+): { previous?: FolderPageLink; next?: FolderPageLink } {
   const notes = tree.children.filter((child) => !child.folder);
-  const chronological = tree.sortBy === "publishDate" || tree.sortBy === "-publishDate";
-  if (tree.sortBy === "-publishDate") {
-    // Stable sorting preserves the sidebar's title/ID order within each date.
-    notes.sort((left, right) => comparePublishDates(left.publishDate, right.publishDate, 1));
-  }
   if (tree.href === currentUrl) {
-    return { next: notes[0] };
+    return { next: pageLink(notes[0], "Next") };
   }
 
   const index = notes.findIndex((note) => note.href === currentUrl);
   if (index !== -1) {
+    const dateSorted = tree.sortBy === "publishDate" || tree.sortBy === "-publishDate";
+    const currentDate = dateSorted ? notes[index].publishDate : undefined;
     let previous = notes[index - 1];
-    if (index === 0 && tree.href && !chronological) {
+    if (index === 0 && tree.href && !dateSorted) {
       previous = tree;
     }
-    return { previous, next: notes[index + 1] };
+    return {
+      previous: pageLink(previous, "Previous", currentDate),
+      next: pageLink(notes[index + 1], "Next", currentDate),
+    };
   }
 
   for (const child of tree.children) {

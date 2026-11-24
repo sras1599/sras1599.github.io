@@ -405,16 +405,15 @@ to ownership, entry points, or the rules described here.
   undated notes stay last, date ties use ascending natural titles, and title ties
   use entry IDs. Subfolders remain first and alphabetically ordered. Ancestor rules
   apply even when a folder has no directly selected notes; feeds are unaffected.
-  Below directory articles in all three collections, Previous and Next links reuse
-  this sorted tree and stay among direct notes in the same folder. Date-sorted
-  folders link chronologically regardless of sidebar direction: Previous leads
-  to older notes and Next to newer notes. Same-date notes retain the sidebar's
-  ascending natural-title and entry-ID order; undated notes stay last.
-  The oldest note has only Next and the
-  newest only Previous; a sole note has neither. Their folder overview links Next
-  to the oldest note. Title-sorted folders follow sidebar order: folder overviews
-  show only Next to their first direct note; that note links back to the overview
-  with Previous when available. Links never wrap or cross into subfolders, and
+  Below directory articles in all three collections, page links follow the
+  sidebar order among direct notes in the same folder. The left link leads to
+  the note above and the right link to the note below. In date-sorted folders,
+  links between notes with different publication dates are labeled Older or
+  Newer according to the destination date. Links involving undated or same-date
+  notes use Previous or Next. A sole note in a date-sorted folder has neither.
+  Folder overviews link Next to their first direct note in sidebar order.
+  In title-sorted folders, that first note links back to the overview with
+  Previous when available. Links never wrap or cross into subfolders, and
   empty folders and standalone entries have none. The shared layout groups the
   article and these links in one column while preserving the article's preview markup.
   The directory root is the explorer's sole heading and mobile disclosure; there

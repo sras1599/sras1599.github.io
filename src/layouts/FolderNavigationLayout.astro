@@ -38,13 +38,13 @@ const { previous, next } = tree ? getFolderPageLinks(tree, currentUrl) : {};
       <nav class="folder-page-links" aria-label="Previous and next pages">
         {previous && (
           <a class="folder-page-previous" href={previous.href} rel="prev" data-no-preview>
-            <span class="folder-page-direction navigation-link-text"><span aria-hidden="true">←</span> Previous</span>
+            <span class="folder-page-direction navigation-link-text"><span aria-hidden="true">←</span> {previous.direction}</span>
             <span class="navigation-link-text">{previous.label}</span>
           </a>
         )}
         {next && (
           <a class="folder-page-next" href={next.href} rel="next" data-no-preview>
-            <span class="folder-page-direction navigation-link-text">Next <span aria-hidden="true">→</span></span>
+            <span class="folder-page-direction navigation-link-text">{next.direction} <span aria-hidden="true">→</span></span>
             <span class="navigation-link-text">{next.label}</span>
           </a>
         )}
