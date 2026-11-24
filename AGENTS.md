@@ -408,7 +408,9 @@ to ownership, entry points, or the rules described here.
   Below directory articles in all three collections, Previous and Next links reuse
   this sorted tree and stay among direct notes in the same folder. Date-sorted
   folders link chronologically regardless of sidebar direction: Previous leads
-  to older notes and Next to newer notes. The oldest note has only Next and the
+  to older notes and Next to newer notes. Same-date notes retain the sidebar's
+  ascending natural-title and entry-ID order; undated notes stay last.
+  The oldest note has only Next and the
   newest only Previous; a sole note has neither. Their folder overview links Next
   to the oldest note. Title-sorted folders follow sidebar order: folder overviews
   show only Next to their first direct note; that note links back to the overview

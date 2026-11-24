@@ -17,8 +17,17 @@ export type NavigationNode = {
   href?: string;
   folder: boolean;
   sortBy?: SortBy;
+  publishDate?: Date;
   children: NavigationNode[];
 };
+
+function comparePublishDates(left: Date | undefined, right: Date | undefined, direction: number): number {
+  // Undated notes remain last in either direction.
+  if (left === undefined && right !== undefined) return 1;
+  if (left !== undefined && right === undefined) return -1;
+  if (left === undefined || right === undefined) return 0;
+  return direction * (left.getTime() - right.getTime());
+}
 
 export function buildFolderNavigation(
   entries: NavigationEntry[],
@@ -60,7 +69,13 @@ export function buildFolderNavigation(
       folder.href = href;
       folder.label = entry.data.title;
     } else {
-      const note = { label: entry.data.title, href, folder: false, children: [] };
+      const note = {
+        label: entry.data.title,
+        href,
+        folder: false,
+        publishDate: entry.data.publishDate,
+        children: [],
+      };
       folder.children.push(note);
       noteEntries.set(note, entry);
     }
@@ -85,16 +100,7 @@ export function buildFolderNavigation(
         return direction * titleOrder || idOrder;
       }
 
-      const leftDate = leftEntry.data.publishDate;
-      const rightDate = rightEntry.data.publishDate;
-      // Missing dates remain last even when chronological order is reversed.
-      if (leftDate === undefined && rightDate !== undefined) return 1;
-      if (leftDate !== undefined && rightDate === undefined) return -1;
-      if (leftDate !== undefined && rightDate !== undefined) {
-        const dateOrder = leftDate.getTime() - rightDate.getTime();
-        if (dateOrder !== 0) return direction * dateOrder;
-      }
-      return titleOrder || idOrder;
+      return comparePublishDates(left.publishDate, right.publishDate, direction) || titleOrder || idOrder;
     });
     for (const child of node.children) {
       if (child.folder) sort(child, [...folders, child.folderName!], sortBy);
@@ -115,7 +121,10 @@ export function getFolderPageLinks(
 ): { previous?: NavigationNode; next?: NavigationNode } {
   const notes = tree.children.filter((child) => !child.folder);
   const chronological = tree.sortBy === "publishDate" || tree.sortBy === "-publishDate";
-  if (tree.sortBy === "-publishDate") notes.reverse();
+  if (tree.sortBy === "-publishDate") {
+    // Stable sorting preserves the sidebar's title/ID order within each date.
+    notes.sort((left, right) => comparePublishDates(left.publishDate, right.publishDate, 1));
+  }
   if (tree.href === currentUrl) {
     return { next: notes[0] };
   }
