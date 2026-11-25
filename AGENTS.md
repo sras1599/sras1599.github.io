@@ -520,10 +520,10 @@ to ownership, entry points, or the rules described here.
   code and private vault `main`, builds with `VAULT_PATH`, and deploys the static
   artifact to Pages. Website pushes to `main` and manual dispatch trigger it.
 - [.github/workflows/pr-dependencies.yml](.github/workflows/pr-dependencies.yml)
-  runs `npm ci --strict-peer-deps` on pull requests targeting `main`, including
-  Dependabot PRs. The `npm dependency install` check uses Node.js 24 and needs
-  no vault access or repository secrets. Required check enforcement is set in
-  GitHub's branch settings.
+  runs `npm ci --strict-peer-deps` on Dependabot pull requests targeting `main`.
+  The `npm dependency install` job skips other PRs, which satisfies the required
+  check. It uses Node.js 24 and needs no vault access or repository secrets.
+  GitHub's branch ruleset controls enforcement and direct-push bypass access.
 - [.github/dependabot.yml](.github/dependabot.yml) checks npm weekly on Mondays,
   grouping minor/patch version updates and leaving majors separate, and GitHub
   Actions monthly with individual PRs. Each ecosystem allows three open version
