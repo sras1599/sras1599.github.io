@@ -2748,5 +2748,15 @@
       "blue",
       "purple"
     ]
+  },
+  {
+    "date": "2026-11-25",
+    "mistakes": 0,
+    "solveOrder": [
+      "yellow",
+      "purple",
+      "green",
+      "blue"
+    ]
   }
 ]
