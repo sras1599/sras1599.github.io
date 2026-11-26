@@ -3,21 +3,21 @@ import { sortSitemapNodes, type SitemapNode } from "../utils/sitemap";
 
 interface Props {
   node: SitemapNode;
-  root?: boolean;
+  depth?: number;
 }
 
-const { node, root = false } = Astro.props;
+const { node, depth = 0 } = Astro.props;
 ---
 
-<li class:list={[{ "root-node": root }]}>
+<li class:list={[{ "root-node": depth === 0 }]}>
   {node.children && node.children.size > 0 ? (
     <details open>
-      <summary>
+      <summary style={`--branch-depth: ${depth + 1}`}>
         <span class="branch-caret" aria-hidden="true">▸</span>
         {node.href ? <a href={node.href}>{node.label}</a> : <span>{node.label}</span>}
       </summary>
       <ul role="list">
-        {sortSitemapNodes(node.children.values()).map((child) => <Astro.self node={child} />)}
+        {sortSitemapNodes(node.children.values()).map((child) => <Astro.self node={child} depth={depth + 1} />)}
       </ul>
     </details>
   ) : (
@@ -35,11 +35,12 @@ const { node, root = false } = Astro.props;
     display: none;
   }
 
-  .root-node > details > summary,
+  summary,
   .root-node > a {
+    --row-indent: calc(var(--branch-indent) * var(--branch-depth, 1));
     display: block;
-    margin-inline-start: calc(-1 * var(--branch-indent));
-    padding-inline-start: var(--branch-indent);
+    margin-inline-start: calc(-1 * var(--row-indent));
+    padding-inline-start: var(--row-indent);
   }
 
   .branch-caret {

@@ -24,7 +24,7 @@ const summary = `${entryCount} ${entryCount === 1 ? "entry" : "entries"} across 
         </div>
       </div>
       <ul class="sitemap-tree" id="sitemap-tree" role="list">
-        {tree.map((node) => <SitemapNode node={node} root />)}
+        {tree.map((node) => <SitemapNode node={node} />)}
       </ul>
     </div>
   </main>

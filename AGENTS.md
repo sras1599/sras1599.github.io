@@ -210,7 +210,8 @@ to ownership, entry points, or the rules described here.
   collapse or expand every branch, including nested ones, and share the Library
   filter button styles in `global.css`. The summary counts listed URLs as entries
   and branches with children as folders.
-  Top-level branch disclosures and standalone page links span their full rows.
+  Branch disclosures span their full rows at every depth, including the tree
+  lines in the gutter. Top-level standalone page links also span their rows.
   Section and folder labels link to included indexes or overviews. A section
   without an index, such as People, uses a plain label. XML lists the same URLs.
 
