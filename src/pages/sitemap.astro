@@ -1,0 +1,74 @@
+---
+import routes from "../../.generated/sitemap.json";
+import SitemapNode from "../components/SitemapNode.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { buildSitemapTree, countSitemapFolders } from "../utils/sitemap";
+
+const tree = buildSitemapTree(routes);
+const entryCount = routes.length;
+const folderCount = countSitemapFolders(tree);
+const summary = `${entryCount} ${entryCount === 1 ? "entry" : "entries"} across ${folderCount} ${folderCount === 1 ? "folder" : "folders"}`;
+---
+
+<BaseLayout title="Sitemap">
+  <main class="article">
+    <header class="article-header">
+      <h1>Sitemap</h1>
+    </header>
+    <div class="article-body">
+      <div class="article-meta-row sitemap-toolbar">
+        <p class="article-meta">{summary}</p>
+        <div class="sitemap-controls" id="sitemap-controls" hidden>
+          <button class="filter-button" type="button" aria-controls="sitemap-tree" data-sitemap-action="collapse">Collapse all</button>
+          <button class="filter-button" type="button" aria-controls="sitemap-tree" data-sitemap-action="expand">Expand all</button>
+        </div>
+      </div>
+      <ul class="sitemap-tree" id="sitemap-tree" role="list">
+        {tree.map((node) => <SitemapNode node={node} root />)}
+      </ul>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  const controls = document.getElementById("sitemap-controls");
+  const branches = document.querySelectorAll<HTMLDetailsElement>("#sitemap-tree details");
+
+  if (controls && branches.length > 0) {
+    for (const button of controls.querySelectorAll("button")) {
+      const open = button.dataset.sitemapAction === "expand";
+      button.addEventListener("click", () => {
+        for (const branch of branches) branch.open = open;
+      });
+    }
+    controls.hidden = false;
+  }
+</script>
+
+<style>
+  .sitemap-toolbar {
+    margin-block-end: 0.75rem;
+  }
+
+  .sitemap-toolbar p {
+    margin: 0;
+  }
+
+  .sitemap-controls:not([hidden]) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-inline-start: auto;
+  }
+
+  .sitemap-tree {
+    --branch-indent: clamp(0.85rem, 3vw, 1.5rem);
+    --branch-center: 0.8em;
+    --branch-color: color-mix(in srgb, var(--outline) 60%, var(--ink));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: 0.95rem / 1.6 "Space Mono", monospace;
+  }
+</style>

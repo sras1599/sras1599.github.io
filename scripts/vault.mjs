@@ -19,8 +19,8 @@
  * 3. Rewrite entry, index, and directory-card Markdown and Obsidian links, read embedded local
  *    images/audio, and prepare all output in memory. Links to existing unavailable
  *    notes and markers become their labels; missing or ambiguous references fail.
- * 4. Synchronize entry Markdown, separate _indexes and _directories documents, and
- *    hashed public assets, removing stale output.
+ * 4. Synchronize generated documents, the sitemap manifest, and hashed public
+ *    assets, removing stale output.
  *
  * Vault lookup paths use forward slashes and are relative to the vault root.
  * Entry identity (collection ID plus slug) is separate from its public URL and
@@ -68,7 +68,7 @@ export async function importVault({
   preview = false,
   registry = CollectionRegistry,
 }) {
-  const { root, discovery, activeCollections, notes } = await selectVaultEntries({
+  const { root, discovery, activeCollections, notes, handwritten } = await selectVaultEntries({
     vaultPath, projectRoot, preview, registry,
   });
   const libraryItems = [...activeCollections.values()].flatMap((collection) =>
@@ -190,6 +190,27 @@ export async function importVault({
     for (const [name, bytes] of prepared.assets) assets.set(name, bytes);
   }
 
+  const sitemap = collectSiteRoutes(notes, activeCollections, handwritten, registry)
+    .filter(({ previewOnly, includeInSitemap }) => !previewOnly && includeInSitemap)
+    .map(({ url, title, collection, directory }) => {
+      const sectionRoute = registry.get(collection)?.route;
+      if (!sectionRoute || sectionRoute === "/") return { url, title, directory };
+
+      // An included index supplies the section's link and title. Otherwise the
+      // public route namespace supplies a label without creating a new URL.
+      const name = sectionRoute.split("/").at(-1).replaceAll("-", " ");
+      const section = { key: `section:${sectionRoute}`, label: name.charAt(0).toUpperCase() + name.slice(1) };
+      return {
+        url,
+        title,
+        directory: {
+          folders: [section, ...(directory?.folders ?? [])],
+          overview: url === sectionRoute || directory?.overview === true,
+        },
+      };
+    });
+  output.set("sitemap.json", `${JSON.stringify(sitemap, null, 2)}\n`);
+
   await syncGeneratedFiles(path.join(projectRoot, "public/_vault"), assets);
   await syncGeneratedFiles(path.join(projectRoot, ".generated"), output, {
     // Collection IDs cannot contain underscores, so this internal directory
@@ -213,28 +234,46 @@ export async function listVaultRoutes({
   preview = false,
   registry = CollectionRegistry,
 }) {
-  const { notes, activeCollections } = await selectVaultEntries({ vaultPath, projectRoot, preview, registry });
-  const handwritten = await readHandwrittenRouteOwners(projectRoot, new Set());
+  const { notes, activeCollections, handwritten } = await selectVaultEntries({ vaultPath, projectRoot, preview, registry });
+  return collectSiteRoutes(notes, activeCollections, handwritten, registry)
+    .filter(({ url, kind }) => !kind?.startsWith("public-") || url === "/" || url.endsWith(".html"))
+    .map(({ url, collection, previewOnly }) => ({ url, collection, previewOnly }));
+}
+
+function collectSiteRoutes(notes, activeCollections, handwritten, registry) {
   const routes = new Map(notes.map((note) => [
     collectionEntryUrl(note.route, note.identity.slug),
-    { collection: note.identity.collectionId, previewOnly: note.previewOnly },
+    {
+      collection: note.identity.collectionId,
+      title: note.metadata.title,
+      directory: note.sitemapDirectory,
+      previewOnly: note.previewOnly,
+      includeInSitemap: note.includeInSitemap,
+    },
   ]));
   for (const collection of activeCollections.values()) {
     for (const category of collection.libraryCategories ?? []) {
       routes.set(collectionEntryUrl(collection.route, category.slug), {
         collection: collection.definition.id,
+        title: category.title,
         previewOnly: category.preview === true,
+        includeInSitemap: category.sitemap !== false,
       });
     }
   }
   const definitions = [...registry.values()]
     .filter(({ route }) => route !== "/")
     .sort((a, b) => b.route.length - a.route.length);
-  for (const { url, owner } of handwritten) {
-    if (owner.startsWith("static file ") && url !== "/" && !url.endsWith(".html")) continue;
+  const sitemapExceptions = new Set(["/", "/sitemap", "/404", "/404.html"]);
+  for (const { url, kind } of handwritten) {
+    const definition = definitions.find(({ route }) => url === route || url.startsWith(`${route}/`));
+    const authoredIndex = url === definition?.route ? activeCollections.get(definition.id)?.index : undefined;
     routes.set(url, {
-      collection: definitions.find(({ route }) => url === route || url.startsWith(`${route}/`))?.id ?? null,
+      collection: definition?.id ?? null,
+      kind,
+      title: authoredIndex?.metadata.title ?? url,
       previewOnly: false,
+      includeInSitemap: (kind === "page" || kind === "public-page") && !sitemapExceptions.has(url),
     });
   }
 
@@ -276,10 +315,11 @@ async function selectVaultEntries({ vaultPath, projectRoot, preview, registry })
     activeCollections,
     preview,
   );
-  await validateUrlOwnership(notes, activeCollections, projectRoot, registry);
+  const handwritten = await readHandwrittenRouteOwners(projectRoot);
+  validateUrlOwnership(notes, activeCollections, handwritten, registry);
   validateUniqueIdentities(notes);
 
-  return { root, discovery, activeCollections, notes };
+  return { root, discovery, activeCollections, notes, handwritten };
 }
 
 /**
@@ -404,16 +444,20 @@ async function discoverVault(
         file: markerPath,
         body: document.body,
       });
-    } else if (declaresDirectory || owner?.sidebar || Object.hasOwn(document.metadata, "sortBy")) {
+    } else if (
+      declaresDirectory || owner?.sidebar || Object.hasOwn(document.metadata, "sortBy") ||
+      (owner?.registered && Object.hasOwn(document.metadata, "sitemap"))
+    ) {
       if (!owner?.registered) {
         throw new Error(`${markerPath}: directory configuration requires a registered collection`);
       }
-      const metadata = parseSchema(
-        withDirectoryProperties(owner.definition.folderDefaultsSchema.strict()),
-        document.metadata,
-        markerPath,
-        { unknownKeyLabel: "marker property" },
-      );
+      const folderSchema = owner.definition.folderDefaultsSchema.strict();
+      const markerSchema = owner.definition.supportsDirectories
+        ? withDirectoryProperties(folderSchema)
+        : folderSchema;
+      const metadata = parseSchema(markerSchema, document.metadata, markerPath, {
+        unknownKeyLabel: "marker property",
+      });
       if (!declaresDirectory && document.body.trim()) {
         throw new Error(`${markerPath}: card content requires directory: true; put folder overview content in _index.md`);
       }
@@ -458,10 +502,15 @@ async function discoverVault(
           sortRules: owner.sidebar.sortRules,
         }
         : undefined;
+      const sitemapFolders = parent
+        ? [...owner.sidebar.sitemapFolders, ...parent.folders.slice(0, -1).map(sitemapFolder)]
+        : [];
+      sitemapFolders.push({ key: `directory:${root.slug}`, label: root.title });
       owner = {
         ...owner,
         sidebar: {
           root, dir, parent,
+          sitemapFolders,
           sortRules: [{ folders: [], sortBy: owner.sortBy ?? "title" }],
           card: {
             file: markerPath,
@@ -780,6 +829,11 @@ function parseSelectedNote(text, file, owner, route, preview) {
     file,
     body: document.body,
     previewOnly,
+    includeInSitemap: validatedMetadata.sitemap !== false,
+    sitemapDirectory: navigation && {
+      folders: [...owner.sidebar.sitemapFolders, ...navigation.folders.map(sitemapFolder)],
+      overview: navigation.overview,
+    },
     directoryDocument,
     route,
     identity: {
@@ -797,6 +851,10 @@ function parseSelectedNote(text, file, owner, route, preview) {
 function relativeFolders(root, directory) {
   const relative = path.posix.relative(root, directory);
   return relative ? relative.split("/") : [];
+}
+
+function sitemapFolder(label) {
+  return { key: `folder:${label}`, label };
 }
 
 function folderSlug(label, file) {
@@ -874,7 +932,7 @@ function generatedEntryPath({ collectionId, slug }) {
  * URLs are reserved for selected notes. Ownership descriptions retain source
  * paths so a collision identifies the declarations the author needs to change.
  */
-async function validateUrlOwnership(notes, activeCollections, projectRoot, registry) {
+function validateUrlOwnership(notes, activeCollections, handwritten, registry) {
   const generatedOwners = [];
 
   for (const collection of activeCollections.values()) {
@@ -932,9 +990,10 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot, regis
       .filter(({ definition }) => definition.indexSchema)
       .map(({ route }) => route),
   );
-  const handwrittenOwners = await readHandwrittenRouteOwners(
-    projectRoot,
-    collectionRoutes,
+  // Collection page templates implement their registered indexes. Public files
+  // claiming the same URLs still conflict with those indexes.
+  const handwrittenOwners = handwritten.filter(({ url, kind }) =>
+    !collectionRoutes.has(url) || kind === "public-page" || kind === "public-file",
   );
   const handwrittenOwnerByUrl = new Map(
     handwrittenOwners.map(({ url, owner }) => [url, owner]),
@@ -951,13 +1010,11 @@ async function validateUrlOwnership(notes, activeCollections, projectRoot, regis
 
 /**
  * Inventory concrete URLs from src/pages and public without executing Astro.
- * Registered collection indexes are implemented by their matching page folders,
- * so those exact page URLs are expected rather than conflicting ownership. A
- * root-relative collection without an index does not claim the homepage.
  * Dynamic page segments are skipped because their concrete URLs cannot be
- * inferred from filenames. Generated _vault assets are excluded.
+ * inferred from filenames. Generated _vault assets are excluded. File kinds let
+ * sitemaps select HTML pages and use clean URLs for public index files.
  */
-async function readHandwrittenRouteOwners(projectRoot, collectionRoutes) {
+async function readHandwrittenRouteOwners(projectRoot) {
   const owners = [];
   const pagesRoot = path.join(projectRoot, "src/pages");
 
@@ -970,11 +1027,10 @@ async function readHandwrittenRouteOwners(projectRoot, collectionRoutes) {
     if (segments.some((segment) => segment.startsWith("["))) continue;
     if (segments.at(-1) === "index") segments.pop();
     const url = segments.length ? `/${segments.join("/")}` : "/";
-    if (collectionRoutes.has(url)) continue;
-
     owners.push({
       url,
       owner: `handwritten route from src/pages/${relative}`,
+      kind: /\.(?:js|ts)$/.test(relative) ? "endpoint" : "page",
     });
   }
 
@@ -983,16 +1039,19 @@ async function readHandwrittenRouteOwners(projectRoot, collectionRoutes) {
     skip: new Set(["_vault"]),
   })) {
     const relative = path.relative(publicRoot, file).split(path.sep).join("/");
+    const nestedIndex = relative.endsWith("/index.html");
     owners.push({
       url: relative === "index.html" ? "/" : `/${relative}`,
       owner: `static file from public/${relative}`,
+      kind: relative.endsWith(".html") && !nestedIndex ? "public-page" : "public-file",
     });
     // Astro emits /about to about/index.html; that public file would overwrite
     // the same output even though its literal file URL differs from /about.
-    if (relative.endsWith("/index.html")) {
+    if (nestedIndex) {
       owners.push({
         url: `/${relative.slice(0, -"/index.html".length)}`,
         owner: `static file from public/${relative}`,
+        kind: "public-page",
       });
     }
   }

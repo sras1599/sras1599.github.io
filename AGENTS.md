@@ -29,6 +29,12 @@ to ownership, entry points, or the rules described here.
   collection default `true` and note values overriding marker defaults. The
   effective value is projected into generated Notes metadata using the existing
   marker inheritance rules.
+- All collections support boolean `sitemap` for routed entries and marker
+  defaults. Entries are included by default. A marker with `sitemap` can configure
+  inherited defaults outside sidebar folders too. Child markers and notes override
+  inherited values within their collection boundary. Library category markers
+  override the Library root default. The setting controls sitemap membership for
+  entries, including folder overviews, and Library category pages.
 - Routes are website-owned (`/blog`, `/notes`, `/people`, and `/` for `pages`), not configurable in vault markers.
   Source entry schemas and generated-content schemas have different roles: only
   explicitly projected frontmatter leaves the vault, but the selected body is
@@ -37,7 +43,7 @@ to ownership, entry points, or the rules described here.
   URLs without dates, feeds, or an index provider. Slugs use the shared syntax without
   a leading slash; nested paths are allowed. The first segment cannot match another
   registered collection's ID or route namespace, even when that collection is inactive.
-  Pages markers accept only collection, publish, and preview; index content,
+  Pages markers accept only collection, publish, preview, and sitemap; index content,
   directory configuration, and sorting are unsupported.
 - [sidebar.mjs](src/collections/sidebar.mjs) owns shared `directory` marker
   validation, directory-card content, and generated `navigation` schemas for Blog,
@@ -62,10 +68,10 @@ to ownership, entry points, or the rules described here.
   `src/pages/library/index.astro` renders the introduction with BaseLayout and
   article typography, followed by dynamically discovered category cards.
   Descendant `_website.md` markers without `collection` declare categories using
-  required title/slug and optional publish/preview flags, validated by
-  `src/collections/library/schema.mjs`. The Library root accepts publish/preview
-  defaults for categories; category values override root defaults. These flags do
-  not hide the Library index, matching other collection index behavior.
+  required title/slug and optional publish/preview/sitemap flags, validated by
+  `src/collections/library/schema.mjs`. The Library root accepts publish/preview/sitemap
+  defaults for categories; category values override root defaults. The Library
+  index has its usual route and sitemap listing.
   Categories follow ordinary selection rules,
   sort by title then slug, and require unique slugs. Their public title/slug/count metadata
   travel in the generated Library index's `categories` metadata alongside an
@@ -170,7 +176,8 @@ to ownership, entry points, or the rules described here.
   in addressable documents. Private bodies are never indexed for block validation.
   Note transclusion and plugin execution are unsupported.
 - The vault is read-only. `.generated/{collection}/`, `.generated/_indexes/`,
-  `.generated/_directories/`, `.generated/_library/`, and `public/_vault/` are disposable importer-owned
+  `.generated/_directories/`, `.generated/_library/`, `.generated/sitemap.json`,
+  and `public/_vault/` are disposable importer-owned
   outputs; never edit them directly. Directory card bodies are keyed by collection
   and slug and exported only for selected root overviews, which receive the
   importer-owned `directoryCard` reference. Marker-relative references reuse the
@@ -191,6 +198,21 @@ to ownership, entry points, or the rules described here.
   public `*/index.html` files also reserve their corresponding clean URLs.
   Index schemas alone do not imply rendered index routes. Other dynamic
   routes cannot be inferred.
+- The importer uses the same route inventory to write the shared sitemap manifest.
+  Both `/sitemap` and `/sitemap.xml` read it. The manifest includes canonical HTML
+  routes, omitting the homepage, preview-only content even in writing mode, and entries
+  and Library categories with effective `sitemap: false`. The footer links to the
+  plain HTML page, and `public/robots.txt` advertises the XML endpoint.
+  The HTML page uses one alphabetical tree with public section branches and
+  directory navigation membership, including notes that override their URLs.
+  Branches with children use native disclosures, open by default, with a caret
+  that points right when closed and down when open. Bulk controls above the tree
+  collapse or expand every branch, including nested ones, and share the Library
+  filter button styles in `global.css`. The summary counts listed URLs as entries
+  and branches with children as folders.
+  Top-level branch disclosures and standalone page links span their full rows.
+  Section and folder labels link to included indexes or overviews. A section
+  without an index, such as People, uses a plain label. XML lists the same URLs.
 
 ### 3. Astro content loading and Markdown rendering
 

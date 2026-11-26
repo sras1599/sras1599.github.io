@@ -35,6 +35,7 @@ export const slugSegmentSchema = z
 export const selectionSchema = z.object({
   publish: z.boolean({ error: "must be a boolean" }),
   preview: z.boolean({ error: "must be a boolean" }),
+  sitemap: z.boolean({ error: "must be a boolean" }).optional(),
 });
 
 export const publishDateSchema = z

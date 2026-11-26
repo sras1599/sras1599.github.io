@@ -1,6 +1,6 @@
 /**
  * Register notes at the website-owned /notes route. The marker authors the
- * collection index and may set publish, preview, or toc defaults; individual notes
+ * collection index and may set publish, preview, sitemap, or toc defaults; individual notes
  * provide public entry metadata; folder-sidebar entries may omit their date.
  * The importer projects shared navigation separately from collection metadata.
  */

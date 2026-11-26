@@ -60,7 +60,7 @@ tags:
 ```
 
 The `notes` marker accepts `collection`, `title`, `metaDescription`,
-`publish`, `preview`, and the shared `directory`/`slug` properties (plus `tags`
+`publish`, `preview`, `sitemap`, `toc`, and the shared `directory`/`slug` properties (plus `tags`
 on directory markers) described
 below. Its `publish` and `preview` values are recursive folder
 defaults; note-level values override them.
@@ -137,7 +137,8 @@ The precedence is the collection default (`true`), then the owning marker's
 defaults, then the note's explicit value. Existing marker rules apply: a
 collection declaration establishes fresh defaults; within sidebar folders, nested
 markers without `collection` inherit defaults and may override `toc`. Outside
-sidebar folders, a defaults marker must declare `collection: notes`. A note with
+sidebar folders, a defaults marker must declare `collection: notes` or supply a
+`sitemap` setting within an existing Notes boundary. A note with
 no eligible headings has no TOC even with `toc: true`. Hiding the TOC preserves
 folder navigation and heading anchors; Blog and People behavior is unchanged.
 
@@ -145,6 +146,29 @@ The slug determines `/blog/an-example-article`, independent of the vault filenam
 or folder. Changing a slug changes the URL; no automatic redirect is created.
 Removing `publish`, setting it to `false`, or deleting a note removes it at the next
 successful import/build. A vault with no selected notes produces an empty blog.
+
+## Sitemap
+
+`/sitemap` is the visitor-facing page and `/sitemap.xml` is the search engine
+sitemap. Both include published entries by default and omit the homepage and
+preview-only content, including in `npm run dev:writing`.
+
+The HTML sitemap uses one alphabetical tree. Entries and configured directories
+sit beneath their public section branch, and standalone pages sit at the root.
+Branches with children start expanded. The caret points right when collapsed
+and down when expanded. Collapse all and Expand all act on every branch.
+Section and folder labels link to their included index or overview. People has
+a plain label because it has no index page. The XML sitemap lists the same URLs
+in a flat list.
+
+Set `sitemap: false` in a folder's `_website.md` to omit its descendant entries
+from both sitemaps. This works inside and outside sidebar folders. A child folder
+marker or an entry's frontmatter can opt back in with `sitemap: true`. Put
+`sitemap: false` in an individual entry's frontmatter to omit just that entry.
+Use unquoted YAML booleans. A marker that declares `collection` starts a new
+set of defaults. Collection indexes keep their sitemap listings. Published
+entries omitted from the sitemap remain accessible at their usual URLs and
+through existing links.
 
 ## Library introduction
 
@@ -155,9 +179,9 @@ public and uses the normal vault link, media, and block-anchor preparation.
 No publish flag is required for the introduction; declaring the root selects it.
 
 The marker may override `title` and `metaDescription`; otherwise the website
-supplies defaults. Optional `publish` and `preview` flags on this root marker
-provide category defaults; each category may override them. These flags do not
-hide the Library introduction, matching other collection indexes.
+supplies defaults. Optional `publish`, `preview`, and `sitemap` flags on this root
+marker provide category defaults, and each category may override them. The
+Library introduction keeps its route and sitemap listing.
 Marker body content, directories, and sorting are unsupported.
 The index is generated under `.generated/_indexes/library.md` and rendered through
 the existing Astro `collectionIndexes` collection, without an ordinary Library
@@ -178,7 +202,7 @@ preview: true
 Books I've read, with occasional **notes** and recommendations.
 ````
 
-Category markers require title and slug, accept optional boolean publish/preview
+Category markers require title and slug, accept optional boolean publish/preview/sitemap
 flags. Their optional Markdown body supplies the introduction beneath the category
 page title and above its header divider on `/library/<slug>`. The `/library`
 illustrated cards do not show this body. The full selected body is public and supports the same vault
@@ -278,9 +302,10 @@ collection: pages
 ```
 
 Unlike Blog, Notes, and People, Pages has no collection index. Its marker accepts
-only `collection` and optional boolean `publish` and `preview` defaults. Do not add
+only `collection` and optional boolean `publish`, `preview`, and `sitemap` defaults. Do not add
 index titles, descriptions, marker body content, directory configuration, or sorting.
-To set defaults in a nested folder, declare `collection: pages` again.
+To set defaults in a nested folder, declare `collection: pages` again or add a
+child marker with `sitemap` to inherit the parent defaults and override selected values.
 
 Each selected page requires a title and slug and may supply a description:
 
@@ -590,7 +615,8 @@ literal; recognized executable plugin blocks are rejected.
 
 `.generated/{collection}` hold generated entries,
 `.generated/_indexes` holds collection indexes, `.generated/_directories` holds
-selected directory and Library category marker bodies keyed by collection and slug, and `public/_vault`
+selected directory and Library category marker bodies keyed by collection and slug,
+`.generated/sitemap.json` holds the shared sitemap route list, and `public/_vault`
 holds referenced images and audio. Root overviews reference their generated card
 body with importer-owned `directoryCard` metadata. Astro registers `directoryCards`
 separately, using the same Markdown loader and renderer without creating routes. They are gitignored and disposable. Never edit them. Astro derives

@@ -1,0 +1,89 @@
+---
+import { sortSitemapNodes, type SitemapNode } from "../utils/sitemap";
+
+interface Props {
+  node: SitemapNode;
+  root?: boolean;
+}
+
+const { node, root = false } = Astro.props;
+---
+
+<li class:list={[{ "root-node": root }]}>
+  {node.children && node.children.size > 0 ? (
+    <details open>
+      <summary>
+        <span class="branch-caret" aria-hidden="true">▸</span>
+        {node.href ? <a href={node.href}>{node.label}</a> : <span>{node.label}</span>}
+      </summary>
+      <ul role="list">
+        {sortSitemapNodes(node.children.values()).map((child) => <Astro.self node={child} />)}
+      </ul>
+    </details>
+  ) : (
+    node.href ? <a href={node.href}>{node.label}</a> : <span>{node.label}</span>
+  )}
+</li>
+
+<style>
+  summary {
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .root-node > details > summary,
+  .root-node > a {
+    display: block;
+    margin-inline-start: calc(-1 * var(--branch-indent));
+    padding-inline-start: var(--branch-indent);
+  }
+
+  .branch-caret {
+    display: inline-block;
+    inline-size: 1.25em;
+    text-align: center;
+  }
+
+  details[open] > summary > .branch-caret {
+    transform: rotate(90deg);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    position: relative;
+    padding-inline-start: var(--branch-indent);
+  }
+
+  li::before,
+  li::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    pointer-events: none;
+  }
+
+  li::before {
+    inset-block: 0;
+    border-inline-start: 1px solid var(--branch-color);
+  }
+
+  li:last-child::before {
+    inset-block-end: auto;
+    block-size: var(--branch-center);
+  }
+
+  li::after {
+    inset-block-start: var(--branch-center);
+    inline-size: calc(var(--branch-indent) - 0.25rem);
+    border-block-start: 1px solid var(--branch-color);
+  }
+</style>
